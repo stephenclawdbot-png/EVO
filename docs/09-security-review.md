@@ -289,40 +289,32 @@ This is the main approach. No wallet integration needed — we build our own fro
 - Users must visit our site to see their Z
 - Not visible in Phantom's "Collectibles" tab
 
-### Approach 2: Metaplex Core Shadow Asset (Future Enhancement)
+### Approach 2: Metaplex Core / NFT / Token Standards (REJECTED)
 
-Make Z *also* exist as a Metaplex Core asset, so they show up in wallet "Collectibles" tabs.
+We explicitly reject wrapping EVOs in any existing token standard (Metaplex Core, Token-2022, SPL NFTs). Here's why:
 
-**How it works:**
-1. When a Z is forged, also mint a Metaplex Core asset
-2. The Core asset's image URI points to our API: `https://api.z.fun/render/<z_pda>`
-3. Our API reads the Z PDA from chain, renders the current art, returns a PNG
-4. Wallet fetches the image URI → sees the Z art
-5. When Z is shattered, burn the Core asset
+**Metaplex Core shadow asset:**
+- Would require a dynamic image URL (`https://api.z.fun/render/<z_pda>`)
+- That URL needs a **server** that reads on-chain data and renders a PNG
+- If the server goes down → wallets show broken images forever
+- If we stop paying for hosting → all Z disappear from wallets
+- This is a **centralized dependency** — the exact thing EVO is designed to eliminate
+- It also makes Z an NFT, which contradicts the core concept
 
-**Metaplex Core advantages:**
-- Lightweight (cheaper than Token Metadata)
-- Plugin system (can add custom data)
-- Non-transferable plugin available (soulbound to PDA owner)
-- Wallets already support Core assets
+**Token-2022:**
+- EVOs aren't tokens. Forcing them into a token standard is architecturally wrong
+- Doesn't solve the display problem anyway
+- Adds unnecessary complexity
 
-**Cons:**
-- Adds complexity (two accounts per Z: PDA + Core asset)
-- Image API is a centralized dependency (if our API is down, wallets show broken images)
-- Costs extra rent for the Core asset account
-- Need to keep Core asset in sync with PDA state
+**Why this matters:**
+EVO's core value proposition is **trustlessness**. The art is computed client-side from on-chain data. No server, no API, no hosted images, no metadata URI. If we add a server-rendered image URL for wallet display, we've introduced a single point of failure and a trust dependency. That's not EVO.
 
-**Recommendation:** Start with Approach 1 (custom frontend). Add Approach 2 (Core shadow) as a Phase 2 enhancement once the protocol is live and proven.
-
-### Approach 3: Token-2022 (Not Recommended)
-
-Could use Token-2022 with custom extensions, but:
-- Token-2022 is still not fully supported by all wallets
-- Doesn't solve the "how to display art" problem
-- Adds token standard complexity we don't need
-- EVOs aren't tokens — forcing them into a token standard is wrong
-
-**Recommendation:** Skip.
+**The trade-off we accept:**
+- Z won't appear in Phantom's "Collectibles" tab
+- Users see their Z at z.fun (our frontend)
+- This is the right trade-off: **trustlessness over convenience**
+- If we disappear, the community can host the open-source renderer and frontend
+- The on-chain data is permanent — Z exist forever on Solana regardless
 
 ### Implementation Plan for Approach 1
 
@@ -526,7 +518,6 @@ This is the ultimate trust guarantee. Combined with:
 - [ ] Marketing launch
 
 ### Phase 4: Protocol Expansion (Post-launch)
-- [ ] Metaplex Core shadow assets (wallet display)
 - [ ] Collection creation UI (for competitors)
 - [ ] API for third-party integrations
 - [ ] DAO governance
