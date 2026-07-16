@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EVO — Evolving Value Object</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121f;
+    --surface: #1a1a2e;
+    --accent: #00f0ff;
+    --accent2: #b794f4;
+    --accent3: #fbbf24;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --green: #4ade80;
+    --red: #f87171;
+  }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Pro Display', -apple-system, 'Segoe UI', system-ui, sans-serif;
+    overflow: hidden;
+    height: 100vh;
+  }
+  
+  .deck {
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+  }
+  
+  .slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 80px;
+    opacity: 0;
+    transform: translateX(40px);
+    transition: opacity 0.5s, transform 0.5s;
+    pointer-events: none;
+    overflow-y: auto;
+  }
+  
+  .slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+  
+  .slide.prev {
+    transform: translateX(-40px);
+  }
+  
+  /* Navigation */
+  .nav {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    z-index: 100;
+    background: rgba(26,26,46,0.8);
+    backdrop-filter: blur(12px);
+    padding: 10px 24px;
+    border-radius: 40px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  
+  .nav button {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: color 0.2s;
+  }
+  .nav button:hover { color: var(--accent); }
+  
+  .nav .counter {
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 50px;
+    text-align: center;
+  }
+  
+  /* Typography */
+  h1 { font-size: 3.5rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 16px; }
+  h2 { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 20px; }
+  h3 { font-size: 1.4rem; font-weight: 600; margin-bottom: 12px; color: var(--accent); }
+  p { font-size: 1.15rem; line-height: 1.7; color: var(--text-dim); max-width: 800px; }
+  .lead { font-size: 1.3rem; color: var(--text); }
+  .accent { color: var(--accent); }
+  .accent2 { color: var(--accent2); }
+  .accent3 { color: var(--accent3); }
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+  
+  /* Slide types */
+  .slide-title { text-align: center; }
+  .slide-title h1 {
+    font-size: 5rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .slide-section {
+    text-align: center;
+  }
+  .slide-section .label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  
+  /* Cards */
+  .cards { display: flex; gap: 24px; margin-top: 32px; flex-wrap: wrap; justify-content: center; }
+  .card {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 28px;
+    width: 280px;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .card:hover { transform: translateY(-4px); border-color: rgba(0,240,255,0.3); }
+  .card .icon { font-size: 2rem; margin-bottom: 12px; }
+  .card h3 { margin-bottom: 8px; }
+  .card p { font-size: 0.95rem; }
+  
+  /* Tables */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 850px;
+    margin-top: 24px;
+    font-size: 0.95rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 12px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  th { color: var(--accent); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; }
+  td { color: var(--text-dim); }
+  tr:last-child td { border-bottom: none; }
+  .yes { color: var(--green); }
+  .no { color: var(--red); }
+  
+  /* Code blocks */
+  pre {
+    background: var(--bg2);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 20px 24px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    max-width: 850px;
+    margin-top: 20px;
+    color: var(--text);
+  }
+  .kw { color: var(--accent2); }
+  .ty { color: var(--accent); }
+  .cm { color: var(--text-dim); font-style: italic; }
+  .fn { color: var(--accent3); }
+  
+  /* Flow diagram */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .flow-step {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 16px 24px;
+    text-align: center;
+    min-width: 120px;
+  }
+  .flow-step .step-icon { font-size: 1.8rem; margin-bottom: 6px; }
+  .flow-step .step-label { font-size: 0.85rem; font-weight: 600; }
+  .flow-step .step-desc { font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; }
+  .flow-arrow { color: var(--accent); font-size: 1.5rem; }
+  
+  /* Big number */
+  .big-number {
+    font-size: 6rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+  
+  /* Crystal visual */
+  .crystal-viz {
+    width: 200px;
+    height: 200px;
+    margin: 20px auto;
+    position: relative;
+  }
+  
+  /* Callout */
+  .callout {
+    background: rgba(0,240,255,0.05);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0;
+    padding: 20px 28px;
+    margin-top: 24px;
+    max-width: 800px;
+  }
+  .callout p { color: var(--text); }
+  
+  /* Two columns */
+  .two-col { display: flex; gap: 60px; margin-top: 32px; align-items: flex-start; }
+  .two-col > div { flex: 1; max-width: 420px; }
+  
+  /* Badge */
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .badge-new { background: rgba(74,222,128,0.15); color: var(--green); border: 1px solid rgba(74,222,128,0.3); }
+  .badge-not { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+  
+  /* Slide label */
+  .slide-tag {
+    position: absolute;
+    top: 30px;
+    left: 80px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    opacity: 0.5;
+  }
+  
+  /* Hint */
+  .hint {
+    position: fixed;
+    bottom: 10px;
+    right: 20px;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    opacity: 0.4;
+  }
+  
+  /* Animations */
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+  }
+  .glow-pulse { animation: pulse 3s ease-in-out infinite; }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .float { animation: float 4s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+<!-- SLIDE 1: Title -->
+<div class="slide slide-title active" data-slide="0">
+  <div class="float" style="margin-bottom: 30px;">
+    <svg width="120" height="120" viewBox="0 0 120 120">
+      <defs>
+        <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#00f0ff" stop-opacity="0.8"/>
+          <stop offset="100%" stop-color="#b794f4" stop-opacity="0.8"/>
+        </linearGradient>
+      </defs>
+      <polygon points="60,10 100,40 90,90 60,110 30,90 20,40" fill="url(#g1)" stroke="#00f0ff" stroke-width="1.5" opacity="0.7"/>
+      <polygon points="60,10 60,110 100,40" fill="none" stroke="#00f0ff" stroke-width="0.5" opacity="0.4"/>
+      <polygon points="60,10 60,110 20,40" fill="none" stroke="#b794f4" stroke-width="0.5" opacity="0.4"/>
+      <polygon points="60,30 80,45 75,75 60,85 45,75 40,45" fill="none" stroke="#00f0ff" stroke-width="1" opacity="0.5"/>
+    </svg>
+  </div>
+  <h1>EVO</h1>
+  <p class="lead" style="font-size: 1.6rem; margin-bottom: 8px;">Evolving Value Object</p>
+  <p style="font-size: 1.1rem;">A new on-chain primitive on Solana</p>
+  <p style="margin-top: 40px; font-size: 0.9rem; color: var(--text-dim);">Not a token. Not an NFT. Something new.</p>
+</div>
+
+<!-- SLIDE 2: The Problem -->
+<div class="slide" data-slide="1">
+  <div class="slide-tag">The Problem</div>
+  <h2>Value is invisible.</h2>
+  <p class="lead">When you hold SOL, it's a number in a wallet. Invisible. Boring.</p>
+  <div class="cards">
+    <div class="card">
+      <div class="icon">💰</div>
+      <h3>Tokens</h3>
+      <p>Fungible. Interchangeable. No art. No identity. Just numbers.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🖼️</div>
+      <h3>NFTs</h3>
+      <p>Beautiful. Unique. But no value backing. No price floor. Just a JPEG.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🔄</div>
+      <h3>Mutable NFTs</h3>
+      <p>Art can change — but someone else controls it. Trust required. Can be ruggged.</p>
+    </div>
+  </div>
+  <div class="callout" style="margin-top: 40px;">
+    <p>What if value <span class="accent">was</span> the art? What if holding SOL made something <span class="accent2">beautiful</span>?</p>
+  </div>
+</div>
+
+<!-- SLIDE 3: The Insight -->
+<div class="slide slide-section" data-slide="2">
+  <div class="slide-tag">The Insight</div>
+  <div class="label">The Non-Obvious Leap</div>
+  <h2 style="max-width: 700px;">Make stored value visible and beautiful.</h2>
+  <p class="lead" style="max-width: 700px; margin-top: 16px;">
+    Lock SOL inside a digital object. The value drives generative art that evolves over time.
+    More SOL = bigger. More time = more intricate. More trades = more character.
+  </p>
+  <div class="callout" style="margin-top: 40px;">
+    <p style="font-size: 1.2rem;">Value locked inside <span class="accent">IS</span> the art parameter.</p>
+  </div>
+</div>
+
+<!-- SLIDE 4: What is an EVO -->
+<div class="slide" data-slide="3">
+  <div class="slide-tag">Definition</div>
+  <h2>What is an EVO?</h2>
+  <p class="lead">An <span class="accent">Evolving Value Object</span> is a Program Derived Account on Solana that:</p>
+  <div style="margin-top: 32px; max-width: 700px;">
+    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+      <span style="font-size: 1.5rem;">1️⃣</span>
+      <div><strong>Holds locked SOL</strong> — the lamports literally live inside the PDA's account balance</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+      <span style="font-size: 1.5rem;">2️⃣</span>
+      <div><strong>Generates evolving art</strong> — computed client-side from on-chain data that changes over time</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+      <span style="font-size: 1.5rem;">3️⃣</span>
+      <div><strong>Has a price floor</strong> — shatter it to reclaim the locked SOL. Floor = locked value.</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+      <span style="font-size: 1.5rem;">4️⃣</span>
+      <div><strong>Is trustless</strong> — no admin, no update authority, no metadata. Art is pure math.</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <span style="font-size: 1.5rem;">5️⃣</span>
+      <div><strong>Records history</strong> — every trade leaves a permanent mark (fracture line) in the art</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 5: Not a Token, Not an NFT -->
+<div class="slide" data-slide="4">
+  <div class="slide-tag">Category</div>
+  <h2>A New Asset Class</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Property</th>
+        <th>Token</th>
+        <th>NFT</th>
+        <th>Mutable NFT</th>
+        <th class="accent">EVO</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Fungible</td><td class="yes">✅</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td></tr>
+      <tr><td>Unique</td><td class="no">❌</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+      <tr><td>Backed by value</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="yes accent">✅ (locked SOL)</td></tr>
+      <tr><td>Price floor</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="yes accent">✅ (shatter to redeem)</td></tr>
+      <tr><td>Evolving art</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌ (manual)</td><td class="yes accent">✅ (automatic)</td></tr>
+      <tr><td>Trustless art</td><td>N/A</td><td class="yes">✅</td><td class="no">❌</td><td class="yes accent">✅</td></tr>
+      <tr><td>Provenance in art</td><td class="no">❌</td><td class="no">❌</td><td class="no">❌</td><td class="yes accent">✅ (fracture lines)</td></tr>
+      <tr><td>Uses token standard</td><td class="yes">✅ SPL</td><td class="yes">✅ Metaplex</td><td class="yes">✅ Metaplex</td><td class="no accent">❌ Custom PDA</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top: 24px; font-size: 0.95rem;">EVO is the <span class="accent">only</span> asset class that is both value-backed AND has evolving art.</p>
+</div>
+
+<!-- SLIDE 6: EVO vs Mutable NFT -->
+<div class="slide" data-slide="5">
+  <div class="slide-tag">Key Distinction</div>
+  <h2>EVO ≠ Mutable Metadata NFT</h2>
+  <div class="two-col">
+    <div>
+      <h3 class="red">Mutable Metadata NFT</h3>
+      <pre><span class="cm">// Regular NFT (SPL/Metaplex)</span>
+<span class="cm">// metadata URI → image URL</span>
+<span class="cm">// someone swaps the image</span>
+
+<span class="cm">// Who controls art?</span>
+→ <span class="kw">update authority</span> holder
+
+<span class="cm">// Can art be ruggged?</span>
+→ <span class="red">YES</span> — authority can
+   change to anything
+
+<span class="cm">// Trust model</span>
+→ Trust the authority</pre>
+    </div>
+    <div>
+      <h3 class="accent">EVO</h3>
+      <pre><span class="cm">// Custom PDA, no token standard</span>
+<span class="cm">// no metadata, no URI, no image</span>
+<span class="cm">// art computed from on-chain data</span>
+
+<span class="cm">// Who controls art?</span>
+→ <span class="accent">NOBODY</span> — it's automatic
+
+<span class="cm">// Can art be ruggged?</span>
+→ <span class="green">NO</span> — deterministic
+   function of on-chain state
+
+<span class="cm">// Trust model</span>
+→ <span class="green">Trustless (pure math)</span></pre>
+    </div>
+  </div>
+  <div class="callout" style="margin-top: 30px;">
+    <p>Mutable metadata = <span class="red">someone has the POWER to change it</span>.<br>
+    EVO = <span class="green">nobody has power. The value itself drives the art.</span></p>
+  </div>
+</div>
+
+<!-- SLIDE 7: Lifecycle -->
+<div class="slide" data-slide="6">
+  <div class="slide-tag">How It Works</div>
+  <h2>The Lifecycle</h2>
+  <div class="flow">
+    <div class="flow-step">
+      <div class="step-icon">🔨</div>
+      <div class="step-label">Forge</div>
+      <div class="step-desc">Mint empty crystal<br>~0.05 SOL</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="step-icon">💎</div>
+      <div class="step-label">Feed</div>
+      <div class="step-desc">Lock SOL inside<br>crystal grows</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="step-icon">⏳</div>
+      <div class="step-label">Grow</div>
+      <div class="step-desc">Facets increase<br>over time</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="step-icon">🔄</div>
+      <div class="step-label">Trade</div>
+      <div class="step-desc">Sell on built-in<br>marketplace</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="step-icon">💥</div>
+      <div class="step-label">Shatter</div>
+      <div class="step-desc">Reclaim SOL<br>crystal destroyed</div>
+    </div>
+  </div>
+  <p style="margin-top: 40px; text-align: center;">Every EVO goes through this cycle. Each path creates a unique object with unique art.</p>
+</div>
+
+<!-- SLIDE 8: Forging & Feeding -->
+<div class="slide" data-slide="7">
+  <div class="slide-tag">Mechanics — Part 1</div>
+  <h2>Forge & Feed</h2>
+  <div class="two-col">
+    <div>
+      <h3>🔨 Forging (Minting)</h3>
+      <p>Pay a small fixed price to create an <strong>empty</strong> crystal PDA.</p>
+      <pre><span class="fn">forge</span>(collection_id)
+
+<span class="cm">// User pays: 0.05 SOL</span>
+<span class="cm">// → 0.01 SOL: rent (stays in PDA)</span>
+<span class="cm">// → 0.04 SOL: collection treasury</span>
+
+<span class="cm">// Result: empty crystal</span>
+<span class="cm">// locked_lamports = 0</span>
+<span class="cm">// facet_count = 0</span>
+<span class="cm">// resonance_seed = hash(tx_sig)</span></pre>
+    </div>
+    <div>
+      <h3>💎 Feeding (Depositing)</h3>
+      <p>Deposit SOL into your crystal. This is the <strong>store of value</strong> action.</p>
+      <pre><span class="fn">feed</span>(crystal_id, amount)
+
+<span class="cm">// User feeds: 1 SOL</span>
+<span class="cm">// → 1 SOL added to locked_lamports</span>
+<span class="cm">// → Crystal grows visually</span>
+<span class="cm">// → Fee: 0 SOL (frictionless)</span>
+
+<span class="cm">// No minimum. No maximum.</span>
+<span class="cm">// No lockup. Feed anytime.</span></pre>
+    </div>
+  </div>
+  <div class="callout" style="margin-top: 24px;">
+    <p>Mint cheap, feed over time. A crystal fed 0.1 SOL weekly for a year tells a different story than one fed 50 SOL in one shot — even if the total is the same.</p>
+  </div>
+</div>
+
+<!-- SLIDE 9: Growing & Trading -->
+<div class="slide" data-slide="8">
+  <div class="slide-tag">Mechanics — Part 2</div>
+  <h2>Grow & Trade</h2>
+  <div class="two-col">
+    <div>
+      <h3>⏳ Growing (Time Evolution)</h3>
+      <p>Facets increase <strong>automatically</strong> over time. No transaction needed.</p>
+      <pre><span class="cm">// Computed from forged_at:</span>
+facet_count = <span class="fn">floor</span>(
+  (now - forged_at) / <span class="ty">7_days</span>
+)
+
+<span class="cm">// 1 week old → 1 facet</span>
+<span class="cm">// 1 year old → 52 facets</span>
+<span class="cm">// Capped at 100 facets</span>
+
+<span class="cm">// Trading doesn't reset</span>
+<span class="cm">// the timer. Age is total.</span></pre>
+    </div>
+    <div>
+      <h3>🔄 Trading (Marketplace)</h3>
+      <p>Seller lists, buyer pays, ownership transfers. <strong>Built into the program.</strong></p>
+      <pre><span class="fn">list</span>(crystal_id, price)
+<span class="fn">buy</span>(crystal_id)
+
+<span class="cm">// Buyer pays X SOL</span>
+<span class="cm">// → Seller: X - 2%</span>
+<span class="cm">// → Protocol: 1% of X</span>
+<span class="cm">// → Collection: 1% of X</span>
+<span class="cm">// → Fracture line recorded</span>
+<span class="cm">// → trade_count++</span></pre>
+    </div>
+  </div>
+  <div class="callout" style="margin-top: 24px;">
+    <p>Every trade leaves a <span class="accent">fracture line</span> — a permanent visual mark. A crystal traded 20 times has 20 fracture lines. A crystal never traded is pristine. Both are beautiful in different ways.</p>
+  </div>
+</div>
+
+<!-- SLIDE 10: Shattering -->
+<div class="slide" data-slide="9">
+  <div class="slide-tag">Mechanics — Part 3</div>
+  <h2>Shatter (The Exit)</h2>
+  <p class="lead">Destroy the crystal. Reclaim your SOL. Art gone forever.</p>
+  <pre><span class="fn">shatter</span>(crystal_id)
+
+<span class="cm">// Program returns ALL locked_lamports to owner</span>
+<span class="cm">// → 99% to owner</span>
+<span class="cm">// → 1% to protocol treasury</span>
+<span class="cm">// → PDA closed (account destroyed)</span>
+<span class="cm">// → Art, history, facets — all gone</span>
+<span class="cm">// → Crystal ceases to exist</span></pre>
+  <div class="cards" style="margin-top: 32px;">
+    <div class="card">
+      <div class="icon">📉</div>
+      <h3>Price Floor</h3>
+      <p>If market price drops below locked SOL, someone arbitrages by shattering. Floor = locked SOL.</p>
+    </div>
+    <div class="card">
+      <div class="icon">📉</div>
+      <h3>Decreasing Supply</h3>
+      <p>Shattering reduces total supply. Over time, crystals are destroyed, making survivors more rare.</p>
+    </div>
+    <div class="card">
+      <div class="icon">♾️</div>
+      <h3>Irreversible</h3>
+      <p>Once shattered, the resonance seed is gone forever. A new crystal gets a new seed. No undo.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 11: The Art System -->
+<div class="slide" data-slide="10">
+  <div class="slide-tag">Art System</div>
+  <h2>How the Art Works</h2>
+  <p class="lead">Art is <strong>not stored</strong>. It's <strong>computed</strong> from on-chain data, client-side, every time.</p>
+  <div class="two-col" style="margin-top: 32px;">
+    <div>
+      <h3>On-Chain Data → Art</h3>
+      <table style="font-size: 0.85rem;">
+        <tr><th>Parameter</th><th>Visual Effect</th></tr>
+        <tr><td>locked_lamports</td><td>Crystal size</td></tr>
+        <tr><td>forged_at (age)</td><td>Facet count</td></tr>
+        <tr><td>resonance_seed</td><td>Color palette</td></tr>
+        <tr><td>trade_count</td><td>Fracture lines</td></tr>
+        <tr><td>fracture_lines</td><td>Crack positions</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>Hybrid Model</h3>
+      <div style="margin-top: 16px;">
+        <div style="margin-bottom: 16px;">
+          <span class="badge badge-new">Artist</span>
+          <p style="font-size: 0.95rem; margin-top: 8px;">Defines color palettes, base shapes, facet geometry, fracture style. The visual identity.</p>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <span class="badge badge-new">Algorithm</span>
+          <p style="font-size: 0.95rem; margin-top: 8px;">Places facets, colors crystal, sizes it, draws fractures — all from on-chain data.</p>
+        </div>
+        <div>
+          <span class="badge badge-new">Deterministic</span>
+          <p style="font-size: 0.95rem; margin-top: 8px;">Same data = same art. Always. For everyone. No randomness in render path.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 12: Visual Progression -->
+<div class="slide" data-slide="11">
+  <div class="slide-tag">Art Progression</div>
+  <h2>A Crystal's Journey</h2>
+  <div class="cards">
+    <div class="card" style="text-align: center;">
+      <svg width="60" height="60" viewBox="0 0 60 60" style="margin: 0 auto 12px;">
+        <polygon points="30,5 50,20 45,45 30,55 15,45 10,20" fill="#3a3a5c" stroke="#555" stroke-width="1" opacity="0.6"/>
+      </svg>
+      <h3 style="font-size: 1rem;">Just Forged</h3>
+      <p style="font-size: 0.85rem;">0 SOL, 0 facets. Tiny rough shard. Single muted color.</p>
+    </div>
+    <div class="card" style="text-align: center;">
+      <svg width="80" height="80" viewBox="0 0 80 80" style="margin: 0 auto 12px;">
+        <polygon points="40,5 65,25 58,60 40,75 22,60 15,25" fill="#1a4a6a" stroke="#00f0ff" stroke-width="1" opacity="0.7"/>
+        <polygon points="40,5 40,75 65,25" fill="none" stroke="#00f0ff" stroke-width="0.5" opacity="0.4"/>
+        <polygon points="40,20 55,30 50,50 40,58 30,50 25,30" fill="none" stroke="#00f0ff" stroke-width="0.5" opacity="0.5"/>
+      </svg>
+      <h3 style="font-size: 1rem;">1 SOL, 2 weeks</h3>
+      <p style="font-size: 0.85rem;">Small crystal forming. Color emerging. 2 facets. Faint glow.</p>
+    </div>
+    <div class="card" style="text-align: center;">
+      <svg width="100" height="100" viewBox="0 0 100 100" style="margin: 0 auto 12px;">
+        <polygon points="50,5 80,30 72,75 50,95 28,75 20,30" fill="#2a1a5a" stroke="#b794f4" stroke-width="1.5" opacity="0.8"/>
+        <polygon points="50,5 50,95 80,30" fill="none" stroke="#b794f4" stroke-width="0.5" opacity="0.5"/>
+        <polygon points="50,5 50,95 20,30" fill="none" stroke="#00f0ff" stroke-width="0.5" opacity="0.5"/>
+        <polygon points="50,15 65,25 60,55 50,65 40,55 35,25" fill="none" stroke="#b794f4" stroke-width="0.8" opacity="0.6"/>
+        <polygon points="50,25 58,32 55,48 50,53 45,48 42,32" fill="none" stroke="#00f0ff" stroke-width="0.5" opacity="0.4"/>
+      </svg>
+      <h3 style="font-size: 1rem;">10 SOL, 6 months</h3>
+      <p style="font-size: 0.85rem;">Medium-large. Rich colors. 26 facets. Strong glow.</p>
+    </div>
+    <div class="card" style="text-align: center;">
+      <svg width="120" height="120" viewBox="0 0 120 120" style="margin: 0 auto 12px;">
+        <polygon points="60,5 95,35 85,90 60,115 35,90 25,35" fill="#3a0a4a" stroke="#fbbf24" stroke-width="2" opacity="0.9"/>
+        <polygon points="60,5 60,115 95,35" fill="none" stroke="#fbbf24" stroke-width="0.5" opacity="0.6"/>
+        <polygon points="60,5 60,115 25,35" fill="none" stroke="#b794f4" stroke-width="0.5" opacity="0.6"/>
+        <polygon points="60,15 78,28 72,65 60,75 48,65 42,28" fill="none" stroke="#fbbf24" stroke-width="1" opacity="0.7"/>
+        <polygon points="60,25 70,33 67,53 60,60 53,53 50,33" fill="none" stroke="#00f0ff" stroke-width="0.8" opacity="0.5"/>
+        <polygon points="60,35 66,40 64,50 60,53 56,50 54,40" fill="none" stroke="#b794f4" stroke-width="0.5" opacity="0.4"/>
+        <line x1="30" y1="50" x2="55" y2="70" stroke="#f87171" stroke-width="0.8" opacity="0.6"/>
+        <line x1="70" y1="40" x2="85" y2="60" stroke="#f87171" stroke-width="0.8" opacity="0.6"/>
+        <line x1="50" y1="20" x2="65" y2="35" stroke="#f87171" stroke-width="0.5" opacity="0.4"/>
+      </svg>
+      <h3 style="font-size: 1rem;">50 SOL, 2 years, 5 trades</h3>
+      <p style="font-size: 0.85rem;">Magnificent. Deep colors. 100 facets. 5 fracture lines. Legendary.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 13: Economics -->
+<div class="slide" data-slide="12">
+  <div class="slide-tag">Economics</div>
+  <h2>Fee Structure</h2>
+  <table>
+    <thead>
+      <tr><th>Action</th><th>Fee</th><th>Split</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Mint (forge)</td><td>0.05 SOL</td><td>0.01 rent + 0.04 collection treasury</td></tr>
+      <tr><td>Feed (deposit)</td><td>0 or 0.001 SOL</td><td>Treasury</td></tr>
+      <tr><td>Trade (sale)</td><td>2% of sale price</td><td>1% protocol + 1% collection</td></tr>
+      <tr><td>Shatter (redeem)</td><td>1% of locked SOL</td><td>Protocol treasury</td></tr>
+    </tbody>
+  </table>
+  <div class="two-col" style="margin-top: 32px;">
+    <div>
+      <h3>Price Formula</h3>
+      <pre><span class="cm">// market_price = locked_sol + premium</span>
+
+<span class="cm">// Floor = locked SOL</span>
+<span class="cm">// (shatter to reclaim)</span>
+
+<span class="cm">// Premium from:</span>
+<span class="cm">// → facets (time held)</span>
+<span class="cm">// → rarity (resonance seed)</span>
+<span class="cm">// → trade history (fractures)</span>
+<span class="cm">// → market demand</span></pre>
+    </div>
+    <div>
+      <h3>Supply Dynamics</h3>
+      <pre><span class="cm">// Max: 2,000 (hardcoded)</span>
+<span class="cm">// No new crystals after cap</span>
+
+<span class="cm">// Supply DECREASES over time:</span>
+<span class="cm">// Year 1: ~2,000</span>
+<span class="cm">// Year 2: ~1,600</span>
+<span class="cm">// Year 3: ~1,200</span>
+<span class="cm">// Year 5: ~800</span>
+
+<span class="cm">// Survivors become more rare</span></pre>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 14: Protocol Model -->
+<div class="slide" data-slide="13">
+  <div class="slide-tag">Protocol</div>
+  <h2>Not Just a Collection — A Protocol</h2>
+  <p class="lead">Anyone can launch their own EVO collection on our program. We earn fees from ALL of them.</p>
+  <pre style="text-align: left;"><span class="cm">// EVO Program (one deployment on Solana)</span>
+<span class="cm">// ├──</span> <span class="accent">Crystals</span> <span class="cm">(our flagship, 2000 cap)</span>
+<span class="cm">// │    └── 2% trade fee → 1% to us + 1% protocol</span>
+<span class="cm">// ├──</span> <span class="accent2">Orbs</span> <span class="cm">(competitor collection)</span>
+<span class="cm">// │    └── 2% trade fee → 1% to them + 1% to US</span>
+<span class="cm">// ├──</span> <span class="accent3">Geodes</span> <span class="cm">(another competitor)</span>
+<span class="cm">// │    └── 2% trade fee → 1% to them + 1% to US</span>
+<span class="cm">// └── ...anyone can launch here</span>
+
+<span class="cm">// We are the pump.fun of EVOs.</span>
+<span class="cm">// pump.fun = launchpad for ALL tokens</span>
+<span class="cm">// EVO protocol = launchpad for ALL evolving value objects</span></pre>
+  <div class="callout" style="margin-top: 24px;">
+    <p>Competitors don't steal your market — <span class="green">they pay you 1% on every trade</span>. Their success = your revenue.</p>
+  </div>
+</div>
+
+<!-- SLIDE 15: Technical Architecture -->
+<div class="slide" data-slide="14">
+  <div class="slide-tag">Technical — Solana Native</div>
+  <h2>Why Solana?</h2>
+  <div class="cards">
+    <div class="card">
+      <div class="icon">🏗️</div>
+      <h3>Account Model</h3>
+      <p>SOL lives inside the PDA natively. No vault contract needed. The value IS the account.</p>
+    </div>
+    <div class="card">
+      <div class="icon">⚡</div>
+      <h3>Low Fees</h3>
+      <p>~$0.001 per transaction. Feeding crystals is economically viable. No gas wars.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🎯</div>
+      <h3>Fast Finality</h3>
+      <p>~400ms confirmation. Art updates feel real-time. No waiting for blocks.</p>
+    </div>
+  </div>
+  <div class="callout" style="margin-top: 32px;">
+    <p>On Ethereum, you'd need a vault contract to hold ETH. On Solana, the lamports ARE the account balance. The PDA holds value natively. This is why EVOs only work on Solana.</p>
+  </div>
+</div>
+
+<!-- SLIDE 16: Data Model -->
+<div class="slide" data-slide="15">
+  <div class="slide-tag">Technical — Data Model</div>
+  <h2>On-Chain Data Structures</h2>
+  <pre><span class="kw">pub struct</span> <span class="ty">ProtocolConfig</span> {
+    protocol_treasury: <span class="ty">Pubkey</span>,
+    protocol_trade_fee_bps: <span class="ty">u16</span>,   <span class="cm">// 100 = 1%</span>
+    protocol_shatter_fee_bps: <span class="ty">u16</span>, <span class="cm">// 100 = 1%</span>
+    authority: <span class="ty">Pubkey</span>,              <span class="cm">// multisig</span>
+}
+
+<span class="kw">pub struct</span> <span class="ty">CollectionConfig</span> {
+    authority: <span class="ty">Pubkey</span>,
+    name: <span class="ty">String</span>,
+    max_supply: <span class="ty">u32</span>,               <span class="cm">// 2000 for Crystals</span>
+    mint_price: <span class="ty">u64</span>,                <span class="cm">// 0.05 SOL in lamports</span>
+    collection_treasury: <span class="ty">Pubkey</span>,
+    art_seed: [<span class="ty">u8</span>; <span class="ty">32</span>],
+    trade_fee_bps: <span class="ty">u16</span>,            <span class="cm">// 100 = 1%</span>
+    total_minted: <span class="ty">u32</span>,
+    is_paused: <span class="ty">bool</span>,
+}
+
+<span class="kw">pub struct</span> <span class="ty">CrystalAccount</span> {
+    owner: <span class="ty">Pubkey</span>,
+    collection: <span class="ty">Pubkey</span>,
+    locked_lamports: <span class="ty">u64</span>,
+    forged_at: <span class="ty">i64</span>,
+    facet_count: <span class="ty">u32</span>,              <span class="cm">// computed from forged_at</span>
+    trade_count: <span class="ty">u32</span>,
+    resonance_seed: [<span class="ty">u8</span>; <span class="ty">32</span>],     <span class="cm">// hash of forge tx</span>
+    fracture_lines: <span class="ty">Vec</span>&lt;<span class="ty">FractureLine</span>&gt;,
+    is_listed: <span class="ty">bool</span>,
+    list_price: <span class="ty">u64</span>,
+    is_shattered: <span class="ty">bool</span>,
+}</pre>
+</div>
+
+<!-- SLIDE 17: Instructions -->
+<div class="slide" data-slide="16">
+  <div class="slide-tag">Technical — Program Instructions</div>
+  <h2>Program Interface</h2>
+  <pre><span class="cm">// Protocol</span>
+<span class="fn">init_protocol</span>(treasury, trade_fee_bps, shatter_fee_bps) → ProtocolConfig PDA
+
+<span class="cm">// Collection</span>
+<span class="fn">create_collection</span>(name, max_supply, mint_price, art_seed, trade_fee_bps) → CollectionConfig PDA
+
+<span class="cm">// Crystal Lifecycle</span>
+<span class="fn">forge</span>(collection_id)           → CrystalAccount PDA (empty, 0 SOL locked)
+<span class="fn">feed</span>(crystal_id, amount)       → locked_lamports += amount
+<span class="fn">list</span>(crystal_id, price)         → is_listed = true, list_price = price
+<span class="fn">delist</span>(crystal_id)              → is_listed = false
+<span class="fn">buy</span>(crystal_id)                 → transfer ownership, record fracture, split fees
+<span class="fn">shatter</span>(crystal_id)            → return SOL, close PDA, collect 1% fee
+
+<span class="cm">// PDA Seeds</span>
+<span class="cm">// Protocol:  ["protocol"]</span>
+<span class="cm">// Collection: ["collection", name_bytes]</span>
+<span class="cm">// Crystal:   ["crystal", collection_key, crystal_index]</span>
+
+<span class="cm">// Constraints</span>
+<span class="cm">// → 2,000 supply cap hardcoded for Crystals</span>
+<span class="cm">// → Facet count = floor((now - forged_at) / 7_days), max 100</span>
+<span class="cm">// → No admin functions after deployment</span>
+<span class="cm">// → Upgrade authority revoked post-deploy</span></pre>
+</div>
+
+<!-- SLIDE 18: Trustless -->
+<div class="slide" data-slide="17">
+  <div class="slide-tag">Technical — Trustless</div>
+  <h2>Zero Trust Required</h2>
+  <div class="two-col">
+    <div>
+      <h3>What doesn't exist</h3>
+      <ul style="list-style: none; margin-top: 16px;">
+        <li style="margin-bottom: 12px;"><span class="red">✗</span> No admin key</li>
+        <li style="margin-bottom: 12px;"><span class="red">✗</span> No update authority</li>
+        <li style="margin-bottom: 12px;"><span class="red">✗</span> No metadata URI</li>
+        <li style="margin-bottom: 12px;"><span class="red">✗</span> No mint authority (after cap)</li>
+        <li style="margin-bottom: 12px;"><span class="red">✗</span> No freeze authority</li>
+        <li style="margin-bottom: 12px;"><span class="red">✗</span> No upgrade authority (post-deploy)</li>
+        <li><span class="red">✗</span> No pausing mechanism</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What protects the SOL</h3>
+      <ul style="list-style: none; margin-top: 16px;">
+        <li style="margin-bottom: 12px;"><span class="green">✓</span> Program logic (only owner can shatter)</li>
+        <li style="margin-bottom: 12px;"><span class="green">✓</span> Program logic (only owner can feed)</li>
+        <li style="margin-bottom: 12px;"><span class="green">✓</span> Program logic (only owner can list/delist)</li>
+        <li style="margin-bottom: 12px;"><span class="green">✓</span> Program logic (buyer pays → ownership transfers)</li>
+        <li style="margin-bottom: 12px;"><span class="green">✓</span> PDA has no private key (can't be stolen)</li>
+        <li style="margin-bottom: 12px;"><span class="green">✓</span> Upgrade authority revoked (code is immutable)</li>
+        <li><span class="green">✓</span> Art is deterministic (can't be changed manually)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout" style="margin-top: 30px;">
+    <p>The SOL is protected by <span class="accent">math and program logic</span>, not by trust in any person or entity. That's the Solana way.</p>
+  </div>
+</div>
+
+<!-- SLIDE 19: The Flywheel -->
+<div class="slide" data-slide="18">
+  <div class="slide-tag">Growth</div>
+  <h2>The Flywheel</h2>
+  <div style="max-width: 700px; margin-top: 32px;">
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <span class="accent" style="font-size: 1.5rem; font-weight: 700;">1.</span>
+        <span>More collections launch on EVO protocol</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <span class="accent" style="font-size: 1.5rem; font-weight: 700;">2.</span>
+        <span>More EVOs in existence → more people discover EVOs</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <span class="accent" style="font-size: 1.5rem; font-weight: 700;">3.</span>
+        <span>More people want to trade EVOs → more liquidity</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <span class="accent" style="font-size: 1.5rem; font-weight: 700;">4.</span>
+        <span>More liquidity → more attractive for new collections</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <span class="accent" style="font-size: 1.5rem; font-weight: 700;">5.</span>
+        <span>More protocol revenue → better features → <span class="accent">back to 1</span></span>
+      </div>
+    </div>
+  </div>
+  <div class="callout" style="margin-top: 40px;">
+    <p>Each new collection brings its own community, pays protocol fees, and drives attention back to <span class="accent">Crystals — the original</span>.</p>
+  </div>
+</div>
+
+<!-- SLIDE 20: The Pitch -->
+<div class="slide slide-section" data-slide="19">
+  <div class="slide-tag">The Pitch</div>
+  <h2 style="max-width: 800px;">Why This Matters</h2>
+  <div style="max-width: 750px; margin-top: 24px;">
+    <p class="lead" style="font-size: 1.4rem; line-height: 1.8;">
+      NFTs were static art. <span class="accent">EVOs are living art backed by real value.</span>
+    </p>
+    <p class="lead" style="font-size: 1.4rem; line-height: 1.8; margin-top: 16px;">
+      Crystals is the first EVO collection — <span class="accent2">2,000 evolving gemstones on Solana</span>, each one growing more beautiful as you feed it SOL.
+    </p>
+    <p class="lead" style="font-size: 1.4rem; line-height: 1.8; margin-top: 16px;">
+      And EVO is a <span class="accent3">protocol</span> — anyone can launch their own EVO collection, and we earn fees from every trade across the entire ecosystem.
+    </p>
+  </div>
+  <div style="margin-top: 48px;">
+    <div class="big-number">2,000</div>
+    <p style="font-size: 1rem; margin-top: 8px;">crystals. 1 protocol. ∞ possibilities.</p>
+  </div>
+</div>
+
+</div>
+
+<!-- Navigation -->
+<div class="nav">
+  <button onclick="prev()">‹</button>
+  <span class="counter" id="counter">1 / 20</span>
+  <button onclick="next()">›</button>
+</div>
+
+<div class="hint">← → arrow keys to navigate</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let current = 0;
+  const total = slides.length;
+  
+  function show(index) {
+    slides.forEach((s, i) => {
+      s.classList.remove('active', 'prev');
+      if (i === index) s.classList.add('active');
+      else if (i < index) s.classList.add('prev');
+    });
+    document.getElementById('counter').textContent = `${index + 1} / ${total}`;
+  }
+  
+  function next() {
+    if (current < total - 1) { current++; show(current); }
+  }
+  
+  function prev() {
+    if (current > 0) { current--; show(current); }
+  }
+  
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') next();
+    if (e.key === 'ArrowLeft') prev();
+  });
+  
+  document.addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON' || e.target.closest('.nav')) return;
+    const x = e.clientX / window.innerWidth;
+    if (x > 0.5) next(); else prev();
+  });
+</script>
+
+</body>
+</html>
