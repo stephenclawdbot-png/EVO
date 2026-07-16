@@ -67,4 +67,13 @@ pub enum EvoError {
 
     #[msg("Incinerator account required for burn fee destination")]
     IncineratorRequired,
+
+    #[msg("Math overflow")]
+    MathOverflow,
+
+    #[msg("Reserve invariant violated — account balance does not back locked lamports")]
+    ReserveInvariantViolated,
+
+    #[msg("Treasury account required for this fee destination")]
+    MissingTreasury,
 }

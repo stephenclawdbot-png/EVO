@@ -32,7 +32,7 @@ pub struct Shatter<'info> {
     #[account(mut, address = collection_config.creator)]
     pub creator: SystemAccount<'info>,
 
-    /// Protocol treasury — optional, used when destination == Treasury or Split
+    /// Protocol treasury — required when destination == Treasury or Split
     /// CHECK: Optional, only used when destination == Treasury or Split
     #[account(mut)]
     pub treasury: Option<UncheckedAccount<'info>>,
@@ -49,9 +49,11 @@ pub fn shatter(ctx: Context<Shatter>, evo_id: u32) -> Result<()> {
     let evo = &mut ctx.accounts.evo;
     let collection = &ctx.accounts.collection_config;
 
+    // Verify reserve invariant BEFORE any mutation
+    verify_reserve_invariant(&evo.to_account_info(), evo.locked_lamports)?;
+
     let locked = evo.locked_lamports;
     let fee = calculate_fee(locked, collection.shatter_fee_bps);
-    let owner_proceeds = locked - fee;
 
     // Mark as shattered BEFORE any lamport movement (prevents re-entrancy)
     evo.is_shattered = true;
@@ -59,51 +61,62 @@ pub fn shatter(ctx: Context<Shatter>, evo_id: u32) -> Result<()> {
 
     // Move the fee out of the EVO PDA using direct lamport manipulation.
     // System Program transfer CPI does NOT work on program-owned accounts.
-    // The EVO PDA is owned by the EVO program, so we must debit/credit lamports directly.
+    let evo_info = evo.to_account_info();
+
     if fee > 0 {
-        let evo_info = evo.to_account_info();
         match collection.shatter_fee_destination {
             FeeDestination::Creator => {
-                **evo_info.lamports.borrow_mut() -= fee;
-                **ctx.accounts.creator.to_account_info().lamports.borrow_mut() += fee;
+                transfer_lamports(
+                    &evo_info,
+                    &ctx.accounts.creator.to_account_info(),
+                    fee,
+                )?;
             }
             FeeDestination::Treasury => {
                 let treasury = ctx.accounts.treasury.as_ref()
-                    .ok_or(EvoError::CollectionInactive)?;
-                **evo_info.lamports.borrow_mut() -= fee;
-                **treasury.to_account_info().lamports.borrow_mut() += fee;
+                    .ok_or(EvoError::MissingTreasury)?;
+                transfer_lamports(
+                    &evo_info,
+                    &treasury.to_account_info(),
+                    fee,
+                )?;
             }
             FeeDestination::Burn => {
                 let incinerator = ctx.accounts.incinerator.as_ref()
                     .ok_or(EvoError::IncineratorRequired)?;
-                **evo_info.lamports.borrow_mut() -= fee;
-                **incinerator.to_account_info().lamports.borrow_mut() += fee;
+                transfer_lamports(
+                    &evo_info,
+                    &incinerator.to_account_info(),
+                    fee,
+                )?;
+                msg!("Burned {} lamports to incinerator", fee);
             }
             FeeDestination::Split => {
+                let treasury = ctx.accounts.treasury.as_ref()
+                    .ok_or(EvoError::MissingTreasury)?;
                 let half = fee / 2;
-                let other_half = fee - half;
-                let creator_info = ctx.accounts.creator.to_account_info();
+                let other_half = fee
+                    .checked_sub(half)
+                    .ok_or(EvoError::MathOverflow)?;
 
-                // Creator always gets their half
-                **evo_info.lamports.borrow_mut() -= half;
-                **creator_info.lamports.borrow_mut() += half;
-
-                // Treasury gets the other half, or creator gets it if no treasury supplied
-                if let Some(treasury) = ctx.accounts.treasury.as_ref() {
-                    **evo_info.lamports.borrow_mut() -= other_half;
-                    **treasury.to_account_info().lamports.borrow_mut() += other_half;
-                } else {
-                    **evo_info.lamports.borrow_mut() -= other_half;
-                    **creator_info.lamports.borrow_mut() += other_half;
-                }
+                transfer_lamports(
+                    &evo_info,
+                    &ctx.accounts.creator.to_account_info(),
+                    half,
+                )?;
+                transfer_lamports(
+                    &evo_info,
+                    &treasury.to_account_info(),
+                    other_half,
+                )?;
             }
         }
     }
 
-    // close = owner sends remaining lamports (owner_proceeds + rent + any surplus) to owner.
+    // close = owner sends remaining lamports (reserve - fee + rent + any surplus) to owner.
     msg!(
         "EVO #{} shattered. Returned {} lamports to owner. Fee: {} lamports.",
-        evo_id, owner_proceeds, fee
+        evo_id, locked - fee, fee
     );
     Ok(())
 }
