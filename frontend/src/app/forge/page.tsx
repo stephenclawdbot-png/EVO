@@ -3,7 +3,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { Transaction, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Nav } from '@/components/Nav';
+import { Transaction } from '@solana/web3.js';
 import Link from 'next/link';
 import {
   readCollectionConfig,
@@ -12,6 +13,7 @@ import {
   generateResonanceSeed,
 } from '@/lib/evo-program';
 import { CollectionData, CREATURES, collectionConfigToData } from '@/lib/evo-data';
+import { IconCheck, IconAlertTriangle, IconExternalLink, IconArrowRight } from '@/components/Icons';
 
 const COLLECTION_NAME = 'Z';
 
@@ -40,26 +42,19 @@ export default function ForgePage() {
     }
   }, [connection]);
 
-  useEffect(() => {
-    fetchCollection();
-  }, [fetchCollection]);
+  useEffect(() => { fetchCollection(); }, [fetchCollection]);
 
   const handleForge = async () => {
-    if (!wallet.connected || !wallet.publicKey || !collection) {
-      setError('Connect your wallet first');
-      return;
-    }
+    if (!wallet.connected || !wallet.publicKey || !collection) { setError('Connect your wallet first'); return; }
     setForging(true); setError(null); setTxSig(null);
     try {
       const cfg = await readCollectionConfig(connection, COLLECTION_NAME);
       if (!cfg) throw new Error('Collection not found');
       if (cfg.currentSupply >= cfg.supplyCap) throw new Error('Collection is full');
-
       const [collectionPda] = getCollectionPDA(COLLECTION_NAME);
       const evoId = cfg.currentSupply;
       const resonanceSeed = generateResonanceSeed();
       const ix = createForgeIx(wallet.publicKey, collectionPda, cfg.creator, evoId, resonanceSeed);
-
       const tx = new Transaction().add(ix);
       tx.feePayer = wallet.publicKey;
       const { blockhash } = await connection.getLatestBlockhash();
@@ -70,11 +65,7 @@ export default function ForgePage() {
       await connection.confirmTransaction(sig, 'confirmed');
       setTxSig(sig);
       await fetchCollection();
-    } catch (err: any) {
-      setError(err.message || 'Forge failed');
-    } finally {
-      setForging(false);
-    }
+    } catch (err: any) { setError(err.message || 'Forge failed'); } finally { setForging(false); }
   };
 
   const remaining = collection ? collection.supplyCap - currentSupply : 0;
@@ -82,124 +73,120 @@ export default function ForgePage() {
   const totalCost = collection ? collection.mintPriceSol + collection.lockAmountSol : 0;
   const shatterRecover = collection ? collection.lockAmountSol * (1 - collection.shatterFeeBps / 10000) : 0;
 
-  return (
-    <div className="min-h-screen bg-[#0a0a0b] text-white">
-      {/* Nav */}
-      <nav className="sticky top-0 z-50 border-b border-[#1a1a1e] bg-[#0a0a0b]/80 backdrop-blur-xl">
-        <div className="mx-auto max-w-7xl px-4 lg:px-6">
-          <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-              Gallery
-            </Link>
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold">Z</div>
-            </div>
-            <WalletMultiButton />
-          </div>
-        </div>
-      </nav>
+  const ticker = collection ? [
+    { label: 'Supply', value: `${currentSupply}/${collection.supplyCap}` },
+    { label: 'Mint', value: `${collection.mintPriceSol} SOL` },
+    { label: 'Lock', value: `${collection.lockAmountSol} SOL`, tone: 'pos' as const },
+    { label: 'Remaining', value: String(remaining) },
+  ] : [];
 
-      <div className="mx-auto max-w-2xl px-4 py-12 lg:px-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold">Forge a Z</h1>
-          <p className="mt-2 text-sm text-gray-500">Mint a new EVO with SOL locked inside</p>
-        </div>
+  return (
+    <div className="min-h-screen bg-bg text-text">
+      <Nav ticker={ticker} />
+
+      <div className="border-b border-border">
+        <Link href="/" className="mx-auto flex max-w-2xl items-center gap-1.5 px-3 py-2 text-xs text-muted transition-colors hover:text-text">
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg>
+          Gallery
+        </Link>
+      </div>
+
+      <div className="mx-auto max-w-lg px-3 py-6 lg:px-4">
+        <h1 className="text-xl font-bold tracking-tight text-text-strong">Forge a Z</h1>
+        <p className="mt-1 text-xs text-muted">Mint a new EVO with SOL locked inside.</p>
 
         {loading ? (
-          <div className="mt-12 flex justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#232328] border-t-indigo-500" />
+          <div className="mt-10 flex justify-center">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-accent" />
           </div>
         ) : collection ? (
           <>
-            {/* Creature preview */}
+            {/* Preview */}
             {creature && (
-              <div className="mt-8 flex flex-col items-center">
-                <div className="relative flex h-56 w-56 items-center justify-center overflow-hidden rounded-2xl border border-[#1a1a1e] bg-[#131316]">
-                  <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 50%, rgba(99,102,241,0.15), transparent 60%)` }} />
-                  <img src={creature.stages.baby} alt={creature.displayName} className="relative z-[1]"
-                    style={{ imageRendering: 'pixelated', transform: 'scale(2)' }} />
+              <div className="mt-5 flex flex-col items-center">
+                <div className="relative flex h-40 w-40 items-center justify-center overflow-hidden rounded border border-border bg-surface">
+                  <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 45%, rgba(129,140,248,0.12), transparent 65%)` }} />
+                  <img src={creature.stages.baby} alt={creature.displayName} className="relative z-[1] pixelated" style={{ transform: 'scale(2)' }} />
                 </div>
-                <div className="mt-4 text-center">
-                  <p className="text-lg font-bold">{creature.displayName}</p>
-                  <p className="text-sm text-gray-500">Z #{currentSupply} · {creature.element} · {creature.rarity}</p>
-                </div>
+                <p className="mt-3 text-sm font-semibold">{creature.displayName}</p>
+                <p className="font-mono text-[11px] text-dim">Z #{currentSupply} - {creature.element} - {creature.rarity}</p>
               </div>
             )}
 
-            {/* Pricing */}
-            <div className="mt-8 space-y-2">
-              <PriceRow label="Mint Price (→ Creator)" value={`${collection.mintPriceSol}◎`} color="text-yellow-400" />
-              <PriceRow label="Locked Value (Your Floor)" value={`${collection.lockAmountSol}◎`} color="text-green-400" />
-              <div className="my-3 border-t border-[#1a1a1e]" />
-              <PriceRow label="Total to Forge" value={`${totalCost.toFixed(3)}◎`} color="text-white" bold />
+            {/* Cost breakdown */}
+            <div className="mt-5 overflow-hidden rounded border border-border">
+              <Row label="Mint price (to creator)" value={`${collection.mintPriceSol} SOL`} />
+              <div className="border-t border-border" />
+              <Row label="Locked value (your floor)" value={`${collection.lockAmountSol} SOL`} tone="pos" />
+              <div className="border-t border-border-strong bg-surface-2">
+                <Row label="Total to forge" value={`${totalCost.toFixed(3)} SOL`} strong />
+              </div>
+            </div>
+
+            {/* Fee schedule */}
+            <div className="mt-3 grid grid-cols-3 gap-px overflow-hidden rounded border border-border bg-border">
+              <Fee label="Shatter fee" value={`${collection.shatterFeeBps / 100}%`} />
+              <Fee label="Royalty" value={`${collection.tradeRoyaltyBps / 100}%`} />
+              <Fee label="Recoverable" value={`${shatterRecover.toFixed(3)}`} />
             </div>
 
             {/* Supply bar */}
-            <div className="mt-6 rounded-xl border border-[#1a1a1e] bg-[#131316] p-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">Supply</span>
-                <span className="font-mono font-bold">{currentSupply} / {collection.supplyCap}</span>
+            <div className="mt-3 rounded border border-border bg-surface p-2.5">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-dim">Supply</span>
+                <span className="font-mono text-text-strong">{currentSupply} / {collection.supplyCap}</span>
               </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#0a0a0b]">
-                <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all" style={{ width: `${(currentSupply / collection.supplyCap) * 100}%` }} />
-              </div>
-              <p className="mt-2 text-xs text-gray-500">{remaining} remaining</p>
-            </div>
-
-            {/* Shatter info */}
-            <div className="mt-4 rounded-xl border border-[#1a1a1e] bg-[#131316]/50 p-4 text-xs text-gray-400">
-              <div className="flex justify-between">
-                <span>Shatter fee</span>
-                <span className="text-white font-medium">{collection.shatterFeeBps / 100}%</span>
-              </div>
-              <div className="mt-1 flex justify-between">
-                <span>Trade royalty</span>
-                <span className="text-white font-medium">{collection.tradeRoyaltyBps / 100}%</span>
-              </div>
-              <div className="mt-3 border-t border-[#1a1a1e] pt-2 flex justify-between">
-                <span>Recoverable on shatter</span>
-                <span className="text-green-400 font-medium">{shatterRecover.toFixed(4)}◎</span>
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-bg">
+                <div className="h-full bg-accent transition-all" style={{ width: `${(currentSupply / collection.supplyCap) * 100}%` }} />
               </div>
             </div>
 
-            {/* Forge button */}
-            <div className="mt-8 flex flex-col items-center">
-              <button onClick={handleForge} disabled={!wallet.connected || forging || remaining === 0}
-                className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-8 py-4 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
-                {forging ? 'Forging...' : remaining === 0 ? 'Collection Full' : `Forge Z #${currentSupply}`}
-              </button>
-              {!wallet.connected && <p className="mt-3 text-xs text-gray-600">Connect wallet to forge</p>}
-            </div>
+            {/* Forge */}
+            <button onClick={handleForge} disabled={!wallet.connected || forging || remaining === 0}
+              className="mt-5 w-full rounded bg-accent py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40 dark:text-[#0a0a0b]">
+              {forging ? 'Forging...' : remaining === 0 ? 'Collection full' : `Forge Z #${currentSupply}`}
+            </button>
+            {!wallet.connected && (
+              <div className="mt-3 flex justify-center"><WalletMultiButton /></div>
+            )}
 
-            {/* Result */}
             {txSig && (
-              <div className="mt-6 rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-center">
-                <p className="font-bold text-green-400">✅ Z Forged Successfully!</p>
-                <a href={`https://solscan.io/tx/${txSig}`} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm text-indigo-400 hover:underline">
-                  View on Solscan →
+              <div className="mt-4 flex items-center gap-2 rounded border border-positive/30 bg-positive-soft px-3 py-2.5 text-xs">
+                <IconCheck className="h-4 w-4 text-positive" />
+                <span className="text-positive font-medium">Z forged</span>
+                <a href={`https://solscan.io/tx/${txSig}`} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-accent hover:underline">
+                  Solscan <IconExternalLink className="h-3 w-3" />
                 </a>
               </div>
             )}
             {error && (
-              <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-center">
-                <p className="font-bold text-red-400">❌ {error}</p>
+              <div className="mt-4 flex items-center gap-2 rounded border border-negative/30 bg-negative-soft px-3 py-2.5 text-xs text-negative">
+                <IconAlertTriangle className="h-4 w-4 shrink-0" /> {error}
               </div>
             )}
           </>
         ) : (
-          <div className="mt-12 text-center text-gray-600">Collection not found</div>
+          <div className="mt-10 text-center text-xs text-dim">Collection not found</div>
         )}
       </div>
     </div>
   );
 }
 
-function PriceRow({ label, value, color, bold }: { label: string; value: string; color: string; bold?: boolean }) {
+function Row({ label, value, tone, strong }: { label: string; value: string; tone?: 'pos'; strong?: boolean }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-[#1a1a1e] bg-[#131316] px-4 py-3">
-      <span className="text-sm text-gray-400">{label}</span>
-      <span className={`font-mono ${bold ? 'text-lg font-bold' : 'text-base font-medium'} ${color}`}>{value}</span>
+    <div className={`flex items-center justify-between px-3 py-2.5 ${strong ? 'bg-surface-2' : ''}`}>
+      <span className={`text-xs ${strong ? 'font-medium text-text' : 'text-muted'}`}>{label}</span>
+      <span className={`font-mono ${strong ? 'text-sm font-bold text-text-strong' : 'text-sm font-medium'} ${tone === 'pos' ? 'text-positive' : ''}`}>{value}</span>
+    </div>
+  );
+}
+
+function Fee({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-bg px-3 py-2 text-center">
+      <p className="text-[10px] uppercase tracking-wide text-dim">{label}</p>
+      <p className="mt-0.5 font-mono text-xs font-semibold text-text">{value}</p>
     </div>
   );
 }

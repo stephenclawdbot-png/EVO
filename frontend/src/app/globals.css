@@ -1,31 +1,111 @@
 @import "tailwindcss";
 
+/* ===== Trading terminal theme =====
+   Dark monochrome is default. Light is a clean institutional alternative.
+   Tokens: bg, surface, surface-2, border, border-strong, text, text-strong,
+   muted, dim, accent, positive, negative, warn, danger + soft variants. */
+
 :root {
-  --background: #0a0a0b;
-  --foreground: #ededed;
-  --surface: #131316;
-  --surface-hover: #1a1a1e;
-  --border: #232328;
-  --accent: #6366f1;
+  /* dark terminal — primary */
+  --bg: #0a0a0c;
+  --surface: #101012;
+  --surface-2: #161619;
+  --border: #1c1c20;
+  --border-strong: #2a2a30;
+  --text: #d4d4d8;
+  --text-strong: #f4f4f5;
+  --muted: #71717a;
+  --dim: #52525b;
+  --accent: #818cf8;
+  --accent-hover: #a5b4fc;
+  --accent-soft: #1a1b2e;
+  --positive: #34d399;
+  --positive-soft: #0c2a1e;
+  --negative: #f87171;
+  --negative-soft: #2a1010;
+  --warn: #fbbf24;
+  --warn-soft: #2a2008;
+  --danger: #f87171;
+  --danger-soft: #2a1010;
+  --row-hover: #161619;
+  --row-active: #1c1d2e;
+  --grid-line: #141417;
+}
+
+.light {
+  --bg: #ffffff;
+  --surface: #fafafa;
+  --surface-2: #f4f4f5;
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --text: #27272a;
+  --text-strong: #18181b;
+  --muted: #71717a;
+  --dim: #a1a1aa;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-soft: #eef2ff;
+  --positive: #16a34a;
+  --positive-soft: #f0fdf4;
+  --negative: #dc2626;
+  --negative-soft: #fef2f2;
+  --warn: #ca8a04;
+  --warn-soft: #fefce8;
+  --danger: #dc2626;
+  --danger-soft: #fef2f2;
+  --row-hover: #f4f4f5;
+  --row-active: #eef2ff;
+  --grid-line: #f4f4f5;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-strong: var(--text-strong);
+  --color-muted: var(--muted);
+  --color-dim: var(--dim);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-positive: var(--positive);
+  --color-positive-soft: var(--positive-soft);
+  --color-negative: var(--negative);
+  --color-negative-soft: var(--negative-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-row-hover: var(--row-hover);
+  --color-row-active: var(--row-active);
+  --color-grid-line: var(--grid-line);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 }
 
+html { color-scheme: dark; }
+html.light { color-scheme: light; }
+
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--font-sans), Inter, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
-.font-mono {
-  font-family: var(--font-mono), monospace;
+.font-mono, .tnum {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  letter-spacing: -0.01em;
 }
+
+.text-strong { color: var(--text-strong); }
 
 .pixelated {
   image-rendering: pixelated;
@@ -33,60 +113,61 @@ body {
   image-rendering: crisp-edges;
 }
 
-/* Wallet button override */
+/* Terminal scrollbars — thin, unobtrusive */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: var(--dim); }
+
+/* Wallet button — flat, monochrome */
 .wallet-adapter-button-trigger {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
-  border-radius: 10px !important;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 4px !important;
   font-weight: 600 !important;
-  font-size: 13px !important;
-  height: 40px !important;
-  padding: 0 20px !important;
-  transition: opacity 0.2s !important;
+  font-size: 12px !important;
+  height: 28px !important;
+  padding: 0 12px !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+  transition: border-color 0.1s, color 0.1s !important;
 }
 .wallet-adapter-button-trigger:hover {
-  opacity: 0.85 !important;
+  border-color: var(--accent) !important;
+  color: var(--text-strong) !important;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Row hover — under 100ms */
+.t-row {
+  transition: background 60ms linear;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #2a2a30;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #3a3a40;
-}
+.t-row:hover { background: var(--row-hover); }
+.t-row.active { background: var(--row-active); }
 
-/* Card hover */
-.evo-card {
-  transition: transform 0.2s ease, border-color 0.2s ease;
-}
-.evo-card:hover {
-  transform: translateY(-2px);
-  border-color: #3a3a40;
-}
+/* Flash animation for price updates */
+@keyframes flash-up { 0% { background: var(--positive-soft); } 100% { background: transparent; } }
+@keyframes flash-down { 0% { background: var(--negative-soft); } 100% { background: transparent; } }
+.flash-up { animation: flash-up 0.5s ease-out; }
+.flash-down { animation: flash-down 0.5s ease-out; }
 
-/* Glow animations */
-@keyframes pulse-glow {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
-}
-.pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-/* Hide number input arrows */
+/* Number inputs */
 input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+/* Inputs */
+.t-input {
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  font-family: var(--font-mono), monospace;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.1s;
 }
-input[type=number] {
-  -moz-appearance: textfield;
-}
+.t-input:focus { border-color: var(--accent); }
+.t-input::placeholder { color: var(--dim); }
+
+/* Selection */
+::selection { background: var(--accent); color: #fff; }
+.light ::selection { color: #fff; }

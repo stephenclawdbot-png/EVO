@@ -1,15 +1,16 @@
 'use client';
 
-import { EVOData, getStage, getAgeString } from '@/lib/evo-data';
+import { EVOData, getStage } from '@/lib/evo-data';
 import { ELEMENT_COLORS, RARITY_COLORS, STAGE_NAMES } from '@/lib/creatures';
 import { useState } from 'react';
 
 interface ZCardProps {
   evo: EVOData;
   onClick?: () => void;
+  isFloor?: boolean;
 }
 
-export function ZCard({ evo, onClick }: ZCardProps) {
+export function ZCard({ evo, onClick, isFloor }: ZCardProps) {
   const [imgError, setImgError] = useState(false);
   const stage = getStage(evo);
   const elementColor = ELEMENT_COLORS[evo.creature.element];
@@ -20,33 +21,34 @@ export function ZCard({ evo, onClick }: ZCardProps) {
   return (
     <div
       onClick={onClick}
-      className="evo-card group relative cursor-pointer overflow-hidden rounded-xl border border-[#1a1a1e] bg-[#131316]"
+      className="t-row group relative cursor-pointer overflow-hidden rounded border border-border bg-surface"
     >
-      {/* Art area */}
-      <div className="relative flex aspect-square items-center justify-center overflow-hidden">
-        {/* Element glow */}
-        <div
-          className="absolute inset-0 opacity-60"
-          style={{ background: `radial-gradient(circle at 50% 50%, ${elementColor}15, transparent 65%)` }}
-        />
+      {/* Art */}
+      <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-bg">
+        <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 45%, ${elementColor}12, transparent 70%)` }} />
 
-        {/* Listed badge */}
-        {evo.isListed && (
-          <div className="absolute top-2 right-2 z-10 rounded-md bg-green-500/90 px-2 py-0.5 text-xs font-bold text-black">
-            {evo.listPrice}◎
-          </div>
+        {/* Z# top-left */}
+        <span className="absolute left-1.5 top-1.5 z-10 rounded bg-bg/70 px-1 font-mono text-[10px] text-muted backdrop-blur-sm">
+          #{evo.id}
+        </span>
+
+        {/* Rarity bar top-right */}
+        <div className="absolute right-1.5 top-1.5 z-10 flex items-center gap-1 rounded bg-bg/70 px-1.5 py-0.5 backdrop-blur-sm">
+          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: rarityColor }} />
+          <span className="text-[10px] text-muted">{evo.creature.rarity}</span>
+        </div>
+
+        {/* Floor tag */}
+        {isFloor && evo.isListed && (
+          <span className="absolute bottom-1.5 left-1.5 z-10 rounded bg-positive px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#0a0a0b]">
+            Floor
+          </span>
         )}
-
-        {/* Rarity dot */}
-        <div
-          className="absolute top-2 left-2 z-10 h-2.5 w-2.5 rounded-full"
-          style={{ backgroundColor: rarityColor, boxShadow: `0 0 8px ${rarityColor}80` }}
-        />
 
         {/* Shattered overlay */}
         {evo.isShattered && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/80">
-            <span className="text-red-500 font-bold text-sm">SHATTERED</span>
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-bg/90">
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-negative">Shattered</span>
           </div>
         )}
 
@@ -60,7 +62,7 @@ export function ZCard({ evo, onClick }: ZCardProps) {
               return (
                 <line key={i} x1={cx} y1={cy}
                   x2={cx + Math.cos(angle) * len} y2={cy + Math.sin(angle) * len}
-                  stroke="rgba(255,255,255,0.25)" strokeWidth={fl.intensity > 50 ? 1.5 : 0.8} strokeLinecap="round" />
+                  stroke="rgba(255,255,255,0.18)" strokeWidth={fl.intensity > 50 ? 1.5 : 0.8} strokeLinecap="round" />
               );
             })}
           </svg>
@@ -68,60 +70,36 @@ export function ZCard({ evo, onClick }: ZCardProps) {
 
         {/* Sprite */}
         {!imgError ? (
-          <img
-            src={sprite}
-            alt={evo.creature.displayName}
-            className="relative z-[1] pixelated"
-            style={{
-              transform: `scale(${scale})`,
-              imageRendering: 'pixelated',
-              filter: `drop-shadow(0 0 6px ${elementColor}60)`,
-            }}
-            onError={() => setImgError(true)}
-          />
+          <img src={sprite} alt={evo.creature.displayName} className="relative z-[1] pixelated"
+            style={{ transform: `scale(${scale})`, imageRendering: 'pixelated', filter: `drop-shadow(0 0 5px ${elementColor}50)` }}
+            onError={() => setImgError(true)} />
         ) : (
-          <div className="relative z-[1] flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-gray-700 text-xs text-gray-600">
+          <div className="relative z-[1] flex h-16 w-16 items-center justify-center rounded border border-dashed border-border-strong text-[10px] text-dim">
             {evo.creature.displayName}
           </div>
         )}
 
-        {/* Facet bar */}
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1a1a1e]">
-          <div className="h-full" style={{ width: `${evo.facetCount}%`, background: `linear-gradient(90deg, ${elementColor}, ${rarityColor})` }} />
-        </div>
+        {/* Listed price overlay on hover */}
+        {evo.isListed && !evo.isShattered && (
+          <div className="absolute inset-x-0 bottom-0 z-20 translate-y-full bg-positive/95 py-1.5 text-center font-mono text-sm font-bold text-[#0a0a0b] transition-transform duration-100 group-hover:translate-y-0">
+            {evo.listPrice} SOL
+          </div>
+        )}
       </div>
 
-      {/* Info */}
-      <div className="p-3">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="truncate text-sm font-bold text-white">{evo.creature.displayName}</h3>
-          <span className="shrink-0 text-xs font-mono text-gray-500">#{evo.id}</span>
-        </div>
-
-        <div className="mt-1.5 flex items-center gap-2">
-          <span className="text-xs font-medium" style={{ color: elementColor }}>{evo.creature.element}</span>
-          <span className="text-xs text-gray-600">·</span>
-          <span className="text-xs text-gray-500">{STAGE_NAMES[stage]}</span>
-          <span className="text-xs text-gray-600">·</span>
-          <span className="text-xs font-medium" style={{ color: rarityColor }}>{evo.creature.rarity}</span>
-        </div>
-
-        <div className="mt-2 flex items-center justify-between border-t border-[#1a1a1e] pt-2">
-          <div>
-            <p className="text-xs text-gray-500">Locked</p>
-            <p className="text-sm font-bold text-yellow-400 font-mono">{evo.lockedLamports}◎</p>
-          </div>
+      {/* Info bar */}
+      <div className="px-2 py-1.5">
+        <div className="flex items-center justify-between gap-1">
+          <h3 className="truncate text-xs font-medium text-text">{evo.creature.displayName}</h3>
           {evo.isListed ? (
-            <div className="text-right">
-              <p className="text-xs text-gray-500">Price</p>
-              <p className="text-sm font-bold text-green-400 font-mono">{evo.listPrice}◎</p>
-            </div>
+            <span className="shrink-0 font-mono text-xs font-bold text-positive">{evo.listPrice}</span>
           ) : (
-            <div className="text-right">
-              <p className="text-xs text-gray-500">Trades</p>
-              <p className="text-sm font-bold text-gray-400 font-mono">{evo.tradeCount}</p>
-            </div>
+            <span className="shrink-0 font-mono text-[11px] text-dim">{evo.tradeCount}x</span>
           )}
+        </div>
+        <div className="mt-0.5 flex items-center justify-between text-[10px] text-dim">
+          <span className="font-mono">{evo.lockedLamports} locked</span>
+          <span className="capitalize">{evo.creature.element}</span>
         </div>
       </div>
     </div>

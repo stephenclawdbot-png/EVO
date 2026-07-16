@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import "./globals.css";
 import { WalletContextProvider } from "@/components/WalletProvider";
+import { ThemeProvider, themeInitScript } from "@/components/ThemeProvider";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -33,9 +34,15 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="min-h-full flex flex-col">
-        <WalletContextProvider>{children}</WalletContextProvider>
+        <ThemeProvider>
+          <WalletContextProvider>{children}</WalletContextProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
