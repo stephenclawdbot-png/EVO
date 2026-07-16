@@ -108,7 +108,8 @@ EVO exposes the interface. The community builds the behaviors.
 
 ### Instructions
 - `initialize_protocol` — one-time setup
-- `create_collection` — creator sets supply, mint_price, lock_amount, fees, metadata_uri, lifecycle, randomness
+- `create_collection` — creator sets supply, mint_price, lock_amount, fees, metadata_uri, lifecycle, randomness, burn_destination
+- `commit_reveal` — creator commits hash(secret) before minting for provably fair reveal
 - `forge` — mint EVO (pays mint_price to creator, locks SOL inside)
 - `feed` — add SOL to existing EVO (increases floor, tracked for evolution)
 - `list` / `delist` — marketplace listing
@@ -117,8 +118,26 @@ EVO exposes the interface. The community builds the behaviors.
 - `transfer` — send EVO to new owner
 - `close_collection` — close empty collection, refund rent to creator
 - `update_metadata` — update collection metadata_uri (creator only)
-- `reveal_collection` — reveal authority injects entropy for fair assignment
+- `reveal_collection` — reveal authority provides secret, program verifies against commitment and derives entropy = keccak256(secret)
 - `evolve` — permissionless, advances EVO to next lifecycle stage if thresholds met
+
+### Provably Fair Reveal
+
+Collections can use commit-reveal to prevent the creator from choosing favorable reveal entropy:
+
+1. **Before minting**: Creator calls `commit_reveal(keccak256(secret))` — stores the commitment hash
+2. **Minting occurs**: Users forge EVOs with sequential mint indices
+3. **Reveal**: Reveal authority calls `reveal_collection(secret)` — program verifies `keccak256(secret) == commitment` and derives `reveal_entropy = keccak256(secret)`
+
+The creator cannot try multiple secrets to find a favorable assignment — the commitment is locked before anyone mints.
+
+### Configurable Burn Destination
+
+Collections can configure a custom burn destination (defaults to Solana's incinerator). This allows:
+- **Production**: Burn fees go to `1nc1nerator11111111111111111111111111111111` (irreversible)
+- **Testing**: Burn fees go to a test wallet — enabling exact balance verification
+
+Set via `burn_destination` in `LifecycleParams` at collection creation time.
 
 ---
 

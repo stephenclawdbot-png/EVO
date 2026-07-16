@@ -76,7 +76,8 @@ The EVO program (`7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc`) defines:
 | `buy` | Purchase a listed EVO — royalty routed per collection config |
 | `transfer` | Transfer ownership without payment |
 | `shatter` | Reclaim locked SOL — asset is permanently destroyed |
-| `reveal_collection` | Reveal authority injects entropy for fair assignment |
+| `reveal_collection` | Reveal authority provides secret; program verifies keccak256(secret) == commitment, derives entropy |
+| `commit_reveal` | Creator commits hash(secret) before minting for provably fair reveal |
 | `evolve` | Permissionless — advances EVO to next lifecycle stage if thresholds met |
 | `close_collection` | Close empty collection, refund rent |
 | `update_metadata` | Update collection metadata URI |
@@ -182,10 +183,14 @@ Each collection selects a `RandomnessPolicy`:
 
 For `BatchReveal`:
 1. Creator commits a Merkle root of all 10,000 assets before minting
-2. Users mint unrevealed EVOs (sequential mint_index)
-3. After mint-out, reveal authority injects `reveal_entropy`
-4. Assignment = `permutation(reveal_entropy, supply)[mint_index]`
-5. Anyone can verify: no duplicates, no skips, no creator manipulation
+2. Creator calls `commit_reveal(keccak256(secret))` — locking the reveal commitment before anyone mints
+3. Users mint unrevealed EVOs (sequential mint_index)
+4. After mint-out, reveal authority calls `reveal_collection(secret)`
+5. Program verifies `keccak256(secret) == reveal_commitment` and derives `reveal_entropy = keccak256(secret)`
+6. Assignment = `permutation(reveal_entropy, supply)[mint_index]`
+7. Anyone can verify: no duplicates, no skips, no creator manipulation
+
+**Why commit-reveal?** Without the commitment, the creator could try multiple entropy values after seeing who minted which index, searching for a favorable assignment. The commitment locks the secret before minting begins — the creator cannot change it afterward.
 
 The genetic seed is derived off-chain:
 ```
@@ -218,10 +223,32 @@ All arithmetic uses `checked_add` / `checked_sub` with `MathOverflow` error. No 
 Fees support four destinations:
 - **Creator** — sent to collection creator
 - **Treasury** — sent to protocol treasury
-- **Burn** — sent to the Solana incinerator (`1nc1nerator11111111111111111111111111111111`), permanently destroyed
+- **Burn** — sent to the burn destination (defaults to Solana's incinerator `1nc1nerator11111111111111111111111111111111`, permanently destroyed). Collections may configure a custom `burn_destination` for testing — in production this should always be the real incinerator.
 - **Split** — 50/50 creator/treasury (requires treasury account)
 
-### 6.4 Upgrade Authority
+### 6.4 Reserve Invariant
+
+Before shattering, the program verifies the EVO account contains at least:
+
+```rust
+let rent_minimum = rent.minimum_balance(evo.data_len());
+let required = rent_minimum.checked_add(locked_lamports).ok_or(EvoError::MathOverflow)?;
+require!(evo.lamports() >= required, EvoError::ReserveInvariantViolated);
+```
+
+This ensures `locked_lamports` can never claim more SOL than the account genuinely holds.
+
+### 6.5 Provably Fair Reveal
+
+The commit-reveal mechanism prevents the creator from choosing favorable reveal entropy:
+
+1. **Commit phase** (before minting): Creator calls `commit_reveal(commitment)` where `commitment = keccak256(secret)`. This can only be done once and only before any minting occurs.
+2. **Mint phase**: Users forge EVOs with sequential mint indices. The commitment is already locked.
+3. **Reveal phase**: Reveal authority calls `reveal_collection(secret)`. The program verifies `keccak256(secret) == reveal_commitment` and derives `reveal_entropy = keccak256(secret)`.
+
+The creator cannot try multiple secrets to find a favorable assignment — the commitment is immutable before the first mint. If no commitment is set (`reveal_commitment == [0u8; 32]`), the secret is used directly as entropy (backward compatible with collections that don't use commit-reveal).
+
+### 6.6 Upgrade Authority
 
 The program remains upgradeable during development. Upgrade authority will be revoked only after:
 1. All invariant tests pass
