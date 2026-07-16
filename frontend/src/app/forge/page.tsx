@@ -8,7 +8,6 @@ import Link from 'next/link';
 import {
   readCollectionConfig,
   getCollectionPDA,
-  getEvoPDA,
   createForgeIx,
   generateResonanceSeed,
 } from '@/lib/evo-program';
@@ -50,11 +49,7 @@ export default function ForgePage() {
       setError('Connect your wallet first');
       return;
     }
-
-    setForging(true);
-    setError(null);
-    setTxSig(null);
-
+    setForging(true); setError(null); setTxSig(null);
     try {
       const cfg = await readCollectionConfig(connection, COLLECTION_NAME);
       if (!cfg) throw new Error('Collection not found');
@@ -63,25 +58,16 @@ export default function ForgePage() {
       const [collectionPda] = getCollectionPDA(COLLECTION_NAME);
       const evoId = cfg.currentSupply;
       const resonanceSeed = generateResonanceSeed();
-
-      const ix = createForgeIx(
-        wallet.publicKey,
-        collectionPda,
-        cfg.creator,
-        evoId,
-        resonanceSeed,
-      );
+      const ix = createForgeIx(wallet.publicKey, collectionPda, cfg.creator, evoId, resonanceSeed);
 
       const tx = new Transaction().add(ix);
       tx.feePayer = wallet.publicKey;
       const { blockhash } = await connection.getLatestBlockhash();
       tx.recentBlockhash = blockhash;
-
       const signed = await wallet.signTransaction?.(tx);
       if (!signed) throw new Error('Transaction signing failed');
       const sig = await connection.sendRawTransaction(signed.serialize());
       await connection.confirmTransaction(sig, 'confirmed');
-
       setTxSig(sig);
       await fetchCollection();
     } catch (err: any) {
@@ -93,133 +79,111 @@ export default function ForgePage() {
 
   const remaining = collection ? collection.supplyCap - currentSupply : 0;
   const creature = collection ? CREATURES[currentSupply % CREATURES.length] : null;
+  const totalCost = collection ? collection.mintPriceSol + collection.lockAmountSol : 0;
+  const shatterRecover = collection ? collection.lockAmountSol * (1 - collection.shatterFeeBps / 10000) : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-950 via-black to-gray-950">
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-xl">
-        <div className="mx-auto max-w-7xl px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link href="/" className="text-gray-400 hover:text-white transition-colors">
-                ← Gallery
-              </Link>
+    <div className="min-h-screen bg-[#0a0a0b] text-white">
+      {/* Nav */}
+      <nav className="sticky top-0 z-50 border-b border-[#1a1a1e] bg-[#0a0a0b]/80 backdrop-blur-xl">
+        <div className="mx-auto max-w-7xl px-4 lg:px-6">
+          <div className="flex h-16 items-center justify-between">
+            <Link href="/" className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              Gallery
+            </Link>
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold">Z</div>
             </div>
-            <WalletMultiButton className="!bg-gradient-to-r !from-purple-500 !to-blue-500 !rounded-lg !text-sm !font-bold !text-white !border-0 hover:!opacity-90 !h-10 !px-4" />
+            <WalletMultiButton />
           </div>
         </div>
-      </header>
+      </nav>
 
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <h1 className="text-4xl font-bold text-white text-center">Forge a Z</h1>
-        <p className="mt-2 text-center text-gray-500">
-          Mint a new Evolving Value Object with SOL locked inside
-        </p>
+      <div className="mx-auto max-w-2xl px-4 py-12 lg:px-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">Forge a Z</h1>
+          <p className="mt-2 text-sm text-gray-500">Mint a new EVO with SOL locked inside</p>
+        </div>
 
         {loading ? (
-          <div className="mt-12 text-center text-gray-600">Loading collection data...</div>
+          <div className="mt-12 flex justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#232328] border-t-indigo-500" />
+          </div>
         ) : collection ? (
           <>
-            {/* Next creature preview */}
+            {/* Creature preview */}
             {creature && (
               <div className="mt-8 flex flex-col items-center">
-                <div className="relative flex h-64 w-64 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-gray-900 to-gray-950">
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background: `radial-gradient(circle at 50% 50%, rgba(168,85,247,0.15), transparent 60%)`,
-                    }}
-                  />
-                  <img
-                    src={creature.stages.baby}
-                    alt={creature.displayName}
-                    className="relative z-[1]"
-                    style={{ imageRendering: 'pixelated', transform: 'scale(2)' }}
-                  />
+                <div className="relative flex h-56 w-56 items-center justify-center overflow-hidden rounded-2xl border border-[#1a1a1e] bg-[#131316]">
+                  <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 50%, rgba(99,102,241,0.15), transparent 60%)` }} />
+                  <img src={creature.stages.baby} alt={creature.displayName} className="relative z-[1]"
+                    style={{ imageRendering: 'pixelated', transform: 'scale(2)' }} />
                 </div>
-                <p className="mt-4 text-lg font-bold text-white">{creature.displayName}</p>
-                <p className="text-sm text-gray-500">
-                  Next Z #{currentSupply} · {creature.element} · {creature.rarity}
-                </p>
+                <div className="mt-4 text-center">
+                  <p className="text-lg font-bold">{creature.displayName}</p>
+                  <p className="text-sm text-gray-500">Z #{currentSupply} · {creature.element} · {creature.rarity}</p>
+                </div>
               </div>
             )}
 
             {/* Pricing */}
-            <div className="mt-8 grid grid-cols-3 gap-4">
-              <div className="rounded-xl border border-white/10 bg-gray-900/50 p-4 text-center">
-                <p className="text-xs text-gray-500">Mint Price (→ Creator)</p>
-                <p className="mt-1 text-2xl font-bold text-yellow-400">{collection.mintPriceSol}◎</p>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-gray-900/50 p-4 text-center">
-                <p className="text-xs text-gray-500">Locked Value (Floor)</p>
-                <p className="mt-1 text-2xl font-bold text-green-400">{collection.lockAmountSol}◎</p>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-gray-900/50 p-4 text-center">
-                <p className="text-xs text-gray-500">Total to Forge</p>
-                <p className="mt-1 text-2xl font-bold text-white">
-                  {(collection.mintPriceSol + collection.lockAmountSol).toFixed(3)}◎
-                </p>
-              </div>
+            <div className="mt-8 space-y-2">
+              <PriceRow label="Mint Price (→ Creator)" value={`${collection.mintPriceSol}◎`} color="text-yellow-400" />
+              <PriceRow label="Locked Value (Your Floor)" value={`${collection.lockAmountSol}◎`} color="text-green-400" />
+              <div className="my-3 border-t border-[#1a1a1e]" />
+              <PriceRow label="Total to Forge" value={`${totalCost.toFixed(3)}◎`} color="text-white" bold />
             </div>
 
             {/* Supply bar */}
-            <div className="mt-6 rounded-xl border border-white/10 bg-gray-900/50 p-4">
+            <div className="mt-6 rounded-xl border border-[#1a1a1e] bg-[#131316] p-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-400">Supply</span>
-                <span className="text-white font-bold">{currentSupply} / {collection.supplyCap}</span>
+                <span className="font-mono font-bold">{currentSupply} / {collection.supplyCap}</span>
               </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-800">
-                <div
-                  className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all"
-                  style={{ width: `${(currentSupply / collection.supplyCap) * 100}%` }}
-                />
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#0a0a0b]">
+                <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all" style={{ width: `${(currentSupply / collection.supplyCap) * 100}%` }} />
               </div>
               <p className="mt-2 text-xs text-gray-500">{remaining} remaining</p>
             </div>
 
             {/* Shatter info */}
-            <div className="mt-4 rounded-xl border border-white/10 bg-gray-900/30 p-4 text-xs text-gray-400">
-              <p>
-                💥 Shatter fee: <span className="text-white font-bold">{collection.shatterFeeBps / 100}%</span> ·
-                Royalty: <span className="text-white font-bold">{collection.tradeRoyaltyBps / 100}%</span> on trades
-              </p>
-              <p className="mt-1">
-                Your Z contains {collection.lockAmountSol} SOL. You can always shatter it to recover
-                {' '}{(collection.lockAmountSol * (1 - collection.shatterFeeBps / 10000)).toFixed(4)}◎ (after fee).
-              </p>
+            <div className="mt-4 rounded-xl border border-[#1a1a1e] bg-[#131316]/50 p-4 text-xs text-gray-400">
+              <div className="flex justify-between">
+                <span>Shatter fee</span>
+                <span className="text-white font-medium">{collection.shatterFeeBps / 100}%</span>
+              </div>
+              <div className="mt-1 flex justify-between">
+                <span>Trade royalty</span>
+                <span className="text-white font-medium">{collection.tradeRoyaltyBps / 100}%</span>
+              </div>
+              <div className="mt-3 border-t border-[#1a1a1e] pt-2 flex justify-between">
+                <span>Recoverable on shatter</span>
+                <span className="text-green-400 font-medium">{shatterRecover.toFixed(4)}◎</span>
+              </div>
             </div>
 
             {/* Forge button */}
             <div className="mt-8 flex flex-col items-center">
-              <button
-                onClick={handleForge}
-                disabled={!wallet.connected || forging || remaining === 0}
-                className="rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 px-12 py-4 text-lg font-bold text-black transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {forging ? 'Forging...' : remaining === 0 ? 'Collection Full' : `⚒️ Forge Z #${currentSupply}`}
+              <button onClick={handleForge} disabled={!wallet.connected || forging || remaining === 0}
+                className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-8 py-4 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
+                {forging ? 'Forging...' : remaining === 0 ? 'Collection Full' : `Forge Z #${currentSupply}`}
               </button>
-              {!wallet.connected && (
-                <p className="mt-2 text-xs text-gray-600">Connect wallet to forge</p>
-              )}
+              {!wallet.connected && <p className="mt-3 text-xs text-gray-600">Connect wallet to forge</p>}
             </div>
 
-            {/* Transaction result */}
+            {/* Result */}
             {txSig && (
               <div className="mt-6 rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-center">
-                <p className="text-green-400 font-bold">✅ Z Forged Successfully!</p>
-                <a
-                  href={`https://solscan.io/tx/${txSig}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-block text-sm text-blue-400 hover:underline"
-                >
+                <p className="font-bold text-green-400">✅ Z Forged Successfully!</p>
+                <a href={`https://solscan.io/tx/${txSig}`} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm text-indigo-400 hover:underline">
                   View on Solscan →
                 </a>
               </div>
             )}
-
             {error && (
               <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-center">
-                <p className="text-red-400 font-bold">❌ {error}</p>
+                <p className="font-bold text-red-400">❌ {error}</p>
               </div>
             )}
           </>
@@ -227,6 +191,15 @@ export default function ForgePage() {
           <div className="mt-12 text-center text-gray-600">Collection not found</div>
         )}
       </div>
+    </div>
+  );
+}
+
+function PriceRow({ label, value, color, bold }: { label: string; value: string; color: string; bold?: boolean }) {
+  return (
+    <div className="flex items-center justify-between rounded-lg border border-[#1a1a1e] bg-[#131316] px-4 py-3">
+      <span className="text-sm text-gray-400">{label}</span>
+      <span className={`font-mono ${bold ? 'text-lg font-bold' : 'text-base font-medium'} ${color}`}>{value}</span>
     </div>
   );
 }
