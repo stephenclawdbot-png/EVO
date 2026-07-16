@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { ZCard } from '@/components/ZCard';
 import { ZDetail } from '@/components/ZDetail';
 import { generateDemoEVOs, EVOData } from '@/lib/evo-data';
@@ -88,9 +90,7 @@ export default function Home() {
                 <p className="text-xs text-gray-500">Evolving Value Objects · EVO Protocol</p>
               </div>
             </div>
-            <button className="rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 px-4 py-2 text-sm font-bold text-white hover:opacity-90 transition-opacity">
-              Connect Wallet
-            </button>
+            <WalletMultiButton className="!bg-gradient-to-r !from-purple-500 !to-blue-500 !rounded-lg !text-sm !font-bold !text-white !border-0 hover:!opacity-90 !transition-opacity !h-10 !px-4" />
           </div>
         </div>
       </header>

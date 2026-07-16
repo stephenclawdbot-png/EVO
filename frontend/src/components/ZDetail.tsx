@@ -3,6 +3,7 @@
 import { EVOData, getStage, getAgeString } from '@/lib/evo-data';
 import { ELEMENT_COLORS, RARITY_COLORS, STAGE_NAMES, Stage } from '@/lib/creatures';
 import { useState } from 'react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 interface ZDetailProps {
   evo: EVOData;
@@ -21,12 +22,15 @@ export function ZDetail({ evo, onBack }: ZDetailProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-950 to-black p-4 md:p-8">
-      <button
-        onClick={onBack}
-        className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-      >
-        ← Back to Gallery
-      </button>
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+        >
+          ← Back to Gallery
+        </button>
+        <WalletMultiButton className="!bg-gradient-to-r !from-purple-500 !to-blue-500 !rounded-lg !text-sm !font-bold !text-white !border-0 hover:!opacity-90 !h-9 !px-3" />
+      </div>
 
       <div className="grid gap-8 md:grid-cols-2">
         {/* Left: Art display */}
