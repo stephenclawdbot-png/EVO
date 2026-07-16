@@ -5,7 +5,7 @@ import { assert, expect } from "chai";
 import { Evo } from "../target/types/evo";
 
 const SOL = (lamports: number) => new BN(lamports * LAMPORTS_PER_SOL);
-const INCINERATOR = new PublicKey("1nc1nerator1111111111111111111111111111111111");
+const INCINERATOR = new PublicKey("1nc1nerator11111111111111111111111111111111");
 // EVOAccount::SPACE from programs/evo/src/state/evo.rs
 const EVO_SPACE = 1109;
 
