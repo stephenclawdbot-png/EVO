@@ -362,6 +362,7 @@ describe("EVO", () => {
           owner: other.publicKey,
           creator: creator.publicKey,
           treasury: treasury.publicKey,
+          incinerator: INCINERATOR,
         })
         .signers([other])
         .rpc();
@@ -436,10 +437,11 @@ describe("EVO", () => {
             owner: other.publicKey,
             creator: creator.publicKey,
             treasury: treasury.publicKey,
+            incinerator: INCINERATOR,
           })
           .signers([other])
           .rpc();
-        assert.fail("non-owner should not shatter");
+          assert.fail("non-owner should not shatter");
       } catch (e) {
         expect(e.message).to.match(/not the owner|0x4/i);
       }

@@ -40,7 +40,7 @@ pub struct Shatter<'info> {
     /// Incinerator — used when fee destination is Burn
     /// CHECK: Verified against INCINERATOR constant
     #[account(mut, address = INCINERATOR)]
-    pub incinerator: Option<UncheckedAccount<'info>>,
+    pub incinerator: UncheckedAccount<'info>,
 
     pub system_program: Program<'info, System>,
 }
@@ -82,11 +82,9 @@ pub fn shatter(ctx: Context<Shatter>, evo_id: u32) -> Result<()> {
                 )?;
             }
             FeeDestination::Burn => {
-                let incinerator = ctx.accounts.incinerator.as_ref()
-                    .ok_or(EvoError::IncineratorRequired)?;
                 transfer_lamports(
                     &evo_info,
-                    &incinerator.to_account_info(),
+                    &ctx.accounts.incinerator.to_account_info(),
                     fee,
                 )?;
                 msg!("Burned {} lamports to incinerator", fee);
