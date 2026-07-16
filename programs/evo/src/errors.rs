@@ -52,4 +52,13 @@ pub enum EvoError {
 
     #[msg("Collection is paused or inactive")]
     CollectionInactive,
+
+    #[msg("You are not the collection creator")]
+    NotCollectionCreator,
+
+    #[msg("Collection is not empty — cannot close")]
+    CollectionNotEmpty,
+
+    #[msg("Metadata URI is too long")]
+    MetadataUriTooLong,
 }

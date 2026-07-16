@@ -32,6 +32,7 @@ pub mod evo {
     /// Create a new collection. Pays the protocol creation fee.
     /// Creator sets shatter fee %, trade royalty %, and their destinations.
     /// These are locked forever — cannot be changed after creation.
+    /// metadata_uri points to off-chain JSON with art, description, and item list.
     pub fn create_collection(
         ctx: Context<CreateCollection>,
         name: String,
@@ -42,6 +43,7 @@ pub mod evo {
         royalty_destination: FeeDestination,
         mint_price_lamports: u64,
         lock_amount_lamports: u64,
+        metadata_uri: String,
     ) -> Result<()> {
         instructions::create_collection::create_collection(
             ctx,
@@ -53,6 +55,7 @@ pub mod evo {
             royalty_destination,
             mint_price_lamports,
             lock_amount_lamports,
+            metadata_uri,
         )
     }
 
@@ -104,5 +107,21 @@ pub mod evo {
     /// Only the current owner can transfer.
     pub fn transfer(ctx: Context<Transfer>, new_owner: Pubkey) -> Result<()> {
         instructions::transfer::transfer(ctx, new_owner)
+    }
+
+    /// Close an empty collection and refund rent to the creator.
+    /// Works on both old-format (pre-metadata_uri) and new-format accounts.
+    /// Collection must have 0 forged EVOs.
+    pub fn close_collection(ctx: Context<CloseCollection>, name: String) -> Result<()> {
+        instructions::close_collection::close_collection(ctx, name)
+    }
+
+    /// Update the metadata URI for a collection.
+    /// Only the collection creator can call this.
+    pub fn update_metadata(
+        ctx: Context<UpdateMetadata>,
+        metadata_uri: String,
+    ) -> Result<()> {
+        instructions::update_metadata::update_metadata(ctx, metadata_uri)
     }
 }

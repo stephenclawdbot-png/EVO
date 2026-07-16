@@ -7,6 +7,8 @@ pub mod delist;
 pub mod buy;
 pub mod shatter;
 pub mod transfer;
+pub mod close_collection;
+pub mod update_metadata;
 
 pub use initialize::*;
 pub use create_collection::*;
@@ -17,3 +19,5 @@ pub use delist::*;
 pub use buy::*;
 pub use shatter::*;
 pub use transfer::*;
+pub use close_collection::*;
+pub use update_metadata::*;

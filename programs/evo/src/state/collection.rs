@@ -1,3 +1,4 @@
+use crate::constants::MAX_METADATA_URI_LEN;
 use crate::state::FeeDestination;
 use anchor_lang::prelude::*;
 
@@ -27,6 +28,8 @@ pub struct CollectionConfig {
     pub lock_amount_lamports: u64,
     /// Bump seed
     pub bump: u8,
+    /// URI to off-chain metadata JSON (image, description, item list)
+    pub metadata_uri: String,
 }
 
 impl CollectionConfig {
@@ -41,5 +44,6 @@ impl CollectionConfig {
         1 +      // royalty_destination (enum)
         8 +      // mint_price_lamports
         8 +      // lock_amount_lamports
-        1;       // bump
+        1 +      // bump
+        4 + MAX_METADATA_URI_LEN; // metadata_uri (String: 4 len + max bytes)
 }

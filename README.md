@@ -1,14 +1,14 @@
-# EVO — Stateful Capital
+# EVO — A Third Model for Digital Assets
 
 > **Speculation with a floor. SOL that remembers.**
 >
-> Not a token. Not an NFT. Capital that carries state through transfer.
+> Not a token. Not an NFT. A third model for digital assets.
 
 ---
 
 ## What Is EVO?
 
-An **EVO** is a Solana account that holds SOL and carries state — history, permissions, and behavior — as a single transferable object.
+Digital assets today force you to choose between fungibility (tokens) and uniqueness (NFTs). EVO introduces a third model: unique programmable assets with intrinsic redeemable value.
 
 ```
 Token  = fungible, no memory, no floor
@@ -16,9 +16,26 @@ NFT    = non-fungible, static, no floor, can go to zero
 EVO    = non-fungible, SOL-backed floor, carries state, always redeemable
 ```
 
-The thesis is simple:
+### The Value Model
 
-> **Fungibility erases meaning. EVO lets capital carry context without becoming a token.**
+```
+Market Price = Intrinsic Floor + Speculative Premium
+```
+
+- **Intrinsic value**: SOL locked inside the EVO account — redeemable via shatter
+- **Market value**: novelty, rarity, culture, speculation
+
+An EVO trades like a collectible, holds like an NFT, and can't go below its floor. Degens speculate on the premium. The reserve protects the downside. When hype dies, supply contracts via shatter — remaining holders benefit from increased scarcity.
+
+### The Architectural Claim
+
+**Metaplex treats lamports as rent. EVO treats lamports as economic state.**
+
+An EVO is one atomic economic object — identity, value, and behavior in the same account. Not a token pointing to a vault. The account IS the asset. The SOL is in the account, not next to it.
+
+> Transfer a Metaplex NFT without its vault. You can. Transfer an EVO without its SOL. You can't.
+
+See [Protocol Design](docs/11-protocol-design.md) for the full architectural thesis.
 
 ---
 
@@ -79,25 +96,27 @@ EVO exposes the interface. The community builds the behaviors.
 
 ---
 
-## Program — Live on Mainnet
+## Program — Deployed on Mainnet
 
 | | |
 |---|---|
-| **Program ID** | `2AUfmSABAwfSAzMWuDfWXzm6TVVvVapWgtrAEBU4FHeR` |
-| **Protocol Config PDA** | `EuLuQqUVq5ze2E5P43MLsYUxQLXskCCAvMK1evdNajRi` |
-| **Authority** | `G3aWJsdtrRT12HnC9R2BVoyErQbtGXseaM9c2xt1MJUJ` |
+| **Program ID** | `7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc` |
+| **Old Program (CLOSED)** | `2AUfmSABAwfSAzMWuDfWXzm6TVVvVapWgtrAEBU4FHeR` |
+| **Authority/Treasury** | `G3aWJsdtrRT12HnC9R2BVoyErQbtGXseaM9c2xt1MJUJ` |
 | **Network** | Solana Mainnet |
-| **Creation Fee** | 0.06789 SOL |
+| **Status** | Deployed, NOT yet initialized |
 
 ### Instructions
 - `initialize_protocol` — one-time setup
-- `create_collection` — creator sets supply, mint_price, lock_amount, fees
+- `create_collection` — creator sets supply, mint_price, lock_amount, fees, metadata_uri
 - `forge` — mint EVO (pays mint_price to creator, locks SOL inside)
 - `feed` — add SOL to existing EVO
 - `list` / `delist` — marketplace listing
 - `buy` — purchase listed EVO (royalties distributed)
 - `shatter` — destroy EVO, reclaim locked SOL
 - `transfer` — send EVO to new owner
+- `close_collection` — close empty collection, refund rent to creator
+- `update_metadata` — update collection metadata_uri (creator only)
 
 ---
 
@@ -115,6 +134,7 @@ EVO exposes the interface. The community builds the behaviors.
 | [08 — Roadmap](docs/08-roadmap.md) | Build phases — primitive + art together, behaviors next |
 | [09 — Security](docs/09-security-review.md) | Audit notes, security model |
 | [10 — Wallet Integration](docs/10-wallet-integration.md) | SDK for wallets and developers |
+| [11 — Protocol Design](docs/11-protocol-design.md) | Why EVO is a third model for digital assets — the architectural thesis |
 
 ---
 

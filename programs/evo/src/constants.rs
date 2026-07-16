@@ -14,5 +14,6 @@ pub const MAX_ROYALTY_BPS: u16 = 2500; // 25% max
 
 // Limits
 pub const MAX_COLLECTION_NAME_LEN: usize = 32;
+pub const MAX_METADATA_URI_LEN: usize = 200;
 pub const MAX_FRACTURE_LINES: usize = 20;
 pub const MAX_RESONANCE_SEED_LEN: usize = 32;
