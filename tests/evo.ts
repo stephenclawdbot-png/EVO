@@ -1,6 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
-import { PublicKey, Keypair, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { PublicKey, Keypair, SystemProgram, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js";
 import { assert, expect } from "chai";
 import { Evo } from "../target/types/evo";
 
@@ -653,6 +653,19 @@ describe("EVO", () => {
     const EVO_ID = 0;
 
     before(async () => {
+      // Fund the incinerator so the account "exists" — Solana doesn't persist
+      // lamport changes to zero-balance accounts via direct manipulation.
+      // On mainnet the incinerator already has lamports; localnet starts empty.
+      await provider.sendAndConfirm(
+        new Transaction().add(
+          SystemProgram.transfer({
+            fromPubkey: wallet.publicKey,
+            toPubkey: INCINERATOR,
+            lamports: 10000000,
+          })
+        )
+      );
+
       collectionPk = collectionPda(NAME);
       await program.methods
         .createCollection(
