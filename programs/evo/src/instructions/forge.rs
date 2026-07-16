@@ -69,6 +69,14 @@ pub fn forge(
     evo.is_shattered = false;
     evo.bump = ctx.bumps.evo;
 
+    // Lifecycle state — mint_index is the slot this EVO takes in the collection
+    // (assigned BEFORE incrementing supply, so first forge = index 0).
+    evo.mint_index = collection.current_supply;
+    evo.current_state = 0;
+    evo.last_transition_at = evo.forged_at;
+    evo.feed_count = 0;
+    evo.total_fed_lamports = 0;
+
     // Increment supply
     collection.current_supply += 1;
 

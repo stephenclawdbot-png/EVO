@@ -33,7 +33,18 @@ pub fn feed(ctx: Context<Feed>, additional_lamports: u64) -> Result<()> {
     );
     transfer(cpi_ctx, additional_lamports)?;
 
-    evo.locked_lamports += additional_lamports;
+    evo.locked_lamports = evo
+        .locked_lamports
+        .checked_add(additional_lamports)
+        .ok_or(EvoError::MathOverflow)?;
+    evo.total_fed_lamports = evo
+        .total_fed_lamports
+        .checked_add(additional_lamports)
+        .ok_or(EvoError::MathOverflow)?;
+    evo.feed_count = evo
+        .feed_count
+        .checked_add(1)
+        .ok_or(EvoError::MathOverflow)?;
 
     msg!("Fed {} lamports to EVO. Total locked: {}", additional_lamports, evo.locked_lamports);
     Ok(())

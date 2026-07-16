@@ -45,13 +45,33 @@ pub fn create_collection(
     mint_price_lamports: u64,
     lock_amount_lamports: u64,
     metadata_uri: String,
+    lifecycle: LifecycleParams,
 ) -> Result<()> {
     require!(protocol_is_initialized(&ctx.accounts.protocol_config), EvoError::ProtocolNotInitialized);
     require!(name.len() <= MAX_COLLECTION_NAME_LEN, EvoError::CollectionNameTooLong);
+    require!(name.len() > 0, EvoError::CollectionNameTooLong);
     require!(shatter_fee_bps <= MAX_SHATTER_FEE_BPS, EvoError::ShatterFeeTooHigh);
     require!(trade_royalty_bps <= MAX_ROYALTY_BPS, EvoError::RoyaltyTooHigh);
     require!(lock_amount_lamports > 0, EvoError::InsufficientLamports);
     require!(metadata_uri.len() <= MAX_METADATA_URI_LEN, EvoError::MetadataUriTooLong);
+
+    // Validate lifecycle config.
+    // Evolution/Custom must declare max_states > 0.
+    // CommitReveal must set a reveal_authority.
+    if lifecycle.lifecycle_type == LifecycleType::Evolution
+        || lifecycle.lifecycle_type == LifecycleType::Custom
+    {
+        require!(lifecycle.max_states > 0, EvoError::InvalidLifecycleConfig);
+    }
+    if lifecycle.lifecycle_type == LifecycleType::CommitReveal
+        || lifecycle.lifecycle_type == LifecycleType::Evolution
+        || lifecycle.lifecycle_type == LifecycleType::Custom
+    {
+        require!(
+            lifecycle.reveal_authority != Pubkey::default(),
+            EvoError::InvalidLifecycleConfig
+        );
+    }
 
     let config = &mut ctx.accounts.collection_config;
 
@@ -67,6 +87,22 @@ pub fn create_collection(
     config.lock_amount_lamports = lock_amount_lamports;
     config.bump = ctx.bumps.collection_config;
     config.metadata_uri = metadata_uri;
+
+    // Lifecycle
+    config.lifecycle_type = lifecycle.lifecycle_type;
+    config.max_states = lifecycle.max_states;
+    config.reveal_authority = lifecycle.reveal_authority;
+    config.reveal_entropy = [0u8; 32];
+    config.is_revealed = false;
+    config.evolve_trade_threshold = lifecycle.evolve_trade_threshold;
+    config.evolve_feed_threshold = lifecycle.evolve_feed_threshold;
+    config.evolve_hold_seconds = lifecycle.evolve_hold_seconds;
+    config.evolve_locked_threshold = lifecycle.evolve_locked_threshold;
+    config.transition_policy_hash = lifecycle.transition_policy_hash;
+
+    // Randomness
+    config.randomness_policy = lifecycle.randomness_policy;
+    config.manifest_root = lifecycle.manifest_root;
 
     // Pay the collection creation fee to the treasury
     let fee = ctx.accounts.protocol_config.creation_fee_lamports;

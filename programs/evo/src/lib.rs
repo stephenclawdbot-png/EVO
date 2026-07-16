@@ -44,6 +44,7 @@ pub mod evo {
         mint_price_lamports: u64,
         lock_amount_lamports: u64,
         metadata_uri: String,
+        lifecycle: LifecycleParams,
     ) -> Result<()> {
         instructions::create_collection::create_collection(
             ctx,
@@ -56,6 +57,7 @@ pub mod evo {
             mint_price_lamports,
             lock_amount_lamports,
             metadata_uri,
+            lifecycle,
         )
     }
 
@@ -123,5 +125,21 @@ pub mod evo {
         metadata_uri: String,
     ) -> Result<()> {
         instructions::update_metadata::update_metadata(ctx, metadata_uri)
+    }
+
+    /// Reveal a collection — the reveal authority injects entropy that
+    /// deterministically seeds per-EVO trait generation. One-shot.
+    pub fn reveal_collection(
+        ctx: Context<RevealCollection>,
+        reveal_entropy: [u8; 32],
+    ) -> Result<()> {
+        instructions::reveal_collection::reveal_collection(ctx, reveal_entropy)
+    }
+
+    /// Permissionless evolution — advances an EVO to its next lifecycle
+    /// stage if all enabled thresholds (trades, feeds, hold time, locked value)
+    /// for the next stage are met.
+    pub fn evolve(ctx: Context<Evolve>) -> Result<()> {
+        instructions::evolve::evolve(ctx)
     }
 }

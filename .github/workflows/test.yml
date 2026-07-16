@@ -1,0 +1,48 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - uses: dtolnay/rust-toolchain@1.97.0
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target"
+
+      - name: Install Solana CLI (Agave 4.1.2)
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/v4.1.2/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+
+      - name: Install Anchor 0.31.0
+        run: cargo install anchor-cli --version 0.31.0 --locked
+
+      - name: Generate throwaway keypairs and align program id
+        run: |
+          mkdir -p target/deploy ~/.config/solana
+          solana-keygen new -o target/deploy/evo-keypair.json --no-bip39-passphrase --silent --force
+          solana-keygen new -o ~/.config/solana/evo-deployer.json --no-bip39-passphrase --silent --force
+          TEST_PID=$(solana-keygen pubkey target/deploy/evo-keypair.json)
+          echo "TEST_PID=$TEST_PID"
+          sed -i "s/7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc/$TEST_PID/g" programs/evo/src/lib.rs Anchor.toml
+          grep -n "$TEST_PID" programs/evo/src/lib.rs Anchor.toml
+
+      - name: Build program
+        run: anchor build
+
+      - name: Run tests
+        run: anchor test --skip-build
