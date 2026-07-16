@@ -21,6 +21,10 @@ pub struct CollectionConfig {
     pub trade_royalty_bps: u16,
     /// Where the royalty goes
     pub royalty_destination: FeeDestination,
+    /// Mint price in lamports — paid to creator when someone forges an EVO
+    pub mint_price_lamports: u64,
+    /// Lock amount in lamports — SOL locked inside each EVO (the floor value)
+    pub lock_amount_lamports: u64,
     /// Bump seed
     pub bump: u8,
 }
@@ -35,5 +39,7 @@ impl CollectionConfig {
         1 +      // shatter_fee_destination (enum)
         2 +      // trade_royalty_bps
         1 +      // royalty_destination (enum)
+        8 +      // mint_price_lamports
+        8 +      // lock_amount_lamports
         1;       // bump
 }

@@ -42,11 +42,14 @@ pub fn create_collection(
     shatter_fee_destination: FeeDestination,
     trade_royalty_bps: u16,
     royalty_destination: FeeDestination,
+    mint_price_lamports: u64,
+    lock_amount_lamports: u64,
 ) -> Result<()> {
     require!(protocol_is_initialized(&ctx.accounts.protocol_config), EvoError::ProtocolNotInitialized);
     require!(name.len() <= MAX_COLLECTION_NAME_LEN, EvoError::CollectionNameTooLong);
     require!(shatter_fee_bps <= MAX_SHATTER_FEE_BPS, EvoError::ShatterFeeTooHigh);
     require!(trade_royalty_bps <= MAX_ROYALTY_BPS, EvoError::RoyaltyTooHigh);
+    require!(lock_amount_lamports > 0, EvoError::InsufficientLamports);
 
     let config = &mut ctx.accounts.collection_config;
 
@@ -58,6 +61,8 @@ pub fn create_collection(
     config.shatter_fee_destination = shatter_fee_destination;
     config.trade_royalty_bps = trade_royalty_bps;
     config.royalty_destination = royalty_destination;
+    config.mint_price_lamports = mint_price_lamports;
+    config.lock_amount_lamports = lock_amount_lamports;
     config.bump = ctx.bumps.collection_config;
 
     // Pay the collection creation fee to the treasury

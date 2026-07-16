@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("7EbK3gcPnMvA7NYb5YdXRMEBQQrMkij4dv5RckYkYmFK");
+declare_id!("2AUfmSABAwfSAzMWuDfWXzm6TVVvVapWgtrAEBU4FHeR");
 
 mod constants;
 mod errors;
@@ -40,6 +40,8 @@ pub mod evo {
         shatter_fee_destination: FeeDestination,
         trade_royalty_bps: u16,
         royalty_destination: FeeDestination,
+        mint_price_lamports: u64,
+        lock_amount_lamports: u64,
     ) -> Result<()> {
         instructions::create_collection::create_collection(
             ctx,
@@ -49,18 +51,20 @@ pub mod evo {
             shatter_fee_destination,
             trade_royalty_bps,
             royalty_destination,
+            mint_price_lamports,
+            lock_amount_lamports,
         )
     }
 
-    /// Forge a new EVO in a collection. Locks SOL into the EVO PDA.
+    /// Forge a new EVO in a collection.
+    /// Pays mint_price to the creator (buying the shell) and locks SOL inside the EVO (the utility).
     /// The forged EVO belongs to the caller.
     pub fn forge(
         ctx: Context<Forge>,
         evo_id: u32,
-        locked_lamports: u64,
         resonance_seed: [u8; 32],
     ) -> Result<()> {
-        instructions::forge::forge(ctx, evo_id, locked_lamports, resonance_seed)
+        instructions::forge::forge(ctx, evo_id, resonance_seed)
     }
 
     /// Feed more SOL into an existing EVO. Increases the floor price.

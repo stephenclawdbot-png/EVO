@@ -31,6 +31,10 @@ pub struct Forge<'info> {
     )]
     pub protocol_config: Account<'info, ProtocolConfig>,
 
+    /// CHECK: Creator wallet — receives the mint price. Verified by collection_config.creator
+    #[account(mut, address = collection_config.creator)]
+    pub creator: SystemAccount<'info>,
+
     #[account(mut)]
     pub owner: Signer<'info>,
 
@@ -40,7 +44,6 @@ pub struct Forge<'info> {
 pub fn forge(
     ctx: Context<Forge>,
     evo_id: u32,
-    locked_lamports: u64,
     resonance_seed: [u8; 32],
 ) -> Result<()> {
     let collection = &mut ctx.accounts.collection_config;
@@ -48,12 +51,14 @@ pub fn forge(
 
     require!(protocol_is_initialized(&ctx.accounts.protocol_config), EvoError::ProtocolNotInitialized);
     require!(collection.current_supply < collection.supply_cap, EvoError::SupplyCapReached);
-    require!(locked_lamports > 0, EvoError::InsufficientLamports);
+
+    let lock_amount = collection.lock_amount_lamports;
+    let mint_price = collection.mint_price_lamports;
 
     // Initialize the EVO
     evo.collection = collection.key();
     evo.owner = ctx.accounts.owner.key();
-    evo.locked_lamports = locked_lamports;
+    evo.locked_lamports = lock_amount;
     evo.forged_at = Clock::get()?.unix_timestamp;
     evo.facet_count = 0;
     evo.trade_count = 0;
@@ -67,7 +72,19 @@ pub fn forge(
     // Increment supply
     collection.current_supply += 1;
 
-    // Transfer SOL from owner to the EVO PDA (locked)
+    // Transfer mint price from owner to creator (speculative value)
+    if mint_price > 0 {
+        let cpi_ctx = CpiContext::new(
+            ctx.accounts.system_program.to_account_info(),
+            Transfer {
+                from: ctx.accounts.owner.to_account_info(),
+                to: ctx.accounts.creator.to_account_info(),
+            },
+        );
+        transfer(cpi_ctx, mint_price)?;
+    }
+
+    // Transfer lock amount from owner to the EVO PDA (locked SOL = floor value)
     let cpi_ctx = CpiContext::new(
         ctx.accounts.system_program.to_account_info(),
         Transfer {
@@ -75,8 +92,8 @@ pub fn forge(
             to: evo.to_account_info(),
         },
     );
-    transfer(cpi_ctx, locked_lamports)?;
+    transfer(cpi_ctx, lock_amount)?;
 
-    msg!("EVO #{} forged in collection '{}' with {} lamports locked", evo_id, collection.name, locked_lamports);
+    msg!("EVO #{} forged in collection '{}'. Mint price: {} lamports to creator, {} lamports locked", evo_id, collection.name, mint_price, lock_amount);
     Ok(())
 }

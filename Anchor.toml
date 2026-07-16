@@ -5,13 +5,13 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-evo = "7EbK3gcPnMvA7NYb5YdXRMEBQQrMkij4dv5RckYkYmFK"
+evo = "2AUfmSABAwfSAzMWuDfWXzm6TVVvVapWgtrAEBU4FHeR"
 
 [programs.devnet]
-evo = "7EbK3gcPnMvA7NYb5YdXRMEBQQrMkij4dv5RckYkYmFK"
+evo = "2AUfmSABAwfSAzMWuDfWXzm6TVVvVapWgtrAEBU4FHeR"
 
 [programs.mainnet]
-evo = "7EbK3gcPnMvA7NYb5YdXRMEBQQrMkij4dv5RckYkYmFK"
+evo = "2AUfmSABAwfSAzMWuDfWXzm6TVVvVapWgtrAEBU4FHeR"
 
 [registry]
 url = "https://api.apr.dev"

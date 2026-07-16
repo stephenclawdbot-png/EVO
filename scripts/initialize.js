@@ -20,7 +20,7 @@ async function main() {
   const balance = await connection.getBalance(payer.publicKey);
   console.log(`Balance: ${balance / 1e9} SOL`);
 
-  const programId = new PublicKey("7EbK3gcPnMvA7NYb5YdXRMEBQQrMkij4dv5RckYkYmFK");
+  const programId = new PublicKey("2AUfmSABAwfSAzMWuDfWXzm6TVVvVapWgtrAEBU4FHeR");
 
   const [protocolConfig] = PublicKey.findProgramAddressSync(
     [Buffer.from("protocol")],
