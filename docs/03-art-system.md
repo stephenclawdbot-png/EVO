@@ -16,13 +16,13 @@ Same data = same art. Always. For everyone. No human intervention possible.
 
 | Parameter | Source | Visual Effect |
 |---|---|---|
-| `locked_lamports` | Total SOL fed | Crystal size (bigger = more SOL) |
+| `locked_lamports` | Total SOL fed | z size (bigger = more SOL) |
 | `forged_at` | Timestamp at creation | Age → facet count → intricacy |
 | `facet_count` | Derived from age | Number of geometric facets |
 | `trade_count` | Number of trades | Number of fracture lines |
 | `resonance_seed` | Hash of forge tx | Base color palette + shape tendency |
-| `fracture_lines` | Trade history | Visible cracks/marks on crystal surface |
-| `is_listed` | Whether for sale | Glow indicator (listed crystals pulse) |
+| `fracture_lines` | Trade history | Visible cracks/marks on z surface |
+| `is_listed` | Whether for sale | Glow indicator (listed Z pulse) |
 
 ---
 
@@ -31,7 +31,7 @@ Same data = same art. Always. For everyone. No human intervention possible.
 We use a **hybrid approach** — artist-designed base + algorithmically generated dynamic layers:
 
 ### Layer 1: Artist-Defined Base (Static)
-- The artist designs the **base crystal shape** and **rendering style**
+- The artist designs the **base z shape** and **rendering style**
 - The artist defines **color palettes** mapped to resonance seed ranges
 - The artist creates the **facet geometry templates** (how facets look at each level)
 - The artist sets the **fracture line style** (how cracks appear)
@@ -39,15 +39,15 @@ We use a **hybrid approach** — artist-designed base + algorithmically generate
 
 ### Layer 2: Algorithmically Generated (Dynamic)
 - The algorithm places facets based on `facet_count` and `resonance_seed`
-- The algorithm colors the crystal based on `resonance_seed` → palette mapping
-- The algorithm sizes the crystal based on `locked_lamports`
+- The algorithm colors the z based on `resonance_seed` → palette mapping
+- The algorithm sizes the z based on `locked_lamports`
 - The algorithm draws fracture lines based on `fracture_lines` data
 - The algorithm adds inner glow based on total value × time multiplier
-- This is what makes each crystal unique and evolving
+- This is what makes each z unique and evolving
 
 ### Layer 3: Real-Time Effects (Client-side)
-- Listed crystals pulse softly
-- Newly fed crystals flash briefly
+- Listed Z pulse softly
+- Newly fed Z flash briefly
 - Facets shimmer subtly (ambient animation)
 - Inner glow breathes slowly
 - These are purely cosmetic — they don't affect the on-chain data
@@ -56,7 +56,7 @@ We use a **hybrid approach** — artist-designed base + algorithmically generate
 
 ## Visual Progression
 
-A crystal's appearance changes dramatically over its lifecycle:
+A z's appearance changes dramatically over its lifecycle:
 
 ### Just Forged (0 SOL, 0 facets)
 ```
@@ -68,7 +68,7 @@ A crystal's appearance changes dramatically over its lifecycle:
 
 ### Fed 1 SOL, 2 weeks old (2 facets)
 ```
-- Small crystal, starting to take shape
+- Small z, starting to take shape
 - Color palette emerging
 - 2 visible facets catching light
 - Faint inner glow beginning
@@ -76,7 +76,7 @@ A crystal's appearance changes dramatically over its lifecycle:
 
 ### Fed 10 SOL, 6 months old (26 facets)
 ```
-- Medium-large crystal
+- Medium-large z
 - Rich, saturated colors
 - 26 intricate facets refracting light
 - Strong inner glow
@@ -85,7 +85,7 @@ A crystal's appearance changes dramatically over its lifecycle:
 
 ### Fed 50 SOL, 2 years old, traded 5 times
 ```
-- Large, magnificent crystal
+- Large, magnificent z
 - Deep, layered color palette
 - 100+ facets (capped) — extremely intricate
 - 5 visible fracture lines telling its trade history
@@ -115,7 +115,7 @@ A crystal's appearance changes dramatically over its lifecycle:
 The art must be **perfectly deterministic:**
 
 ```
-function renderCrystal(onChainData) → Image {
+function renderz(onChainData) → Image {
   // Pure function — no randomness, no external calls
   // Same input = same output, every time
   
@@ -132,7 +132,7 @@ function renderCrystal(onChainData) → Image {
 - No `Math.random()` anywhere in the render path
 - No external API calls
 - No time-based randomness (time is read from on-chain `forged_at`, not `Date.now()`)
-- Every viewer sees the exact same crystal for the same on-chain state
+- Every viewer sees the exact same z for the same on-chain state
 
 ---
 
@@ -144,11 +144,11 @@ Rarity emerges naturally from the data:
 |---|---|---|
 | Color palette | Resonance seed hash | Some palettes are rarer (e.g., 5% chance for "Aurora") |
 | Shape tendency | Resonance seed hash | Some shapes are rarer (e.g., elongated vs round) |
-| Size | Total SOL fed | Big crystals require real money |
-| Facet count | Time held | Old crystals are rare (many were shattered) |
-| Fracture patterns | Trade history | Unique to each crystal's journey |
-| Clean crystals | Never traded | Pristine crystals become rare as trading happens |
-| Legendary crystals | Oldest + largest + most-traded | The intersection is extremely rare |
+| Size | Total SOL fed | Big Z require real money |
+| Facet count | Time held | Old Z are rare (many were shattered) |
+| Fracture patterns | Trade history | Unique to each z's journey |
+| Clean Z | Never traded | Pristine Z become rare as trading happens |
+| Legendary Z | Oldest + largest + most-traded | The intersection is extremely rare |
 
 **Rarity is not forced — it emerges from behavior.** This is fundamentally different from NFT rarity (where traits are assigned at mint). EVO rarity is earned through time, value, and trading.
 
@@ -162,12 +162,12 @@ The artist is responsible for:
 2. **Color palettes** — 10-20 curated palettes mapped to resonance seeds
 3. **Facet geometry** — How facets look at each level (0-100)
 4. **Fracture line style** — How trade marks appear
-5. **Glow and lighting** — How the crystal catches light
-6. **Base shapes** — Crystal morphology variations
+5. **Glow and lighting** — How the z catches light
+6. **Base shapes** — z morphology variations
 
 The artist does NOT:
-- Draw individual crystals (the algorithm does that)
-- Choose which crystal gets which palette (the resonance seed does that)
+- Draw individual Z (the algorithm does that)
+- Choose which z gets which palette (the resonance seed does that)
 - Manually update any art (the on-chain data does that)
 - Have any "update authority" (nobody does)
 

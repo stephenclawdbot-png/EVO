@@ -64,7 +64,7 @@ The non-obvious insight that makes EVOs work:
 
 > **Value locked inside the object IS the art parameter.**
 
-More SOL = bigger crystal. More time = more facets. More trades = more fracture lines. The art is a direct visualization of the economic activity around the object. You're not just holding value — you're holding a living representation of that value.
+More SOL = bigger z. More time = more facets. More trades = more fracture lines. The art is a direct visualization of the economic activity around the object. You're not just holding value — you're holding a living representation of that value.
 
 This is why it hasn't been done before:
 1. **Cross-domain thinking** — You need to understand DeFi (value locking), generative art (algorithmic rendering), and game design (evolution mechanics) simultaneously
@@ -82,9 +82,9 @@ EVO is a new asset class:
 |---|---|---|
 | Fungible Token | SOL, USDC | Interchangeable units |
 | Non-Fungible Token | CryptoPunks, Bored Apes | Unique static items |
-| **Evolving Value Object** | **Crystals** | **Unique, value-backed, evolving** |
+| **Evolving Value Object** | **Z** | **Unique, value-backed, evolving** |
 
-Just like "NFT" became a household term, "EVO" is the category name for this new primitive. Crystals is the first EVO collection — the CryptoPunks of EVOs.
+Just like "NFT" became a household term, "EVO" is the category name for this new primitive. Z is the first EVO collection — the CryptoPunks of EVOs.
 
 ---
 

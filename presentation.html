@@ -215,8 +215,8 @@
     line-height: 1;
   }
   
-  /* Crystal visual */
-  .crystal-viz {
+  /* z visual */
+  .z-viz {
     width: 200px;
     height: 200px;
     margin: 20px auto;
@@ -463,13 +463,13 @@
     <div class="flow-step">
       <div class="step-icon">🔨</div>
       <div class="step-label">Forge</div>
-      <div class="step-desc">Mint empty crystal<br>~0.05 SOL</div>
+      <div class="step-desc">Mint empty z<br>~0.05 SOL</div>
     </div>
     <div class="flow-arrow">→</div>
     <div class="flow-step">
       <div class="step-icon">💎</div>
       <div class="step-label">Feed</div>
-      <div class="step-desc">Lock SOL inside<br>crystal grows</div>
+      <div class="step-desc">Lock SOL inside<br>z grows</div>
     </div>
     <div class="flow-arrow">→</div>
     <div class="flow-step">
@@ -487,7 +487,7 @@
     <div class="flow-step">
       <div class="step-icon">💥</div>
       <div class="step-label">Shatter</div>
-      <div class="step-desc">Reclaim SOL<br>crystal destroyed</div>
+      <div class="step-desc">Reclaim SOL<br>z destroyed</div>
     </div>
   </div>
   <p style="margin-top: 40px; text-align: center;">Every EVO goes through this cycle. Each path creates a unique object with unique art.</p>
@@ -500,26 +500,26 @@
   <div class="two-col">
     <div>
       <h3>🔨 Forging (Minting)</h3>
-      <p>Pay a small fixed price to create an <strong>empty</strong> crystal PDA.</p>
+      <p>Pay a small fixed price to create an <strong>empty</strong> z PDA.</p>
       <pre><span class="fn">forge</span>(collection_id)
 
 <span class="cm">// User pays: 0.05 SOL</span>
 <span class="cm">// → 0.01 SOL: rent (stays in PDA)</span>
 <span class="cm">// → 0.04 SOL: collection treasury</span>
 
-<span class="cm">// Result: empty crystal</span>
+<span class="cm">// Result: empty z</span>
 <span class="cm">// locked_lamports = 0</span>
 <span class="cm">// facet_count = 0</span>
 <span class="cm">// resonance_seed = hash(tx_sig)</span></pre>
     </div>
     <div>
       <h3>💎 Feeding (Depositing)</h3>
-      <p>Deposit SOL into your crystal. This is the <strong>store of value</strong> action.</p>
-      <pre><span class="fn">feed</span>(crystal_id, amount)
+      <p>Deposit SOL into your z. This is the <strong>store of value</strong> action.</p>
+      <pre><span class="fn">feed</span>(z_id, amount)
 
 <span class="cm">// User feeds: 1 SOL</span>
 <span class="cm">// → 1 SOL added to locked_lamports</span>
-<span class="cm">// → Crystal grows visually</span>
+<span class="cm">// → z grows visually</span>
 <span class="cm">// → Fee: 0 SOL (frictionless)</span>
 
 <span class="cm">// No minimum. No maximum.</span>
@@ -527,7 +527,7 @@
     </div>
   </div>
   <div class="callout" style="margin-top: 24px;">
-    <p>Mint cheap, feed over time. A crystal fed 0.1 SOL weekly for a year tells a different story than one fed 50 SOL in one shot — even if the total is the same.</p>
+    <p>Mint cheap, feed over time. A z fed 0.1 SOL weekly for a year tells a different story than one fed 50 SOL in one shot — even if the total is the same.</p>
   </div>
 </div>
 
@@ -554,8 +554,8 @@ facet_count = <span class="fn">floor</span>(
     <div>
       <h3>🔄 Trading (Marketplace)</h3>
       <p>Seller lists, buyer pays, ownership transfers. <strong>Built into the program.</strong></p>
-      <pre><span class="fn">list</span>(crystal_id, price)
-<span class="fn">buy</span>(crystal_id)
+      <pre><span class="fn">list</span>(z_id, price)
+<span class="fn">buy</span>(z_id)
 
 <span class="cm">// Buyer pays X SOL</span>
 <span class="cm">// → Seller: X - 2%</span>
@@ -566,7 +566,7 @@ facet_count = <span class="fn">floor</span>(
     </div>
   </div>
   <div class="callout" style="margin-top: 24px;">
-    <p>Every trade leaves a <span class="accent">fracture line</span> — a permanent visual mark. A crystal traded 20 times has 20 fracture lines. A crystal never traded is pristine. Both are beautiful in different ways.</p>
+    <p>Every trade leaves a <span class="accent">fracture line</span> — a permanent visual mark. A z traded 20 times has 20 fracture lines. A z never traded is pristine. Both are beautiful in different ways.</p>
   </div>
 </div>
 
@@ -574,15 +574,15 @@ facet_count = <span class="fn">floor</span>(
 <div class="slide" data-slide="9">
   <div class="slide-tag">Mechanics — Part 3</div>
   <h2>Shatter (The Exit)</h2>
-  <p class="lead">Destroy the crystal. Reclaim your SOL. Art gone forever.</p>
-  <pre><span class="fn">shatter</span>(crystal_id)
+  <p class="lead">Destroy the z. Reclaim your SOL. Art gone forever.</p>
+  <pre><span class="fn">shatter</span>(z_id)
 
 <span class="cm">// Program returns ALL locked_lamports to owner</span>
 <span class="cm">// → 99% to owner</span>
 <span class="cm">// → 1% to protocol treasury</span>
 <span class="cm">// → PDA closed (account destroyed)</span>
 <span class="cm">// → Art, history, facets — all gone</span>
-<span class="cm">// → Crystal ceases to exist</span></pre>
+<span class="cm">// → z ceases to exist</span></pre>
   <div class="cards" style="margin-top: 32px;">
     <div class="card">
       <div class="icon">📉</div>
@@ -592,12 +592,12 @@ facet_count = <span class="fn">floor</span>(
     <div class="card">
       <div class="icon">📉</div>
       <h3>Decreasing Supply</h3>
-      <p>Shattering reduces total supply. Over time, crystals are destroyed, making survivors more rare.</p>
+      <p>Shattering reduces total supply. Over time, Z are destroyed, making survivors more rare.</p>
     </div>
     <div class="card">
       <div class="icon">♾️</div>
       <h3>Irreversible</h3>
-      <p>Once shattered, the resonance seed is gone forever. A new crystal gets a new seed. No undo.</p>
+      <p>Once shattered, the resonance seed is gone forever. A new z gets a new seed. No undo.</p>
     </div>
   </div>
 </div>
@@ -612,7 +612,7 @@ facet_count = <span class="fn">floor</span>(
       <h3>On-Chain Data → Art</h3>
       <table style="font-size: 0.85rem;">
         <tr><th>Parameter</th><th>Visual Effect</th></tr>
-        <tr><td>locked_lamports</td><td>Crystal size</td></tr>
+        <tr><td>locked_lamports</td><td>z size</td></tr>
         <tr><td>forged_at (age)</td><td>Facet count</td></tr>
         <tr><td>resonance_seed</td><td>Color palette</td></tr>
         <tr><td>trade_count</td><td>Fracture lines</td></tr>
@@ -628,7 +628,7 @@ facet_count = <span class="fn">floor</span>(
         </div>
         <div style="margin-bottom: 16px;">
           <span class="badge badge-new">Algorithm</span>
-          <p style="font-size: 0.95rem; margin-top: 8px;">Places facets, colors crystal, sizes it, draws fractures — all from on-chain data.</p>
+          <p style="font-size: 0.95rem; margin-top: 8px;">Places facets, colors z, sizes it, draws fractures — all from on-chain data.</p>
         </div>
         <div>
           <span class="badge badge-new">Deterministic</span>
@@ -642,7 +642,7 @@ facet_count = <span class="fn">floor</span>(
 <!-- SLIDE 12: Visual Progression -->
 <div class="slide" data-slide="11">
   <div class="slide-tag">Art Progression</div>
-  <h2>A Crystal's Journey</h2>
+  <h2>A z's Journey</h2>
   <div class="cards">
     <div class="card" style="text-align: center;">
       <svg width="60" height="60" viewBox="0 0 60 60" style="margin: 0 auto 12px;">
@@ -658,7 +658,7 @@ facet_count = <span class="fn">floor</span>(
         <polygon points="40,20 55,30 50,50 40,58 30,50 25,30" fill="none" stroke="#00f0ff" stroke-width="0.5" opacity="0.5"/>
       </svg>
       <h3 style="font-size: 1rem;">1 SOL, 2 weeks</h3>
-      <p style="font-size: 0.85rem;">Small crystal forming. Color emerging. 2 facets. Faint glow.</p>
+      <p style="font-size: 0.85rem;">Small z forming. Color emerging. 2 facets. Faint glow.</p>
     </div>
     <div class="card" style="text-align: center;">
       <svg width="100" height="100" viewBox="0 0 100 100" style="margin: 0 auto 12px;">
@@ -721,7 +721,7 @@ facet_count = <span class="fn">floor</span>(
     <div>
       <h3>Supply Dynamics</h3>
       <pre><span class="cm">// Max: 2,000 (hardcoded)</span>
-<span class="cm">// No new crystals after cap</span>
+<span class="cm">// No new Z after cap</span>
 
 <span class="cm">// Supply DECREASES over time:</span>
 <span class="cm">// Year 1: ~2,000</span>
@@ -740,7 +740,7 @@ facet_count = <span class="fn">floor</span>(
   <h2>Not Just a Collection — A Protocol</h2>
   <p class="lead">Anyone can launch their own EVO collection on our program. We earn fees from ALL of them.</p>
   <pre style="text-align: left;"><span class="cm">// EVO Program (one deployment on Solana)</span>
-<span class="cm">// ├──</span> <span class="accent">Crystals</span> <span class="cm">(our flagship, 2000 cap)</span>
+<span class="cm">// ├──</span> <span class="accent">Z</span> <span class="cm">(our flagship, 2000 cap)</span>
 <span class="cm">// │    └── 2% trade fee → 1% to us + 1% protocol</span>
 <span class="cm">// ├──</span> <span class="accent2">Orbs</span> <span class="cm">(competitor collection)</span>
 <span class="cm">// │    └── 2% trade fee → 1% to them + 1% to US</span>
@@ -769,7 +769,7 @@ facet_count = <span class="fn">floor</span>(
     <div class="card">
       <div class="icon">⚡</div>
       <h3>Low Fees</h3>
-      <p>~$0.001 per transaction. Feeding crystals is economically viable. No gas wars.</p>
+      <p>~$0.001 per transaction. Feeding Z is economically viable. No gas wars.</p>
     </div>
     <div class="card">
       <div class="icon">🎯</div>
@@ -796,7 +796,7 @@ facet_count = <span class="fn">floor</span>(
 <span class="kw">pub struct</span> <span class="ty">CollectionConfig</span> {
     authority: <span class="ty">Pubkey</span>,
     name: <span class="ty">String</span>,
-    max_supply: <span class="ty">u32</span>,               <span class="cm">// 2000 for Crystals</span>
+    max_supply: <span class="ty">u32</span>,               <span class="cm">// 2000 for Z</span>
     mint_price: <span class="ty">u64</span>,                <span class="cm">// 0.05 SOL in lamports</span>
     collection_treasury: <span class="ty">Pubkey</span>,
     art_seed: [<span class="ty">u8</span>; <span class="ty">32</span>],
@@ -805,7 +805,7 @@ facet_count = <span class="fn">floor</span>(
     is_paused: <span class="ty">bool</span>,
 }
 
-<span class="kw">pub struct</span> <span class="ty">CrystalAccount</span> {
+<span class="kw">pub struct</span> <span class="ty">ZAccount</span> {
     owner: <span class="ty">Pubkey</span>,
     collection: <span class="ty">Pubkey</span>,
     locked_lamports: <span class="ty">u64</span>,
@@ -830,21 +830,21 @@ facet_count = <span class="fn">floor</span>(
 <span class="cm">// Collection</span>
 <span class="fn">create_collection</span>(name, max_supply, mint_price, art_seed, trade_fee_bps) → CollectionConfig PDA
 
-<span class="cm">// Crystal Lifecycle</span>
-<span class="fn">forge</span>(collection_id)           → CrystalAccount PDA (empty, 0 SOL locked)
-<span class="fn">feed</span>(crystal_id, amount)       → locked_lamports += amount
-<span class="fn">list</span>(crystal_id, price)         → is_listed = true, list_price = price
-<span class="fn">delist</span>(crystal_id)              → is_listed = false
-<span class="fn">buy</span>(crystal_id)                 → transfer ownership, record fracture, split fees
-<span class="fn">shatter</span>(crystal_id)            → return SOL, close PDA, collect 1% fee
+<span class="cm">// z Lifecycle</span>
+<span class="fn">forge</span>(collection_id)           → ZAccount PDA (empty, 0 SOL locked)
+<span class="fn">feed</span>(z_id, amount)       → locked_lamports += amount
+<span class="fn">list</span>(z_id, price)         → is_listed = true, list_price = price
+<span class="fn">delist</span>(z_id)              → is_listed = false
+<span class="fn">buy</span>(z_id)                 → transfer ownership, record fracture, split fees
+<span class="fn">shatter</span>(z_id)            → return SOL, close PDA, collect 1% fee
 
 <span class="cm">// PDA Seeds</span>
 <span class="cm">// Protocol:  ["protocol"]</span>
 <span class="cm">// Collection: ["collection", name_bytes]</span>
-<span class="cm">// Crystal:   ["crystal", collection_key, crystal_index]</span>
+<span class="cm">// z:   ["z", collection_key, z_index]</span>
 
 <span class="cm">// Constraints</span>
-<span class="cm">// → 2,000 supply cap hardcoded for Crystals</span>
+<span class="cm">// → 2,000 supply cap hardcoded for Z</span>
 <span class="cm">// → Facet count = floor((now - forged_at) / 7_days), max 100</span>
 <span class="cm">// → No admin functions after deployment</span>
 <span class="cm">// → Upgrade authority revoked post-deploy</span></pre>
@@ -914,7 +914,7 @@ facet_count = <span class="fn">floor</span>(
     </div>
   </div>
   <div class="callout" style="margin-top: 40px;">
-    <p>Each new collection brings its own community, pays protocol fees, and drives attention back to <span class="accent">Crystals — the original</span>.</p>
+    <p>Each new collection brings its own community, pays protocol fees, and drives attention back to <span class="accent">Z — the original</span>.</p>
   </div>
 </div>
 
@@ -927,7 +927,7 @@ facet_count = <span class="fn">floor</span>(
       NFTs were static art. <span class="accent">EVOs are living art backed by real value.</span>
     </p>
     <p class="lead" style="font-size: 1.4rem; line-height: 1.8; margin-top: 16px;">
-      Crystals is the first EVO collection — <span class="accent2">2,000 evolving gemstones on Solana</span>, each one growing more beautiful as you feed it SOL.
+      Z is the first EVO collection — <span class="accent2">2,000 evolving gemstones on Solana</span>, each one growing more beautiful as you feed it SOL.
     </p>
     <p class="lead" style="font-size: 1.4rem; line-height: 1.8; margin-top: 16px;">
       And EVO is a <span class="accent3">protocol</span> — anyone can launch their own EVO collection, and we earn fees from every trade across the entire ecosystem.
@@ -935,7 +935,7 @@ facet_count = <span class="fn">floor</span>(
   </div>
   <div style="margin-top: 48px;">
     <div class="big-number">2,000</div>
-    <p style="font-size: 1rem; margin-top: 8px;">crystals. 1 protocol. ∞ possibilities.</p>
+    <p style="font-size: 1rem; margin-top: 8px;">Z. 1 protocol. ∞ possibilities.</p>
   </div>
 </div>
 

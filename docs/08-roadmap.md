@@ -1,13 +1,13 @@
 # 08 — Roadmap
 
-## Phase 1 — Core Protocol & Crystals Collection
+## Phase 1 — Core Protocol & Z Collection
 
-**Goal:** Launch the EVO program + Crystals collection + basic frontend.
+**Goal:** Launch the EVO program + Z collection + basic frontend.
 
 ### Solana Program
-- [ ] `create_collection` — Initialize a new EVO collection (Crystals first)
-- [ ] `forge` — Mint empty crystal PDA, generate resonance seed
-- [ ] `feed` — Deposit SOL into existing crystal
+- [ ] `create_collection` — Initialize a new EVO collection (Z first)
+- [ ] `forge` — Mint empty z PDA, generate resonance seed
+- [ ] `feed` — Deposit SOL into existing z
 - [ ] `grow` — Snapshot facet count (optimization, or compute on-the-fly)
 - [ ] `list` — Owner sets sale price
 - [ ] `delist` — Owner removes listing
@@ -28,16 +28,16 @@
 
 ### Frontend
 - [ ] Next.js + Solana wallet adapter (Phantom, Solflare, Backpack)
-- [ ] Forge page (mint empty crystal)
-- [ ] Crystal page (live art render, stats, feed button)
+- [ ] Forge page (mint empty z)
+- [ ] z page (live art render, stats, feed button)
 - [ ] Marketplace page (browse, filter, buy)
-- [ ] Feed interface (deposit SOL into crystal)
+- [ ] Feed interface (deposit SOL into z)
 - [ ] Shatter interface (reclaim SOL)
-- [ ] Wallet integration (view your crystals)
+- [ ] Wallet integration (view your Z)
 
 ### Launch
 - [ ] Deploy program to Solana mainnet
-- [ ] Create Crystals collection (2000 cap)
+- [ ] Create Z collection (2000 cap)
 - [ ] Revoke upgrade authority
 - [ ] Public mint opens
 - [ ] Announcement + marketing
@@ -51,15 +51,15 @@
 ### Marketplace
 - [ ] Order book / listing UI with filters
 - [ ] Rarity scoring system
-- [ ] Price history charts per crystal
+- [ ] Price history charts per z
 - [ ] Collection-wide statistics (total locked SOL, supply, etc.)
-- [ ] Featured crystals (legendary, high-value, rare)
+- [ ] Featured Z (legendary, high-value, rare)
 
 ### Social
-- [ ] Crystal lineage — trace all previous owners
-- [ ] Legendary crystals page (oldest, most-traded, largest)
+- [ ] z lineage — trace all previous owners
+- [ ] Legendary Z page (oldest, most-traded, largest)
 - [ ] Community challenges (forge + hold 365 days, trade 10x, etc.)
-- [ ] Crystal profiles (each crystal gets a page with full history)
+- [ ] z profiles (each z gets a page with full history)
 - [ ] Owner profiles (show off your collection)
 
 ---
@@ -87,16 +87,16 @@
 
 **Goal:** Push the boundaries of what EVOs can do.
 
-### Crystal Mechanics
-- [ ] Crystal splitting (break one into two smaller ones)
-- [ ] Crystal merging (combine two into one larger)
-- [ ] Crystal lending (rent your crystal's art for a fee)
-- [ ] Crystal gifting (transfer without payment)
+### z Mechanics
+- [ ] z splitting (break one into two smaller ones)
+- [ ] z merging (combine two into one larger)
+- [ ] z lending (rent your z's art for a fee)
+- [ ] z gifting (transfer without payment)
 
 ### DeFi Integration
 - [ ] EVO as collateral (borrow against locked SOL)
-- [ ] EVO fractionalization (split a crystal into tradeable shares)
-- [ ] EVO index (basket of crystals as a single tradeable position)
+- [ ] EVO fractionalization (split a z into tradeable shares)
+- [ ] EVO index (basket of Z as a single tradeable position)
 
 ### Cross-Chain
 - [ ] EVO recognition on Ethereum (read Solana state, render art)

@@ -20,15 +20,15 @@ NFT    = non-fungible, static art, no floor
 EVO    = non-fungible, evolving art, SOL-backed floor
 ```
 
-## The First EVO Collection: Crystals
+## The First EVO Collection: Z
 
-**Crystals** is the flagship EVO collection on Solana — 2,000 evolving gemstones, each one growing more beautiful as you feed it SOL.
+**Z** is the flagship EVO collection on Solana — 2,000 evolving gemstones, each one growing more beautiful as you feed it SOL.
 
-- **Mint:** Empty crystal for ~0.05 SOL (cheap, accessible)
-- **Feed:** Lock more SOL over time — the crystal grows
+- **Mint:** Empty z for ~0.05 SOL (cheap, accessible)
+- **Feed:** Lock more SOL over time — the z grows
 - **Grow:** Facets increase the longer you hold (time-based evolution)
 - **Trade:** Sell on the built-in marketplace — buyer gets locked SOL + art
-- **Shatter:** Reclaim your SOL anytime — crystal destroyed forever
+- **Shatter:** Reclaim your SOL anytime — z destroyed forever
 
 ## EVO Protocol — Not Just a Collection
 
@@ -36,7 +36,7 @@ EVO is also a **protocol**. Anyone can launch their own EVO collection on the EV
 
 ```
 EVO Program (one deployment on Solana)
-├── Crystals (our flagship, 2000 cap)
+├── Z (our flagship, 2000 cap)
 ├── Orbs (competitor collection)
 ├── Geodes (another collection)
 └── ...anyone can launch here
