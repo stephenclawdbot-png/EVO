@@ -31,6 +31,8 @@ npm-debug.log*
 target/
 .keypair
 *.keypair
+**/evo-keypair.json
+programs/**/evo-keypair.json
 
 # Rust
 Cargo.lock

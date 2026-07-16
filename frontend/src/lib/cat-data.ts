@@ -1,7 +1,7 @@
 // Cat Collection — 50 EVOs generated from a single cat pixel art image
 // Demonstrates the EVO concept: 1 base image → many unique outputs
 
-export type CatElement = 'Terra' | 'Aqua' | 'Flora' | 'Ignis' | 'Aero' | 'Void' | 'Lux';
+export type CatCoat = 'Tabby' | 'Calico' | 'Tuxedo' | 'Siamese' | 'Tortoiseshell' | 'Shorthair' | 'Persian';
 export type CatStage = 'baby' | 'juvenile' | 'adult' | 'elder';
 
 export interface CatFractureLine {
@@ -21,21 +21,33 @@ export interface CatEVO {
   facetCount: number;
   tradeCount: number;
   resonanceSeed: string;
-  element: CatElement;
+  coat: CatCoat;
+  hueShift: number;
   fractureLines: CatFractureLine[];
   isListed: boolean;
   listPrice: number | null;
   isShattered: boolean;
 }
 
-export const CAT_ELEMENT_COLORS: Record<CatElement, string> = {
-  Terra: '#8b5a2b',
-  Aqua: '#40a4df',
-  Flora: '#50c878',
-  Ignis: '#ff6432',
-  Aero: '#b4c8dc',
-  Void: '#8a2be2',
-  Lux: '#ffd700',
+export const CAT_COAT_COLORS: Record<CatCoat, string> = {
+  Tabby: '#d4a055',
+  Calico: '#e8845c',
+  Tuxedo: '#2a2a2a',
+  Siamese: '#f0d8b0',
+  Tortoiseshell: '#8b4513',
+  Shorthair: '#c0c0c0',
+  Persian: '#f5f0e0',
+};
+
+// Hue rotation degrees per coat type — tints the single cat image differently
+export const CAT_COAT_HUE: Record<CatCoat, number> = {
+  Tabby: 0,
+  Calico: 15,
+  Tuxedo: 200,
+  Siamese: 35,
+  Tortoiseshell: 345,
+  Shorthair: 180,
+  Persian: 50,
 };
 
 export const CAT_STAGE_NAMES: Record<CatStage, string> = {
@@ -45,7 +57,7 @@ export const CAT_STAGE_NAMES: Record<CatStage, string> = {
   elder: 'Ancient',
 };
 
-const ELEMENTS: CatElement[] = ['Terra', 'Aqua', 'Flora', 'Ignis', 'Aero', 'Void', 'Lux'];
+const COATS: CatCoat[] = ['Tabby', 'Calico', 'Tuxedo', 'Siamese', 'Tortoiseshell', 'Shorthair', 'Persian'];
 
 function seededRandom(seed: string): () => number {
   let h = 0;
@@ -108,7 +120,8 @@ export function generateCatEVOs(): CatEVO[] {
     const facets = computeFacets(forgedAt);
     const lockedSol = Math.round((0.05 + rng() * 49.95) * 1000) / 1000;
     const tradeCount = Math.floor(rng() * 9);
-    const element = ELEMENTS[Math.floor(rng() * ELEMENTS.length)];
+    const coat = COATS[Math.floor(rng() * COATS.length)];
+    const hueShift = CAT_COAT_HUE[coat] + Math.floor(rng() * 20 - 10);
 
     const fractureLines: CatFractureLine[] = [];
     for (let t = 1; t <= tradeCount; t++) {
@@ -134,7 +147,8 @@ export function generateCatEVOs(): CatEVO[] {
       facetCount: facets,
       tradeCount,
       resonanceSeed: seed.slice(0, 32).padEnd(32, '0'),
-      element,
+      coat,
+      hueShift,
       fractureLines,
       isListed,
       listPrice,

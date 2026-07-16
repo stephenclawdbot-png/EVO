@@ -1,0 +1,104 @@
+use anchor_lang::prelude::*;
+
+declare_id!("7EbK3gcPnMvA7NYb5YdXRMEBQQrMkij4dv5RckYkYmFK");
+
+mod constants;
+mod errors;
+mod state;
+mod instructions;
+mod utils;
+
+use instructions::*;
+use state::*;
+
+#[program]
+pub mod evo {
+    use super::*;
+
+    /// Initialize the EVO protocol. Called once by the deployer.
+    /// Sets the treasury wallet and collection creation fee.
+    pub fn initialize_protocol(
+        ctx: Context<InitializeProtocol>,
+        treasury: Pubkey,
+        creation_fee_lamports: u64,
+    ) -> Result<()> {
+        instructions::initialize::initialize_protocol(
+            ctx,
+            treasury,
+            creation_fee_lamports,
+        )
+    }
+
+    /// Create a new collection. Pays the protocol creation fee.
+    /// Creator sets shatter fee %, trade royalty %, and their destinations.
+    /// These are locked forever — cannot be changed after creation.
+    pub fn create_collection(
+        ctx: Context<CreateCollection>,
+        name: String,
+        supply_cap: u32,
+        shatter_fee_bps: u16,
+        shatter_fee_destination: FeeDestination,
+        trade_royalty_bps: u16,
+        royalty_destination: FeeDestination,
+    ) -> Result<()> {
+        instructions::create_collection::create_collection(
+            ctx,
+            name,
+            supply_cap,
+            shatter_fee_bps,
+            shatter_fee_destination,
+            trade_royalty_bps,
+            royalty_destination,
+        )
+    }
+
+    /// Forge a new EVO in a collection. Locks SOL into the EVO PDA.
+    /// The forged EVO belongs to the caller.
+    pub fn forge(
+        ctx: Context<Forge>,
+        evo_id: u32,
+        locked_lamports: u64,
+        resonance_seed: [u8; 32],
+    ) -> Result<()> {
+        instructions::forge::forge(ctx, evo_id, locked_lamports, resonance_seed)
+    }
+
+    /// Feed more SOL into an existing EVO. Increases the floor price.
+    /// Only the owner can feed.
+    pub fn feed(ctx: Context<Feed>, additional_lamports: u64) -> Result<()> {
+        instructions::feed::feed(ctx, additional_lamports)
+    }
+
+    /// List an EVO for sale at a specified price.
+    /// Only the owner can list.
+    pub fn list(ctx: Context<List>, price_lamports: u64) -> Result<()> {
+        instructions::list::list(ctx, price_lamports)
+    }
+
+    /// Remove a listing. Only the owner can delist.
+    pub fn delist(ctx: Context<Delist>) -> Result<()> {
+        instructions::delist::delist(ctx)
+    }
+
+    /// Buy a listed EVO. Transfers ownership and splits the payment:
+    /// - Seller receives: price - royalty
+    /// - Royalty destination receives: price * royalty_bps / 10000
+    /// The EVO's trade count increments and a fracture line is recorded.
+    pub fn buy(ctx: Context<Buy>) -> Result<()> {
+        instructions::buy::buy(ctx)
+    }
+
+    /// Shatter an EVO to reclaim locked SOL.
+    /// Sends locked_lamports - shatter_fee to the owner.
+    /// The shatter fee goes to the configured destination.
+    /// The EVO is marked as shattered (permanently destroyed).
+    pub fn shatter(ctx: Context<Shatter>, evo_id: u32) -> Result<()> {
+        instructions::shatter::shatter(ctx, evo_id)
+    }
+
+    /// Transfer an EVO to a new owner. No payment involved.
+    /// Only the current owner can transfer.
+    pub fn transfer(ctx: Context<Transfer>, new_owner: Pubkey) -> Result<()> {
+        instructions::transfer::transfer(ctx, new_owner)
+    }
+}

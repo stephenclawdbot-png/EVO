@@ -1,0 +1,28 @@
+{
+  "name": "evo",
+  "version": "1.0.0",
+  "description": "> A new on-chain primitive. Not a token. Not an NFT. Value-backed art that evolves over time.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stephenclawdbot-png/EVO.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/stephenclawdbot-png/EVO/issues"
+  },
+  "homepage": "https://github.com/stephenclawdbot-png/EVO#readme",
+  "dependencies": {
+    "@solana/web3.js": "^1.95.4",
+    "bs58": "^6.0.0"
+  }
+}
