@@ -686,9 +686,13 @@ describe("EVO", () => {
       const locked = evo.lockedLamports.toNumber();
       const fee = Math.floor((locked * SHATTER_FEE_BPS) / 10000);
 
+      const cfg = await program.account.collectionConfig.fetch(collectionPk);
+      console.log("    stored fee_destination:", JSON.stringify(cfg.shatterFeeDestination));
+
       const incineratorBefore = await lamportsOf(INCINERATOR);
       const ownerBefore = await lamportsOf(buyer.publicKey);
       const creatorBefore = await lamportsOf(creator.publicKey);
+      const treasuryBefore = await lamportsOf(treasury.publicKey);
       const evoBalBefore = await lamportsOf(evoPk);
 
       await program.methods
@@ -706,8 +710,9 @@ describe("EVO", () => {
       const incineratorAfter = await lamportsOf(INCINERATOR);
       const ownerAfter = await lamportsOf(buyer.publicKey);
       const creatorAfter = await lamportsOf(creator.publicKey);
+      const treasuryAfter = await lamportsOf(treasury.publicKey);
       console.log(`    burn test: locked=${locked} fee=${fee} evoBefore=${evoBalBefore}`);
-      console.log(`    incinerator delta=${incineratorAfter - incineratorBefore} owner delta=${ownerAfter - ownerBefore} creator delta=${creatorAfter - creatorBefore}`);
+      console.log(`    incinerator delta=${incineratorAfter - incineratorBefore} owner delta=${ownerAfter - ownerBefore} creator delta=${creatorAfter - creatorBefore} treasury delta=${treasuryAfter - treasuryBefore}`);
       assert.equal(incineratorAfter - incineratorBefore, fee, "incinerator received burned fee");
     });
   });
