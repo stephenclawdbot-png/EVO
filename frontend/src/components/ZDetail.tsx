@@ -2,7 +2,7 @@
 
 import { EVOData, getStage, getAgeString } from '@/lib/evo-data';
 import { ELEMENT_COLORS, RARITY_COLORS, STAGE_NAMES, Stage } from '@/lib/creatures';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Nav } from './Nav';
@@ -18,7 +18,7 @@ import {
   readProtocolConfig,
   getCollectionPDA,
 } from '@/lib/evo-program';
-import { IconCheck, IconX, IconAlertTriangle, IconExternalLink } from './Icons';
+import { IconCheck, IconAlertTriangle, IconExternalLink } from './Icons';
 
 interface ZDetailProps {
   evo: EVOData;
@@ -36,7 +36,14 @@ export function ZDetail({ evo, onBack, onRefresh }: ZDetailProps) {
   const [listPrice, setListPrice] = useState('');
   const [feedAmount, setFeedAmount] = useState('');
   const [transferAddress, setTransferAddress] = useState('');
-  const [tab, setTab] = useState<'info' | 'history'>('info');
+  const [tab, setTab] = useState<'overview' | 'activity' | 'holders'>('overview');
+  const [creator, setCreator] = useState<string | null>(null);
+
+  useEffect(() => {
+    readCollectionConfig(connection, 'Z').then(cfg => {
+      if (cfg) setCreator(cfg.creator.toBase58());
+    }).catch(() => {});
+  }, [connection]);
 
   const stage = getStage(evo);
   const elementColor = ELEMENT_COLORS[evo.creature.element];
@@ -46,6 +53,7 @@ export function ZDetail({ evo, onBack, onRefresh }: ZDetailProps) {
   const currentStageIndex = stages.indexOf(stage);
   const isOwner = wallet.connected && wallet.publicKey && evo.owner === wallet.publicKey.toBase58();
 
+  // --- Tx handlers (unchanged) ---
   const sendTx = async (ix: any) => {
     if (!wallet.connected || !wallet.publicKey) { setError('Connect wallet first'); return null; }
     const tx = new Transaction().add(ix);
@@ -129,6 +137,19 @@ export function ZDetail({ evo, onBack, onRefresh }: ZDetailProps) {
     } catch (err: any) { setError(err.message || 'Transfer failed'); } finally { setAction(null); }
   };
 
+  // --- Derived data ---
+  const premium = evo.isListed && evo.listPrice ? ((evo.listPrice - evo.lockedLamports) / evo.lockedLamports * 100) : 0;
+  const holderHistory = [
+    { address: evo.owner, current: true, trade: null as number | null },
+    ...evo.fractureLines.slice().reverse().map(fl => ({ address: fl.previousOwner, current: false, trade: fl.tradeNumber })),
+  ];
+  const uniqueHolders = new Set(holderHistory.map(h => h.address)).size;
+
+  // Sparkline from fracture line intensities
+  const sparkPoints = evo.fractureLines.length > 0
+    ? evo.fractureLines.map(fl => fl.intensity)
+    : [0, 100];
+
   const ticker = [
     { label: 'Z', value: `#${evo.id}` },
     { label: 'Locked', value: `${evo.lockedLamports} SOL`, tone: 'pos' as const },
@@ -152,8 +173,9 @@ export function ZDetail({ evo, onBack, onRefresh }: ZDetailProps) {
 
       <div className="mx-auto max-w-7xl px-3 py-4 lg:px-4">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-          {/* Left: Art + evolution */}
+          {/* Left: Art + tabs */}
           <div>
+            {/* Large preview */}
             <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded border border-border bg-surface lg:aspect-[4/3]"
               style={{ boxShadow: evo.isListed ? `0 0 0 1px ${elementColor}40` : 'none' }}>
               <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 45%, ${elementColor}18, transparent 70%)` }} />
@@ -208,58 +230,128 @@ export function ZDetail({ evo, onBack, onRefresh }: ZDetailProps) {
 
             {/* Tabs */}
             <div className="mt-4 flex border-b border-border">
-              <button onClick={() => setTab('info')} className={`px-3 py-2 text-xs font-medium transition-colors ${tab === 'info' ? 'border-b-2 border-accent text-text-strong' : 'text-muted hover:text-text'}`}>Properties</button>
-              <button onClick={() => setTab('history')} className={`px-3 py-2 text-xs font-medium transition-colors ${tab === 'history' ? 'border-b-2 border-accent text-text-strong' : 'text-muted hover:text-text'}`}>
-                History {evo.fractureLines.length > 0 && `(${evo.fractureLines.length})`}
-              </button>
+              <TabBtn active={tab === 'overview'} onClick={() => setTab('overview')}>Overview</TabBtn>
+              <TabBtn active={tab === 'activity'} onClick={() => setTab('activity')}>
+                Activity {evo.fractureLines.length > 0 && `(${evo.fractureLines.length})`}
+              </TabBtn>
+              <TabBtn active={tab === 'holders'} onClick={() => setTab('holders')}>
+                Holders {uniqueHolders > 0 && `(${uniqueHolders})`}
+              </TabBtn>
             </div>
 
-            {tab === 'info' ? (
-              <div className="mt-3 space-y-2">
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  <Prop label="Element" value={evo.creature.element} color={elementColor} />
-                  <Prop label="Rarity" value={evo.creature.rarity} color={rarityColor} />
-                  <Prop label="Stage" value={STAGE_NAMES[stage]} />
-                  <Prop label="Creature" value={evo.creatureId} />
-                </div>
-                <div className="rounded border border-border bg-surface px-3 py-2">
-                  <p className="text-[10px] uppercase tracking-wide text-dim">Resonance Seed</p>
-                  <p className="mt-1 break-all font-mono text-[11px] text-muted">{evo.resonanceSeed}</p>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-3">
-                {evo.fractureLines.length > 0 ? (
-                  <div className="overflow-hidden rounded border border-border">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-surface text-[10px] uppercase tracking-wide text-dim">
-                        <tr>
-                          <th className="px-2 py-1.5 font-medium">Trade</th>
-                          <th className="px-2 py-1.5 font-medium">From</th>
-                          <th className="px-2 py-1.5 font-medium">Age</th>
-                          <th className="px-2 py-1.5 text-right font-medium">Intensity</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {evo.fractureLines.map((fl, i) => (
-                          <tr key={i} className="border-t border-border">
-                            <td className="px-2 py-1.5 font-mono text-accent">#{fl.tradeNumber}</td>
-                            <td className="px-2 py-1.5 font-mono text-muted">{fl.previousOwner.slice(0, 6)}...{fl.previousOwner.slice(-4)}</td>
-                            <td className="px-2 py-1.5 text-dim">{getAgeString(fl.timestamp)}</td>
-                            <td className="px-2 py-1.5 text-right font-mono text-muted">{fl.intensity}%</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+            {/* Tab content */}
+            <div className="mt-3">
+              {tab === 'overview' && (
+                <div className="space-y-3">
+                  {/* Description */}
+                  <div className="rounded border border-border bg-surface px-3 py-2.5">
+                    <p className="text-[10px] uppercase tracking-wide text-dim">Description</p>
+                    <p className="mt-1 text-xs text-muted leading-relaxed">
+                      {evo.creature.displayName} is a {evo.creature.rarity.toLowerCase()} {evo.creature.element.toLowerCase()}-aligned Zenko from the Z collection.
+                      Forged {getAgeString(evo.forgedAt).toLowerCase()} with {evo.lockedLamports} SOL locked inside.
+                      {' '}It has evolved to {STAGE_NAMES[stage].toLowerCase()} stage with {evo.facetCount}/100 facets
+                      {evo.tradeCount > 0 && <> and survived {evo.tradeCount} trade{evo.tradeCount > 1 ? 's' : ''}</>}.
+                    </p>
                   </div>
-                ) : (
-                  <p className="py-8 text-center text-xs text-dim">No trade history yet</p>
-                )}
-              </div>
-            )}
+
+                  {/* Properties */}
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <Prop label="Element" value={evo.creature.element} color={elementColor} />
+                    <Prop label="Rarity" value={evo.creature.rarity} color={rarityColor} />
+                    <Prop label="Stage" value={STAGE_NAMES[stage]} />
+                    <Prop label="Creature" value={evo.creatureId} />
+                  </div>
+
+                  {/* Program capabilities */}
+                  <div className="rounded border border-border bg-surface px-3 py-2.5">
+                    <p className="text-[10px] uppercase tracking-wide text-dim">Program capabilities</p>
+                    <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-3">
+                      <Cap label="Feed" desc="Add SOL" />
+                      <Cap label="List" desc="Sell" />
+                      <Cap label="Buy" desc="Acquire" />
+                      <Cap label="Transfer" desc="Send" />
+                      <Cap label="Shatter" desc="Redeem" />
+                      <Cap label="Evolve" desc="Auto" />
+                    </div>
+                  </div>
+
+                  {/* Resonance seed */}
+                  <div className="rounded border border-border bg-surface px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-wide text-dim">Resonance Seed</p>
+                    <p className="mt-1 break-all font-mono text-[11px] text-muted">{evo.resonanceSeed}</p>
+                  </div>
+                </div>
+              )}
+
+              {tab === 'activity' && (
+                <div>
+                  {evo.fractureLines.length > 0 ? (
+                    <div className="overflow-hidden rounded border border-border">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-surface text-[10px] uppercase tracking-wide text-dim">
+                          <tr>
+                            <th className="px-2 py-1.5 font-medium">Trade</th>
+                            <th className="px-2 py-1.5 font-medium">From</th>
+                            <th className="px-2 py-1.5 font-medium">Age</th>
+                            <th className="px-2 py-1.5 text-right font-medium">Intensity</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {evo.fractureLines.map((fl, i) => (
+                            <tr key={i} className="border-t border-border t-row">
+                              <td className="px-2 py-1.5 font-mono text-accent">#{fl.tradeNumber}</td>
+                              <td className="px-2 py-1.5 font-mono text-muted">{fl.previousOwner.slice(0, 6)}...{fl.previousOwner.slice(-4)}</td>
+                              <td className="px-2 py-1.5 text-dim">{getAgeString(fl.timestamp)}</td>
+                              <td className="px-2 py-1.5 text-right font-mono text-muted">{fl.intensity}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="py-8 text-center text-xs text-dim">No trade activity yet</p>
+                  )}
+                </div>
+              )}
+
+              {tab === 'holders' && (
+                <div>
+                  {holderHistory.length > 0 ? (
+                    <div className="overflow-hidden rounded border border-border">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-surface text-[10px] uppercase tracking-wide text-dim">
+                          <tr>
+                            <th className="px-2 py-1.5 font-medium">Holder</th>
+                            <th className="px-2 py-1.5 font-medium">Status</th>
+                            <th className="px-2 py-1.5 text-right font-medium">Trade</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {holderHistory.map((h, i) => (
+                            <tr key={i} className="border-t border-border t-row">
+                              <td className="px-2 py-1.5 font-mono text-muted">{h.address.slice(0, 6)}...{h.address.slice(-4)}</td>
+                              <td className="px-2 py-1.5">
+                                {h.current ? (
+                                  <span className="rounded bg-positive-soft px-1.5 py-0.5 text-[10px] font-medium text-positive">Current</span>
+                                ) : (
+                                  <span className="text-[10px] text-dim">Previous</span>
+                                )}
+                              </td>
+                              <td className="px-2 py-1.5 text-right font-mono text-dim">{h.trade ? `#${h.trade}` : '--'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="py-8 text-center text-xs text-dim">No holder history</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Right: Order panel */}
+          {/* Right: Market sidebar */}
           <div className="space-y-3">
             {/* Title */}
             <div>
@@ -277,11 +369,29 @@ export function ZDetail({ evo, onBack, onRefresh }: ZDetailProps) {
               <p className="mt-1 font-mono text-[10px] text-dim">Owner {evo.owner.slice(0, 8)}...{evo.owner.slice(-4)}</p>
             </div>
 
+            {/* Market data */}
+            <div className="rounded border border-border bg-surface">
+              <div className="grid grid-cols-2 gap-px bg-border">
+                <MktCell label="Locked value" value={`${evo.lockedLamports}`} unit="SOL" tone="pos" />
+                <MktCell label="Premium" value={evo.isListed ? `${premium > 0 ? '+' : ''}${premium.toFixed(0)}` : '--'} unit="%" />
+                <MktCell label="Trades" value={String(evo.tradeCount)} />
+                <MktCell label="Holders" value={String(uniqueHolders)} />
+              </div>
+              {/* Sparkline */}
+              <div className="border-t border-border px-3 py-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-wide text-dim">Fracture intensity</span>
+                  <span className="font-mono text-[10px] text-muted">{evo.fractureLines.length} trades</span>
+                </div>
+                <Sparkline points={sparkPoints} color={elementColor} />
+              </div>
+            </div>
+
             {/* Buy box */}
             {evo.isListed && !evo.isShattered && !isOwner && (
               <div className="rounded border border-border bg-surface p-3">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-[11px] uppercase tracking-wide text-dim">Price</span>
+                  <span className="text-[11px] uppercase tracking-wide text-dim">Ask</span>
                   <span className="font-mono text-2xl font-bold text-positive">{evo.listPrice} <span className="text-sm text-muted">SOL</span></span>
                 </div>
                 <div className="mt-1 text-[11px] text-dim">Locked floor: <span className="font-mono text-muted">{evo.lockedLamports} SOL</span></div>
@@ -326,12 +436,35 @@ export function ZDetail({ evo, onBack, onRefresh }: ZDetailProps) {
               </div>
             )}
 
-            {/* Stats grid */}
-            <div className="grid grid-cols-2 gap-2">
-              <Stat label="Locked SOL" value={`${evo.lockedLamports}`} tone="pos" />
-              <Stat label="Facets" value={`${evo.facetCount}/100`} />
-              <Stat label="Trades" value={String(evo.tradeCount)} />
-              <Stat label="Age" value={getAgeString(evo.forgedAt)} />
+            {/* Bid/Ask */}
+            {!evo.isShattered && (
+              <div className="rounded border border-border bg-surface p-3">
+                <div className="flex items-center justify-between text-[11px]">
+                  <div>
+                    <p className="uppercase tracking-wide text-dim">Bid</p>
+                    <p className="font-mono text-sm text-muted">--</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="uppercase tracking-wide text-dim">Ask</p>
+                    <p className="font-mono text-sm text-positive">{evo.isListed ? `${evo.listPrice} SOL` : '--'}</p>
+                  </div>
+                </div>
+                <p className="mt-2 text-[10px] text-dim">On-chain bids coming soon</p>
+              </div>
+            )}
+
+            {/* Creator */}
+            <div className="rounded border border-border bg-surface px-3 py-2.5">
+              <p className="text-[10px] uppercase tracking-wide text-dim">Creator</p>
+              {creator ? (
+                <a href={`https://solscan.io/account/${creator}`} target="_blank" rel="noopener noreferrer"
+                  className="mt-1 inline-flex items-center gap-1.5 font-mono text-[11px] text-accent hover:underline">
+                  {creator.slice(0, 8)}...{creator.slice(-4)}
+                  <IconExternalLink className="h-3 w-3" />
+                </a>
+              ) : (
+                <p className="mt-1 font-mono text-[11px] text-dim">Loading...</p>
+              )}
             </div>
 
             {/* Tx result / error */}
@@ -393,12 +526,46 @@ export function ZDetail({ evo, onBack, onRefresh }: ZDetailProps) {
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: string; tone?: 'pos' }) {
+function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <div className="rounded border border-border bg-surface px-2.5 py-2">
+    <button onClick={onClick} className={`px-3 py-2 text-xs font-medium transition-colors ${active ? 'border-b-2 border-accent text-text-strong' : 'text-muted hover:text-text'}`}>
+      {children}
+    </button>
+  );
+}
+
+function MktCell({ label, value, unit, tone }: { label: string; value: string; unit?: string; tone?: 'pos' }) {
+  return (
+    <div className="bg-surface px-3 py-2">
       <p className="text-[10px] uppercase tracking-wide text-dim">{label}</p>
-      <p className={`mt-0.5 font-mono text-sm font-semibold ${tone === 'pos' ? 'text-positive' : 'text-text-strong'}`}>{value}</p>
+      <p className={`mt-0.5 font-mono text-sm font-semibold ${tone === 'pos' ? 'text-positive' : 'text-text-strong'}`}>
+        {value}{unit && <span className="ml-0.5 text-[10px] text-muted">{unit}</span>}
+      </p>
     </div>
+  );
+}
+
+function Sparkline({ points, color }: { points: number[]; color: string }) {
+  const w = 280, h = 40, pad = 4;
+  const max = Math.max(...points, 1);
+  const min = Math.min(...points, 0);
+  const range = max - min || 1;
+  const stepX = (w - pad * 2) / Math.max(points.length - 1, 1);
+  const coords = points.map((p, i) => ({
+    x: pad + i * stepX,
+    y: pad + (h - pad * 2) * (1 - (p - min) / range),
+  }));
+  const path = coords.map((c, i) => `${i === 0 ? 'M' : 'L'}${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ');
+  const areaPath = `${path} L${coords[coords.length - 1].x.toFixed(1)},${h - pad} L${coords[0].x.toFixed(1)},${h - pad} Z`;
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="mt-1.5 w-full" preserveAspectRatio="none" style={{ height: 40 }}>
+      <path d={areaPath} fill={color} opacity={0.12} />
+      <path d={path} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      {coords.map((c, i) => (
+        <circle key={i} cx={c.x} cy={c.y} r={1.5} fill={color} opacity={0.6} />
+      ))}
+    </svg>
   );
 }
 
@@ -407,6 +574,16 @@ function Prop({ label, value, color }: { label: string; value: string; color?: s
     <div className="rounded border border-border bg-surface px-2.5 py-2">
       <p className="text-[10px] uppercase tracking-wide text-dim">{label}</p>
       <p className="mt-0.5 text-xs font-semibold capitalize" style={color ? { color } : undefined}>{value}</p>
+    </div>
+  );
+}
+
+function Cap({ label, desc }: { label: string; desc: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="h-1 w-1 rounded-full bg-accent" />
+      <span className="text-xs font-medium text-text">{label}</span>
+      <span className="text-[10px] text-dim">{desc}</span>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { EVOData, getStage } from '@/lib/evo-data';
-import { ELEMENT_COLORS, RARITY_COLORS, STAGE_NAMES } from '@/lib/creatures';
+import { ELEMENT_COLORS, RARITY_COLORS } from '@/lib/creatures';
 import { useState } from 'react';
 
 interface ZCardProps {
@@ -23,9 +23,9 @@ export function ZCard({ evo, onClick, isFloor }: ZCardProps) {
       onClick={onClick}
       className="t-row group relative cursor-pointer overflow-hidden rounded border border-border bg-surface"
     >
-      {/* Art */}
+      {/* Art — prominent */}
       <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-bg">
-        <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 45%, ${elementColor}12, transparent 70%)` }} />
+        <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 45%, ${elementColor}14, transparent 70%)` }} />
 
         {/* Z# top-left */}
         <span className="absolute left-1.5 top-1.5 z-10 rounded bg-bg/70 px-1 font-mono text-[10px] text-muted backdrop-blur-sm">
@@ -87,7 +87,7 @@ export function ZCard({ evo, onClick, isFloor }: ZCardProps) {
         )}
       </div>
 
-      {/* Info bar */}
+      {/* Info bar — minimal, art-forward */}
       <div className="px-2 py-1.5">
         <div className="flex items-center justify-between gap-1">
           <h3 className="truncate text-xs font-medium text-text">{evo.creature.displayName}</h3>
@@ -99,7 +99,7 @@ export function ZCard({ evo, onClick, isFloor }: ZCardProps) {
         </div>
         <div className="mt-0.5 flex items-center justify-between text-[10px] text-dim">
           <span className="font-mono">{evo.lockedLamports} locked</span>
-          <span className="capitalize">{evo.creature.element}</span>
+          <span className="capitalize" style={{ color: elementColor }}>{evo.creature.element}</span>
         </div>
       </div>
     </div>
