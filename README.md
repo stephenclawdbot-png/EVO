@@ -56,6 +56,7 @@ Every trade across ALL collections pays a small **protocol fee** to the EVO trea
 | [06 — Competitive Moat](docs/06-competitive-moat.md) | Why copying can't beat us |
 | [07 — EVO vs Everything](docs/07-comparison.md) | EVO vs tokens, NFTs, mutable metadata NFTs |
 | [08 — Roadmap](docs/08-roadmap.md) | Build phases |
+| [09 — Security Review](docs/09-security-review.md) | Program audit, wallet integration, security hardening |
 
 *Architecture document coming soon.*
 
