@@ -34,3 +34,8 @@ target/
 
 # Rust
 Cargo.lock
+
+# Local-only files (session handoffs, personal notes)
+START_HERE.md
+SESSION_NOTES.md
+HANDOFF.md
