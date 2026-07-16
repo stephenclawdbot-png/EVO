@@ -103,6 +103,10 @@ pub fn create_collection(
     // Randomness
     config.randomness_policy = lifecycle.randomness_policy;
     config.manifest_root = lifecycle.manifest_root;
+    config.reveal_commitment = [0u8; 32];
+
+    // Configurable burn destination
+    config.burn_destination = lifecycle.burn_destination;
 
     // Pay the collection creation fee to the treasury
     let fee = ctx.accounts.protocol_config.creation_fee_lamports;

@@ -100,4 +100,16 @@ pub enum EvoError {
 
     #[msg("Invalid lifecycle configuration")]
     InvalidLifecycleConfig,
+
+    #[msg("Reveal commitment already set")]
+    CommitmentAlreadySet,
+
+    #[msg("Reveal secret does not match commitment")]
+    CommitmentHashMismatch,
+
+    #[msg("Invalid burn destination")]
+    InvalidBurnDestination,
+
+    #[msg("Commitment must be set before minting starts")]
+    CommitmentAfterMintStarted,
 }

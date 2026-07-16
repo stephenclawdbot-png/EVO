@@ -37,9 +37,11 @@ pub struct Shatter<'info> {
     #[account(mut)]
     pub treasury: Option<UncheckedAccount<'info>>,
 
-    /// Incinerator — used when fee destination is Burn
-    /// CHECK: Verified against INCINERATOR constant
-    #[account(mut, address = INCINERATOR)]
+    /// Incinerator — used when fee destination is Burn.
+    /// May be the real Solana incinerator or a custom burn destination
+    /// (if collection.burn_destination != Pubkey::default()).
+    /// CHECK: Verified at runtime against collection.burn_destination
+    #[account(mut)]
     pub incinerator: UncheckedAccount<'info>,
 
     pub system_program: Program<'info, System>,
@@ -82,12 +84,21 @@ pub fn shatter(ctx: Context<Shatter>, evo_id: u32) -> Result<()> {
                 )?;
             }
             FeeDestination::Burn => {
+                let burn_dest = if collection.burn_destination == Pubkey::default() {
+                    INCINERATOR
+                } else {
+                    collection.burn_destination
+                };
+                require!(
+                    ctx.accounts.incinerator.key() == burn_dest,
+                    EvoError::InvalidBurnDestination
+                );
                 transfer_lamports(
                     &evo_info,
                     &ctx.accounts.incinerator.to_account_info(),
                     fee,
                 )?;
-                msg!("Burned {} lamports to incinerator", fee);
+                msg!("Burned {} lamports to burn destination", fee);
             }
             FeeDestination::Split => {
                 let treasury = ctx.accounts.treasury.as_ref()

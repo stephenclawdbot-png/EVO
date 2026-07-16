@@ -35,9 +35,11 @@ pub struct Buy<'info> {
     #[account(mut)]
     pub treasury: Option<SystemAccount<'info>>,
 
-    /// Incinerator — used when royalty destination is Burn
-    /// CHECK: Verified against INCINERATOR constant
-    #[account(mut, address = INCINERATOR)]
+    /// Incinerator — used when royalty destination is Burn.
+    /// May be the real Solana incinerator or a custom burn destination
+    /// (if collection.burn_destination != Pubkey::default()).
+    /// CHECK: Verified at runtime in route_fee against collection.burn_destination
+    #[account(mut)]
     pub incinerator: Option<UncheckedAccount<'info>>,
 
     #[account(mut)]
@@ -80,6 +82,7 @@ pub fn buy(ctx: Context<Buy>) -> Result<()> {
             &ctx.accounts.creator,
             ctx.accounts.treasury.as_ref(),
             ctx.accounts.incinerator.as_ref(),
+            collection.burn_destination,
             royalty,
         )?;
     }

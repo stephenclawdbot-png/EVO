@@ -51,6 +51,8 @@ pub fn verify_reserve_invariant<'info>(
 /// Route a fee to the configured destination.
 /// `from` must be a system-owned account (signer) — System Program transfer is used.
 /// `incinerator` is required when destination == Burn.
+/// `burn_destination` is the collection's configured burn destination
+/// (Pubkey::default() means real incinerator).
 pub fn route_fee<'info>(
     system_program: &Program<'info, System>,
     from: &Signer<'info>,
@@ -58,6 +60,7 @@ pub fn route_fee<'info>(
     creator: &SystemAccount<'info>,
     treasury: Option<&SystemAccount<'info>>,
     incinerator: Option<&UncheckedAccount<'info>>,
+    burn_destination: Pubkey,
     amount: u64,
 ) -> Result<()> {
     if amount == 0 {
@@ -88,6 +91,15 @@ pub fn route_fee<'info>(
         }
         FeeDestination::Burn => {
             let incinerator = incinerator.ok_or(EvoError::IncineratorRequired)?;
+            let burn_dest = if burn_destination == Pubkey::default() {
+                crate::constants::INCINERATOR
+            } else {
+                burn_destination
+            };
+            require!(
+                incinerator.key() == burn_dest,
+                EvoError::InvalidBurnDestination
+            );
             let cpi_ctx = CpiContext::new(
                 system_program.to_account_info(),
                 Transfer {
@@ -96,7 +108,7 @@ pub fn route_fee<'info>(
                 },
             );
             transfer(cpi_ctx, amount)?;
-            msg!("Burned {} lamports to incinerator", amount);
+            msg!("Burned {} lamports to burn destination", amount);
         }
         FeeDestination::Split => {
             let treasury = treasury.ok_or(EvoError::MissingTreasury)?;

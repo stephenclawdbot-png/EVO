@@ -57,6 +57,7 @@ pub struct LifecycleParams {
     pub evolve_hold_seconds: i64,
     pub evolve_locked_threshold: u64,
     pub transition_policy_hash: [u8; 32],
+    pub burn_destination: Pubkey,
 }
 
 impl Default for LifecycleParams {
@@ -72,6 +73,7 @@ impl Default for LifecycleParams {
             evolve_hold_seconds: 0,
             evolve_locked_threshold: 0,
             transition_policy_hash: [0u8; 32],
+            burn_destination: Pubkey::default(),
         }
     }
 }

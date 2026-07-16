@@ -127,13 +127,27 @@ pub mod evo {
         instructions::update_metadata::update_metadata(ctx, metadata_uri)
     }
 
-    /// Reveal a collection — the reveal authority injects entropy that
-    /// deterministically seeds per-EVO trait generation. One-shot.
+    /// Reveal a collection — the reveal authority provides the secret
+    /// that was committed before minting (via `commit_reveal`). The program
+    /// verifies `keccak256(secret) == reveal_commitment` and derives the
+    /// reveal entropy as `keccak256(secret)`. This prevents the authority
+    /// from freely choosing entropy after seeing who minted which index.
     pub fn reveal_collection(
         ctx: Context<RevealCollection>,
-        reveal_entropy: [u8; 32],
+        secret: [u8; 32],
     ) -> Result<()> {
-        instructions::reveal_collection::reveal_collection(ctx, reveal_entropy)
+        instructions::reveal_collection::reveal_collection(ctx, secret)
+    }
+
+    /// Commit to a reveal secret before minting starts.
+    /// The creator calls this with `commitment_hash = keccak256(secret)`
+    /// before any EVOs are forged. Later, `reveal_collection(secret)`
+    /// verifies the secret matches this commitment.
+    pub fn commit_reveal(
+        ctx: Context<CommitReveal>,
+        commitment_hash: [u8; 32],
+    ) -> Result<()> {
+        instructions::commit_reveal::commit_reveal(ctx, commitment_hash)
     }
 
     /// Permissionless evolution — advances an EVO to its next lifecycle

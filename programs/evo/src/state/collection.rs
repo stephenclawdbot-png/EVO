@@ -36,6 +36,12 @@ pub struct CollectionConfig {
     // --- Randomness ---
     pub randomness_policy: RandomnessPolicy,
     pub manifest_root: [u8; 32],
+    pub reveal_commitment: [u8; 32],
+
+    // --- Configurable burn destination ---
+    /// If Pubkey::default(), burn fees go to the real Solana incinerator.
+    /// Otherwise, burn fees go to this address (testing / custom burn wallets).
+    pub burn_destination: Pubkey,
 }
 
 impl CollectionConfig {
@@ -65,5 +71,7 @@ impl CollectionConfig {
         32 +     // transition_policy_hash
         // Randomness:
         1 +      // randomness_policy
-        32;      // manifest_root
+        32 +     // manifest_root
+        32 +     // reveal_commitment
+        32;      // burn_destination
 }

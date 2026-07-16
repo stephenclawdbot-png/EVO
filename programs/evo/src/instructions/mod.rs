@@ -10,6 +10,7 @@ pub mod transfer;
 pub mod close_collection;
 pub mod update_metadata;
 pub mod reveal_collection;
+pub mod commit_reveal;
 pub mod evolve;
 
 pub use initialize::*;
@@ -24,4 +25,5 @@ pub use transfer::*;
 pub use close_collection::*;
 pub use update_metadata::*;
 pub use reveal_collection::*;
+pub use commit_reveal::*;
 pub use evolve::*;
