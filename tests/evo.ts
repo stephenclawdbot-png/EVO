@@ -321,6 +321,7 @@ describe("EVO", () => {
           seller: buyer.publicKey,
           creator: creator.publicKey,
           buyer: other.publicKey,
+          treasury: treasury.publicKey,
         })
         .signers([other])
         .rpc();
@@ -360,6 +361,7 @@ describe("EVO", () => {
           collectionConfig: collectionPk,
           owner: other.publicKey,
           creator: creator.publicKey,
+          treasury: treasury.publicKey,
         })
         .signers([other])
         .rpc();
@@ -692,6 +694,7 @@ describe("EVO", () => {
           collectionConfig: collectionPk,
           owner: buyer.publicKey,
           creator: creator.publicKey,
+          treasury: treasury.publicKey,
           incinerator: INCINERATOR,
         })
         .signers([buyer])
