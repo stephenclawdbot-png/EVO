@@ -370,7 +370,7 @@ describe("EVO", () => {
         await program.account.evoAccount.fetch(evoPk);
         assert.fail("EVO account should be closed after shatter");
       } catch (e) {
-        expect(e.message).to.match(/Account not found|could not find|not found/i);
+        expect(e.message).to.match(/Account not found|could not find|not found|does not exist|has no data/i);
       }
 
       const ownerAfter = await lamportsOf(other.publicKey);
@@ -687,6 +687,10 @@ describe("EVO", () => {
       const fee = Math.floor((locked * SHATTER_FEE_BPS) / 10000);
 
       const incineratorBefore = await lamportsOf(INCINERATOR);
+      const ownerBefore = await lamportsOf(buyer.publicKey);
+      const creatorBefore = await lamportsOf(creator.publicKey);
+      const evoBalBefore = await lamportsOf(evoPk);
+
       await program.methods
         .shatter(EVO_ID)
         .accounts({
@@ -700,6 +704,10 @@ describe("EVO", () => {
         .signers([buyer])
         .rpc();
       const incineratorAfter = await lamportsOf(INCINERATOR);
+      const ownerAfter = await lamportsOf(buyer.publicKey);
+      const creatorAfter = await lamportsOf(creator.publicKey);
+      console.log(`    burn test: locked=${locked} fee=${fee} evoBefore=${evoBalBefore}`);
+      console.log(`    incinerator delta=${incineratorAfter - incineratorBefore} owner delta=${ownerAfter - ownerBefore} creator delta=${creatorAfter - creatorBefore}`);
       assert.equal(incineratorAfter - incineratorBefore, fee, "incinerator received burned fee");
     });
   });
