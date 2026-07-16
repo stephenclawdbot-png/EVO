@@ -9,6 +9,8 @@ pub mod shatter;
 pub mod transfer;
 pub mod close_collection;
 pub mod update_metadata;
+pub mod reveal_collection;
+pub mod evolve;
 
 pub use initialize::*;
 pub use create_collection::*;
@@ -21,3 +23,5 @@ pub use shatter::*;
 pub use transfer::*;
 pub use close_collection::*;
 pub use update_metadata::*;
+pub use reveal_collection::*;
+pub use evolve::*;

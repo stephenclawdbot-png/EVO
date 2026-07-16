@@ -108,15 +108,17 @@ EVO exposes the interface. The community builds the behaviors.
 
 ### Instructions
 - `initialize_protocol` — one-time setup
-- `create_collection` — creator sets supply, mint_price, lock_amount, fees, metadata_uri
+- `create_collection` — creator sets supply, mint_price, lock_amount, fees, metadata_uri, lifecycle, randomness
 - `forge` — mint EVO (pays mint_price to creator, locks SOL inside)
-- `feed` — add SOL to existing EVO
+- `feed` — add SOL to existing EVO (increases floor, tracked for evolution)
 - `list` / `delist` — marketplace listing
 - `buy` — purchase listed EVO (royalties distributed)
 - `shatter` — destroy EVO, reclaim locked SOL
 - `transfer` — send EVO to new owner
 - `close_collection` — close empty collection, refund rent to creator
 - `update_metadata` — update collection metadata_uri (creator only)
+- `reveal_collection` — reveal authority injects entropy for fair assignment
+- `evolve` — permissionless, advances EVO to next lifecycle stage if thresholds met
 
 ---
 
@@ -135,6 +137,7 @@ EVO exposes the interface. The community builds the behaviors.
 | [09 — Security](docs/09-security-review.md) | Audit notes, security model |
 | [10 — Wallet Integration](docs/10-wallet-integration.md) | SDK for wallets and developers |
 | [11 — Protocol Design](docs/11-protocol-design.md) | Why EVO is a third model for digital assets — the architectural thesis |
+| [White Paper](WHITEPAPER.md) | Full technical white paper — architecture, value model, lifecycle, security, roadmap |
 
 ---
 

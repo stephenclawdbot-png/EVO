@@ -76,4 +76,28 @@ pub enum EvoError {
 
     #[msg("Treasury account required for this fee destination")]
     MissingTreasury,
+
+    #[msg("Collection mismatch")]
+    CollectionMismatch,
+
+    #[msg("Collection is not revealed yet")]
+    NotRevealed,
+
+    #[msg("EVO is already at max state")]
+    AlreadyAtMaxState,
+
+    #[msg("Evolution conditions not met")]
+    EvolutionConditionsNotMet,
+
+    #[msg("Only the reveal authority can reveal")]
+    NotRevealAuthority,
+
+    #[msg("Collection is already revealed")]
+    AlreadyRevealed,
+
+    #[msg("This collection does not support evolution")]
+    EvolutionNotEnabled,
+
+    #[msg("Invalid lifecycle configuration")]
+    InvalidLifecycleConfig,
 }
