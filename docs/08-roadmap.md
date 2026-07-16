@@ -1,113 +1,124 @@
 # 08 — Roadmap
 
-## Phase 1 — Core Protocol & Z Collection
+## The Strategy
 
-**Goal:** Launch the EVO program + Z collection + basic frontend.
+> **Prove the value first. Add art last.**
 
-### Solana Program
-- [ ] `create_collection` — Initialize a new EVO collection (Z first)
-- [ ] `forge` — Mint empty z PDA, generate resonance seed
-- [ ] `feed` — Deposit SOL into existing z
-- [ ] `grow` — Snapshot facet count (optimization, or compute on-the-fly)
-- [ ] `list` — Owner sets sale price
-- [ ] `delist` — Owner removes listing
-- [ ] `buy` — Pay price, transfer ownership, record fracture line
-- [ ] `shatter` — Reclaim locked SOL, close PDA
-- [ ] Protocol fee distribution on all actions
-- [ ] 2,000 supply cap enforcement
-- [ ] Upgrade authority revoked after deployment
+The biggest risk identified by the team: "EVO is more advanced economically than programmatically." The fix: prove the primitive works — people can mint, trade, and shatter with real SOL and a real floor — before adding any visual/art layer.
 
-### Generative Art
-- [ ] Define art parameter mapping (on-chain data → visual properties)
-- [ ] Curate 10-20 color palettes
-- [ ] Design facet geometry templates (0-100 facets)
-- [ ] Design fracture line rendering
-- [ ] Implement WebGL renderer
-- [ ] Implement SVG renderer (for thumbnails/marketplace grid)
-- [ ] Determinism tests (same data = same art)
+---
+
+## Phase 1 — Primitive + First Collection (NOW)
+
+**Goal:** Prove "speculation with a floor" works on mainnet.
+
+### Program (DONE — live on mainnet)
+- [x] Deploy EVO program to mainnet
+- [x] Initialize protocol
+- [x] 9 instructions working (forge, feed, list, buy, shatter, transfer, etc.)
+- [x] Mint price + lock amount economic model
+- [x] Fee destinations (Treasury/Creator/Burn/Split)
 
 ### Frontend
-- [ ] Next.js + Solana wallet adapter (Phantom, Solflare, Backpack)
-- [ ] Forge page (mint empty z)
-- [ ] z page (live art render, stats, feed button)
-- [ ] Marketplace page (browse, filter, buy)
-- [ ] Feed interface (deposit SOL into z)
-- [ ] Shatter interface (reclaim SOL)
-- [ ] Wallet integration (view your Z)
+- [x] Wallet adapter (Phantom, Solflare, Backpack)
+- [ ] Wire frontend to real on-chain PDAs
+- [ ] Forge page — mint an EVO with real SOL
+- [ ] EVO detail page — show locked SOL, floor, premium
+- [ ] Marketplace page — browse, list, buy
+- [ ] Shatter interface — reclaim SOL
+- [ ] Feed interface — add SOL to EVO
 
 ### Launch
-- [ ] Deploy program to Solana mainnet
-- [ ] Create Z collection (2000 cap)
-- [ ] Revoke upgrade authority
+- [ ] Create first collection on mainnet
 - [ ] Public mint opens
-- [ ] Announcement + marketing
+- [ ] First trades happen
+- [ ] First shatter happens (proves the floor works)
+
+### Success Criteria
+> A user can: forge an EVO with real SOL, see their floor, list it for sale, sell it to someone else, and the buyer can shatter it to reclaim SOL. The full cycle works.
 
 ---
 
-## Phase 2 — Marketplace & Social
+## Phase 2 — Standard & Composability
 
-**Goal:** Full trading experience + social features.
+**Goal:** Make EVO a primitive other developers can build on.
 
-### Marketplace
-- [ ] Order book / listing UI with filters
-- [ ] Rarity scoring system
-- [ ] Price history charts per z
-- [ ] Collection-wide statistics (total locked SOL, supply, etc.)
-- [ ] Featured Z (legendary, high-value, rare)
+### EVO Standard Interface (ESI)
+- [ ] Publish ESI spec
+- [ ] Public SDK (read owner, value, floor, behavior type)
+- [ ] CPI examples for other programs
+- [ ] Documentation for developers
 
-### Social
-- [ ] z lineage — trace all previous owners
-- [ ] Legendary Z page (oldest, most-traded, largest)
-- [ ] Community challenges (forge + hold 365 days, trade 10x, etc.)
-- [ ] z profiles (each z gets a page with full history)
-- [ ] Owner profiles (show off your collection)
+### Protocol Improvements
+- [ ] Split listing state to separate PDA (marketplace-neutral)
+- [ ] Split history to separate append-only PDA
+- [ ] Reduce base EVO account to ~170 bytes
+- [ ] Add behavior_type + behavior_params fields
+- [ ] Add AuthorityState (owner + delegate minimum)
+
+### Composability Demos
+- [ ] Lending protocol integration (EVO as collateral)
+- [ ] Independent marketplace integration
+- [ ] One demo app built by someone else
 
 ---
 
-## Phase 3 — Protocol Expansion
+## Phase 3 — Behaviors & Community
 
-**Goal:** Open EVO to other collections.
+**Goal:** Let others build apps on the EVO interface.
 
-### Multi-Collection
-- [ ] `create_collection` live for anyone
-- [ ] Collection configuration UI
-- [ ] Shared marketplace (browse all EVO collections)
-- [ ] Per-collection pages
-- [ ] Collection analytics dashboard
+### Behavior Apps (built by others, not us)
+- [ ] Vault — time-locked SOL (gift that unlocks on a date)
+- [ ] Legacy — directed redemption (shatter routes to multiple wallets)
+- [ ] Patron — creator gets a cut of feed, principal preserved
+- [ ] Community-built behaviors we haven't thought of
 
 ### Ecosystem
-- [ ] EVO SDK (JavaScript/TypeScript for other developers)
-- [ ] Art template system (artists can define palettes/shapes for their collection)
-- [ ] Documentation for collection creators
-- [ ] Grants program for notable EVO collections
+- [ ] Multi-collection marketplace
+- [ ] Collection analytics
+- [ ] EVO explorer (browse all collections)
+- [ ] Developer grants
+
+### Governance
+- [ ] Lock redemption kernel (immutable)
+- [ ] Multisig for behavior layer upgrades
+- [ ] Community proposals
 
 ---
 
-## Phase 4 — Advanced Features
+## Phase 4 — Media & Art (LAST)
 
-**Goal:** Push the boundaries of what EVOs can do.
+**Goal:** Add visual expression to the stateful capital primitive.
 
-### z Mechanics
-- [ ] z splitting (break one into two smaller ones)
-- [ ] z merging (combine two into one larger)
-- [ ] z lending (rent your z's art for a fee)
-- [ ] z gifting (transfer without payment)
+### Art System
+- [ ] Define art parameter mapping (on-chain data → visuals)
+- [ ] Artist engagement for visual identity
+- [ ] Color palettes, shapes, facet styles
+- [ ] WebGL renderer (full experience)
+- [ ] SVG renderer (thumbnails)
 
-### DeFi Integration
-- [ ] EVO as collateral (borrow against locked SOL)
-- [ ] EVO fractionalization (split a z into tradeable shares)
-- [ ] EVO index (basket of Z as a single tradeable position)
+### Pre-made Art Support
+- [ ] Arweave integration (image_ref + image_hash)
+- [ ] Merkle validation for approved seeds
+- [ ] Creator dashboard for uploading art
 
-### Cross-Chain
-- [ ] EVO recognition on Ethereum (read Solana state, render art)
-- [ ] EVO on Base (native deployment)
-- [ ] Cross-chain trading (buy on one chain, hold on another)
+### Advanced
+- [ ] Generative rendering from resonance_seed
+- [ ] Evolution overlays (fracture lines, facet growth)
+- [ ] Multiple rendering frontends
+- [ ] Wallet integration (show EVO art in Phantom/Solflare)
 
-### Governance
-- [ ] Protocol DAO
-- [ ] Treasury governance
-- [ ] Fee adjustment via governance
-- [ ] Community grants program
+---
+
+## What We Explicitly DON'T Build Yet
+
+| Thing | Why |
+|------|-----|
+| Behavior templates (Vault/Legacy/Patron) | These are apps, not protocol. Let others build them. |
+| Custom DSL for behaviors | Too complex, too early. Config + templates first. |
+| Art/media | Last priority. Prove value first. |
+| Cross-chain | Premature. Nail Solana first. |
+| DAO governance | Earn the right to govern first. |
 
 ---
 
@@ -115,20 +126,20 @@
 
 | Phase | Duration | Depends On |
 |---|---|---|
-| Phase 1 | 4-8 weeks | Artist engagement, Solana dev |
-| Phase 2 | 4-6 weeks | Phase 1 complete |
-| Phase 3 | 6-10 weeks | Phase 2 complete, ecosystem demand |
-| Phase 4 | Ongoing | Community needs, market conditions |
+| Phase 1 | 2-4 weeks | Frontend wiring |
+| Phase 2 | 4-8 weeks | Phase 1 complete |
+| Phase 3 | Ongoing | Ecosystem demand |
+| Phase 4 | 4-8 weeks | After primitive is proven |
 
 ---
 
 ## Immediate Next Steps
 
-1. **Engage an artist** — Define the visual identity (palettes, shapes, facet styles)
-2. **Build the Solana program** — forge, feed, grow, trade, shatter
-3. **Build the art renderer** — WebGL + SVG, deterministic from on-chain data
-4. **Build the frontend** — Forge, view, feed, trade, shatter
-5. **Deploy + launch** — Mainnet, revoke authority, open mint
+1. **Create first collection on mainnet** — test the full cycle with real SOL
+2. **Wire frontend to real on-chain PDAs** — make buttons actually work
+3. **Test forge → trade → shatter cycle** — prove the floor works
+4. **Open public mint** — let people speculate with a floor
+5. **Publish SDK** — let developers read EVO state
 
 ---
 

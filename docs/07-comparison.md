@@ -2,22 +2,20 @@
 
 ## The Asset Class Comparison
 
-| Property | Fungible Token | NFT | Mutable Metadata NFT | **EVO** |
+| Property | Fungible Token | NFT | NFT + Escrow | **EVO** |
 |---|---|---|---|---|
 | Fungible | ✅ | ❌ | ❌ | ❌ |
 | Unique | ❌ | ✅ | ✅ | ✅ |
-| Backed by value | ❌ | ❌ | ❌ | ✅ (locked SOL) |
-| Price floor | ❌ | ❌ | ❌ | ✅ (shatter to redeem) |
-| Evolving art | ❌ | ❌ | ❌ (manual) | ✅ (automatic) |
-| Art changes | N/A | Never | When authority updates | **When value/time changes** |
-| Who controls art | N/A | Nobody | Update authority | **Nobody — pure math** |
-| Trustless art | N/A | ✅ | ❌ | ✅ |
-| Has metadata URI | N/A | ✅ | ✅ | ❌ |
-| Uses token standard | ✅ (SPL) | ✅ (Metaplex) | ✅ (Metaplex) | ❌ (custom PDA) |
-| Provenance in art | ❌ | ❌ | ❌ | ✅ (fracture lines) |
-| Supply changes | N/A | Fixed | Fixed | ✅ (decreases via shatter) |
-| Store of value | Maybe | Maybe | Maybe | ✅ (by design) |
-| Simple to trade | ✅ | ✅ | ✅ | ✅ |
+| Backed by value | ❌ | ❌ | ✅ (separate) | ✅ (inside) |
+| Price floor | ❌ | ❌ | Maybe | ✅ (shatter) |
+| Has memory/state | ❌ | ❌ | ❌ | ✅ |
+| Carries behavior | ❌ | ❌ | ❌ | ✅ (interface) |
+| Standard interface | ✅ (SPL) | ✅ (Metaplex) | ❌ (ad hoc) | ✅ (ESI) |
+| Token standard | ✅ (SPL) | ✅ (Metaplex) | ✅ | ❌ (custom PDA) |
+| Media required | N/A | ✅ (URI) | ✅ | ❌ (optional) |
+| Supply changes | Mintable | Fixed | Fixed | ✅ (decreases via shatter) |
+| Can go to zero | N/A | ✅ | Maybe | ❌ (floor protects) |
+| Other programs compose | Easy | Easy | Hard | ✅ (ESI) |
 
 ---
 
@@ -26,61 +24,44 @@
 ```
 NFT:
   → Mint a token with metadata URI → image on IPFS
-  → Art is static forever
-  → No value backing
+  → Static art forever (or mutable by authority)
+  → No value backing — can go to zero
   → No price floor
-  → Traded on external marketplaces (Magic Eden, Tensor)
+  → Traded on external marketplaces
 
 EVO:
   → Forge a PDA with locked SOL
-  → Art evolves as value grows and time passes
-  → Backed by real SOL
-  → Price floor = locked SOL
-  → Traded on built-in program marketplace
+  → Art is optional (primitive works without media)
+  → Backed by real SOL — floor = locked amount
+  → Shatter to reclaim — downside is defined
+  → Carries state (history, provenance) without becoming a token
 ```
 
-**Key difference:** NFTs are digital art with scarcity. EVOs are digital art with scarcity AND value backing AND evolution.
+**Key difference:** NFTs are digital art with scarcity. EVOs are stateful capital with a floor.
 
 ---
 
-## EVO vs Mutable Metadata NFT
+## EVO vs NFT + Escrow
 
-This is the most important comparison — because mutable metadata NFTs are the closest existing thing to EVOs.
+This is the closest existing pattern. Someone creates an NFT, locks SOL in a separate escrow PDA, and ties them together.
 
 ```
-Mutable Metadata NFT:
-  → Regular NFT (SPL/Metaplex token)
-  → Metadata URI points to an image
-  → Someone with update authority can change the URI
-  → "Dynamic" because the image can be swapped
-  → TRUST REQUIRED: you trust the authority not to rug the art
+NFT + Escrow:
+  → Two separate accounts (NFT + escrow PDA)
+  → Value is in the escrow, not the NFT
+  → No standard — each implementation is ad hoc
+  → Other programs must understand both accounts
+  → Must reimplement for every collection
 
 EVO:
-  → NOT an NFT (no SPL token, no Metaplex)
-  → No metadata, no URI, no image file
-  → Art is COMPUTED from on-chain data
-  → NOBODY can change the art manually
-  → Art changes because the DATA changes (SOL fed, time passes, trades happen)
-  → TRUSTLESS: the art is a pure function of on-chain state
+  → One account (SOL + state together)
+  → Value is inside the owned object
+  → Standard interface (ESI) — defined once
+  → Other programs read one account
+  → One protocol, all collections
 ```
 
-| Question | Mutable Metadata NFT | EVO |
-|---|---|---|
-| Is it an NFT? | Yes (SPL/Metaplex) | No (custom PDA) |
-| Is there metadata? | Yes (URI to image) | No (rendered from data) |
-| How does art change? | Authority swaps the image | Value/time changes the data |
-| Who controls the art? | Update authority holder | **Nobody** |
-| Can art be ruggged? | Yes (authority can change to anything) | **No** (deterministic function) |
-| Is there value backing? | No | Yes (locked SOL) |
-| Is there a price floor? | No | Yes (shatter to redeem) |
-| Is the change automatic? | No (requires manual tx) | Yes (happens with every feed/trade/time) |
-| Trust model | Trust the authority | Trustless (pure math) |
-
-**The fundamental difference:**
-- Mutable metadata = **someone has the POWER to change the art**
-- EVO = **nobody has power. The value itself drives the art.**
-
-This is why EVO is a new primitive, not just a fancy NFT.
+**The distinction:** NFT + escrow is a **pattern** reimplemented every time. EVO is a **standard** composed by anyone.
 
 ---
 
@@ -89,16 +70,15 @@ This is why EVO is a new primitive, not just a fancy NFT.
 ```
 Token:
   → Fungible units of a supply
-  → No art
-  → No uniqueness
+  → No memory, no uniqueness
   → Value from utility or speculation
-  → Traded on DEXs (Jupiter, Raydium)
+  → Can go to zero
 
 EVO:
   → Non-fungible (each is unique)
-  → Art that evolves
-  → Value from locked SOL + art premium
-  → Traded on built-in marketplace
+  → Carries state (history, provenance)
+  → Floor from locked SOL
+  → Cannot go below floor (shatter protects)
 ```
 
 ---
@@ -109,61 +89,50 @@ EVO:
 LP Position:
   → Represents liquidity in a pool
   → Value fluctuates with pool performance
-  → Some can be traded (Uniswap V3 NFTs)
-  → No art, no evolution
   → Complex to understand
+  → No art, no story
 
 EVO:
   → Represents locked SOL
-  → Value = locked SOL (stable, doesn't fluctuate)
-  → Tradeable with art premium
-  → Beautiful, evolving art
-  → Simple to understand: lock SOL, it grows, trade or shatter
+  → Floor is stable (doesn't fluctuate)
+  → Simple: lock SOL, trade or shatter
+  → Carries provenance and state
 ```
 
 ---
 
-## EVO vs Savings Account
+## The Unique Position
+
+EVO occupies a position no existing asset class fills:
 
 ```
-Savings Account:
-  → Deposit money, earn interest
-  → No art, no uniqueness
-  → Centralized (bank controls it)
-  → Can't trade the account
-
-EVO:
-  → Deposit SOL, it stays (no interest, but art grows)
-  → Each EVO is unique with evolving art
-  → Decentralized (program-controlled)
-  → Tradeable — sell the whole EVO to someone else
-  → The "interest" is the art becoming more valuable over time
+                    Has a floor?
+                         |
+           YES           |          NO
+    ──────────────────────────────────────
+    LP Position         |    Token (SOL)
+    Savings             |    NFT
+    EVO ←               |    Art Blocks
+                        |    Mutable NFT
+    ──────────────────────────────────────
+                         |
+                    Carries state?
+                         |
+           YES ← EVO is the ONLY thing in this quadrant
+                 (has a floor AND carries state through transfer)
 ```
+
+**EVO is the only asset class that has a SOL-backed floor AND carries state.**
 
 ---
 
-## The Unique Position of EVO
-
-EVO sits in a position no existing asset class occupies:
+## The Simplest Distinction
 
 ```
-           Value-backed?
-                |
-    YES        |        NO
-    ─────────────────────────────
-    LP pos     |     Token (SOL)
-    Savings    |     NFT
-    EVO ←      |     Mutable NFT
-               |     Art Blocks
-    ─────────────────────────────
-               |
-           Evolving art?
-                |
-    YES ← EVO is the ONLY thing in this quadrant
-          (value-backed AND evolving art)
+SOL     = value, no identity, no floor (it IS the floor)
+NFT     = identity, no value, no floor (can go to zero)
+EVO     = value + identity + floor (speculation with a floor)
 ```
-
-**EVO is the only asset class that is both value-backed AND has evolving art.** That's the novel position.
 
 ---
 

@@ -1,27 +1,61 @@
 # 01 — The Concept
 
-## The Big Idea
+## The Thesis
 
-Make stored value visible and beautiful.
+> **Why should capital become an object instead of remaining fungible?**
 
-Right now, when you hold SOL, it's invisible — a number in a wallet. When you hold an NFT, it's beautiful but worthless — a JPEG with no floor.
+Because **fungibility erases meaning.**
 
-**EVO combines both:** you lock SOL inside a digital object, and that value drives generative art that evolves over time. The more value you lock, the bigger it grows. The longer you hold, the more intricate it becomes. Every trade leaves a permanent mark.
+When I send you 1 SOL, you don't know if I earned it, was gifted it, or what it was meant for. The history is gone. The value is clean — but it's anonymous. Fungibility is great for exchange. It's terrible for meaning.
+
+EVO's thesis: sometimes meaning is worth more than liquidity.
+
+A gift of SOL should carry the fact that it was a gift. A commitment should carry its conditions. A patron's contribution should carry its provenance. Today, none of that can survive a transfer. The moment SOL moves, it's blank again.
+
+**Stateless capital → stateful capital.** That's the whole primitive.
 
 ---
 
 ## What Is an EVO?
 
-**EVO = Evolving Value Object**
+An **EVO** is a Solana account that:
 
-An EVO is a Program Derived Account (PDA) on Solana that:
+1. **Holds SOL** — Lamports live inside the PDA, physically isolated
+2. **Carries state** — History, behavior, permissions — without becoming a token
+3. **Has a floor** — Shatter to reclaim locked SOL. The downside is defined
+4. **Is transferable** — Move the whole object — value + state — to anyone
+5. **Is composable** — Other programs can read ownership, value, and behavior
 
-1. **Holds locked SOL** — The lamports literally live inside the PDA's account balance
-2. **Generates evolving art** — Art is computed client-side from on-chain data that changes over time
-3. **Has a price floor** — Shatter it to reclaim the locked SOL. The floor = locked value
-4. **Is unique** — Each EVO has a unique resonance signature (like a fingerprint)
-5. **Is trustless** — No admin, no update authority, no metadata URI. Nobody can change the art manually
-6. **Records history** — Every trade adds a fracture line — a permanent visual mark of provenance
+No SPL token. No Metaplex metadata. No image file. Just a PDA with SOL and state.
+
+---
+
+## The One Sentence
+
+> **EVO makes SOL stateful — letting capital carry history, permissions, and behavior as a transferable object, without becoming a token.**
+
+Or even shorter:
+
+> **SOL that remembers.**
+
+---
+
+## Speculation With a Floor
+
+This is the pitch that makes it click:
+
+```
+An EVO contains 1 SOL.
+It trades for 4 SOL.
+Why? Because famous creator, rare, old, survived 500 trades, community wants it.
+Worst case? Shatter. Recover your floor.
+```
+
+That's psychologically very different from buying a JPEG that can go to zero.
+
+You're not eliminating speculation. You're **grounding it.**
+
+Every collectible has real value inside it. Trade stories. Keep your floor.
 
 ---
 
@@ -34,57 +68,51 @@ An EVO is a Program Derived Account (PDA) on Solana that:
 
 ## Why It's Not an NFT
 
-- No static image. The art is generative and evolving
-- No metadata URI pointing to Arweave/IPFS. The art is computed from on-chain data
+- No static image. No metadata URI. No Arweave/IPFS pin
 - No Metaplex standard. No token standard at all — just a custom program account
-- No update authority. Nobody can manually change the art
 - Backed by real value (locked SOL), not just scarcity
+- Art is optional and LAST priority — the primitive works without any media
 
-## Why It's Not a Mutable Metadata NFT
+## Why It's Not Just "NFT + Escrow"
 
-This is the most important distinction:
-
-| | Mutable Metadata NFT | EVO |
+| | NFT + Escrow | EVO |
 |---|---|---|
-| What it is | Regular NFT (SPL/Metaplex) | Custom PDA, no token standard |
-| How art changes | Someone swaps the image at the metadata URI | Value/time changes the on-chain data → art auto-updates |
-| Who controls art | Update authority holder | **Nobody** — it's automatic |
-| Trust model | Trust the authority not to do something bad | **Trustless** — pure math |
-| Is there metadata? | Yes (URI pointer to image) | **No** — rendered from raw data |
-| Value backing? | None | Locked SOL inside the PDA |
+| Token mint exists | Yes (SPL/Metaplex) | No |
+| Ownership | Token standard | Native program state |
+| Value location | Separate escrow PDA | Inside the owned object |
+| Redemption | Requires escrow program | Built into the object |
+| Standard interface | No (each is ad hoc) | Yes (EVO Standard Interface) |
+| Other programs verify | Must read escrow separately | Read EVO directly |
 
-**Mutable metadata = someone has the POWER to change the art.**
-**EVO = nobody has power. The value itself drives the art.**
+NFT + escrow is a **pattern** that must be reimplemented every time. EVO is a **standard** — defined once, composed by anyone.
 
 ---
 
-## The Core Insight
+## The Smallest Possible EVO
 
-The non-obvious insight that makes EVOs work:
+Delete every feature. Delete behaviors, art, marketplace, history. What remains?
 
-> **Value locked inside the object IS the art parameter.**
+**Value + ownership + a behavior interface.**
 
-More SOL = bigger z. More time = more facets. More trades = more fracture lines. The art is a direct visualization of the economic activity around the object. You're not just holding value — you're holding a living representation of that value.
+Three things. That's the primitive.
 
-This is why it hasn't been done before:
-1. **Cross-domain thinking** — You need to understand DeFi (value locking), generative art (algorithmic rendering), and game design (evolution mechanics) simultaneously
-2. **Solana-specific advantage** — The account model means SOL lives inside the PDA natively. On Ethereum, you'd need a vault contract. On Solana, the value IS the account
-3. **Non-obvious insight** — Making stored value beautiful isn't an obvious leap. People think of art and finance as separate domains
-4. **Technical complexity** — Client-side deterministic rendering from on-chain data is harder than pinning a JPEG to IPFS
+Bitcoin's genius was **money**, not scripting.
+Ethereum's genius was **computation**, not NFTs.
+SPL Token's genius was **fungible asset**, not wallets.
+
+EVO's genius: **stateful capital.**
+
+The behaviors (Vault, Legacy, Patron) are apps built BY OTHER PEOPLE on top of the interface. The protocol just exposes the surface. That's what makes it a primitive, not an app.
 
 ---
 
 ## The Category
 
-EVO is a new asset class:
-
-| Asset Class | Example | Key Property |
+| Asset Class | Key Property | Example |
 |---|---|---|
-| Fungible Token | SOL, USDC | Interchangeable units |
-| Non-Fungible Token | CryptoPunks, Bored Apes | Unique static items |
-| **Evolving Value Object** | **Z** | **Unique, value-backed, evolving** |
-
-Just like "NFT" became a household term, "EVO" is the category name for this new primitive. Z is the first EVO collection — the CryptoPunks of EVOs.
+| Fungible Token | Interchangeable units | SOL, USDC |
+| Non-Fungible Token | Unique static items | CryptoPunks, Bored Apes |
+| **Stateful Capital** | **Value + state, transferable, redeemable** | **EVO** |
 
 ---
 

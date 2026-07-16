@@ -1,65 +1,139 @@
-# EVO — Evolving Value Object
+# EVO — Stateful Capital
 
-> A new on-chain primitive. Not a token. Not an NFT. Value-backed art that evolves over time.
+> **Speculation with a floor. SOL that remembers.**
+>
+> Not a token. Not an NFT. Capital that carries state through transfer.
 
 ---
 
-## What Is an EVO?
+## What Is EVO?
 
-An **EVO** (Evolving Value Object) is a digital asset that:
-
-1. **Holds real value** — SOL is locked inside it
-2. **Evolves over time** — Its generative art grows more intricate as value is added and time passes
-3. **Is trustless** — No admin, no update authority, no metadata. The art is a pure function of on-chain data
-4. **Has a price floor** — Shatter it to reclaim the locked SOL
-5. **Tells a story** — Every trade leaves a permanent mark (fracture line) in the art
+An **EVO** is a Solana account that holds SOL and carries state — history, permissions, and behavior — as a single transferable object.
 
 ```
-Token  = fungible, no art, no floor
-NFT    = non-fungible, static art, no floor
-EVO    = non-fungible, evolving art, SOL-backed floor
+Token  = fungible, no memory, no floor
+NFT    = non-fungible, static, no floor, can go to zero
+EVO    = non-fungible, SOL-backed floor, carries state, always redeemable
 ```
 
-## The First EVO Collection: Z
+The thesis is simple:
 
-**Z** is the flagship EVO collection on Solana — 2,000 evolving gemstones, each one growing more beautiful as you feed it SOL.
+> **Fungibility erases meaning. EVO lets capital carry context without becoming a token.**
 
-- **Mint:** Empty z for ~0.05 SOL (cheap, accessible)
-- **Feed:** Lock more SOL over time — the z grows
-- **Grow:** Facets increase the longer you hold (time-based evolution)
-- **Trade:** Sell on the built-in marketplace — buyer gets locked SOL + art
-- **Shatter:** Reclaim your SOL anytime — z destroyed forever
+---
 
-## EVO Protocol — Not Just a Collection
+## The One-Sentence Pitch
 
-EVO is also a **protocol**. Anyone can launch their own EVO collection on the EVO program:
+> Every collectible has real value inside it. Trade stories. Keep your floor.
+
+Degens trade narratives — rarity, provenance, status, upside. EVO gives that speculation a safety net: the locked SOL inside is always reclaimable via shatter.
+
+**Worst case:** shatter and recover your floor.
+**Best case:** trade it for 10x because the story is hot.
+
+That's **speculation with a floor.** Not a store of value. Not a degen casino. Both.
+
+---
+
+## How It Works
 
 ```
-EVO Program (one deployment on Solana)
-├── Z (our flagship, 2000 cap)
-├── Orbs (competitor collection)
-├── Geodes (another collection)
-└── ...anyone can launch here
+Forge   → Create an EVO. Pay mint_price (to creator) + lock_amount (inside EVO).
+Feed    → Add more SOL. Floor goes up.
+Trade   → Sell to anyone. Market sets the premium. Floor protects the downside.
+Shatter → Destroy the EVO. Reclaim locked SOL (minus fee). Object gone forever.
+Transfer → Send to anyone. No marketplace required.
 ```
 
-Every trade across ALL collections pays a small **protocol fee** to the EVO treasury. We earn from the entire ecosystem, not just our own collection.
+### The Two-Layer Value Model
+
+| Layer | What it is | Who gets it |
+|-------|-----------|-------------|
+| **lock_amount** | SOL locked inside the EVO PDA — the floor | Owner (reclaimable via shatter) |
+| **mint_price** | Price to forge — the speculative entry | Creator (at mint) |
+| **market premium** | What someone pays above the floor | Seller (on resale) |
+
+Example: An EVO contains 1 SOL. It trades for 4 SOL. Why? Because it's the first Genesis object from Artist X, survived 500 trades, and only 100 exist.
+
+Worst case: shatter, recover ~1 SOL. The downside is defined.
+
+---
+
+## The Primitive (Minimal)
+
+What's the smallest possible EVO?
+
+**Value + ownership + a behavior interface.**
+
+That's it. Everything else is built BY OTHER PEOPLE:
+
+| Layer | What it is | Who builds it |
+|-------|-----------|---------------|
+| Protocol (EVO) | forge, shatter, transfer, feed, behavior interface | Us |
+| Apps (Vault, Legacy, Patron, etc.) | Behavior templates using the interface | Anyone |
+| Marketplace | Trading layer | Independent protocols |
+| History | Provenance tracking | Indexers |
+| Art/media | Visual presentation | Frontends |
+
+EVO exposes the interface. The community builds the behaviors.
+
+---
+
+## Program — Live on Mainnet
+
+| | |
+|---|---|
+| **Program ID** | `2AUfmSABAwfSAzMWuDfWXzm6TVVvVapWgtrAEBU4FHeR` |
+| **Protocol Config PDA** | `EuLuQqUVq5ze2E5P43MLsYUxQLXskCCAvMK1evdNajRi` |
+| **Authority** | `G3aWJsdtrRT12HnC9R2BVoyErQbtGXseaM9c2xt1MJUJ` |
+| **Network** | Solana Mainnet |
+| **Creation Fee** | 0.06789 SOL |
+
+### Instructions
+- `initialize_protocol` — one-time setup
+- `create_collection` — creator sets supply, mint_price, lock_amount, fees
+- `forge` — mint EVO (pays mint_price to creator, locks SOL inside)
+- `feed` — add SOL to existing EVO
+- `list` / `delist` — marketplace listing
+- `buy` — purchase listed EVO (royalties distributed)
+- `shatter` — destroy EVO, reclaim locked SOL
+- `transfer` — send EVO to new owner
+
+---
 
 ## Documentation
 
 | Document | Description |
 |----------|-------------|
-| [01 — Concept](docs/01-concept.md) | The big idea, what EVOs are, why they're new |
-| [02 — Mechanics](docs/02-mechanics.md) | Forging, feeding, growing, trading, shattering |
-| [03 — Art System](docs/03-art-system.md) | How generative art evolves from on-chain data |
-| [04 — Economics](docs/04-economics.md) | Fee structure, pricing, treasury, protocol revenue |
-| [05 — Protocol Model](docs/05-protocol.md) | Multi-collection protocol, why competitors use our program |
-| [06 — Competitive Moat](docs/06-competitive-moat.md) | Why copying can't beat us |
-| [07 — EVO vs Everything](docs/07-comparison.md) | EVO vs tokens, NFTs, mutable metadata NFTs |
-| [08 — Roadmap](docs/08-roadmap.md) | Build phases |
-| [09 — Security Review](docs/09-security-review.md) | Program audit, wallet integration, security hardening |
-
-*Architecture document coming soon.*
+| [01 — Concept](docs/01-concept.md) | Why capital needs identity — the stateful capital thesis |
+| [02 — Mechanics](docs/02-mechanics.md) | Forge, feed, trade, shatter — the lifecycle |
+| [03 — Art System](docs/03-art-system.md) | Optional visual layer (future, not priority) |
+| [04 — Economics](docs/04-economics.md) | Two-layer value, speculation with a floor, fee structure |
+| [05 — Protocol](docs/05-protocol.md) | Minimal primitive, behavior interface, composability |
+| [06 — Competitive Moat](docs/06-competitive-moat.md) | Why EVO wins as a category |
+| [07 — EVO vs Everything](docs/07-comparison.md) | EVO vs tokens, NFTs, escrow |
+| [08 — Roadmap](docs/08-roadmap.md) | Build phases — primitive first, art last |
+| [09 — Security](docs/09-security-review.md) | Audit notes, security model |
+| [10 — Wallet Integration](docs/10-wallet-integration.md) | SDK for wallets and developers |
 
 ---
 
-*Concept developed by Stephen & Copilot — July 2026*
+## Quick Start
+
+```bash
+git clone https://github.com/stephenclawdbot-png/EVO.git
+cd EVO
+
+# Build the program (requires Anchor + Solana CLI)
+anchor build
+
+# Frontend
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
+*EVO — Stateful Capital. SOL that remembers.*
+*Not a token. Not an NFT. Programmable value.*

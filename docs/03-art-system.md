@@ -1,6 +1,23 @@
-# 03 — Art System
+# 03 — Art System (Future, Not Priority)
 
-## How EVO Art Works
+> ⚠️ Art is the LAST priority. The primitive works without any media.
+> Prove the value first. Add art later.
+
+---
+
+## Why Art Is Last
+
+The team's strategic review identified a critical risk:
+
+> "EVO is more advanced economically than programmatically. You have the value container. You now need to prove the programmable value part."
+
+Art pulls EVO back toward NFT comparisons. The primitive is **stateful capital** — SOL that carries state. Art is one possible expression of that state, not the reason it exists.
+
+Build the value primitive first. Let people trade stories with a floor. Then add visual expression.
+
+---
+
+## How Art Works (When We Build It)
 
 EVO art is **not stored** anywhere. There is no image file, no IPFS pin, no Arweave upload. The art is **computed** from on-chain data, client-side, every time it's viewed.
 
@@ -8,170 +25,65 @@ EVO art is **not stored** anywhere. There is no image file, no IPFS pin, no Arwe
 On-chain data → Deterministic algorithm → Rendered art
 ```
 
-Same data = same art. Always. For everyone. No human intervention possible.
+Same data = same art. Always. For everyone.
 
----
-
-## Art Parameters (From On-Chain Data)
+### Art Parameters (From On-Chain Data)
 
 | Parameter | Source | Visual Effect |
 |---|---|---|
-| `locked_lamports` | Total SOL fed | z size (bigger = more SOL) |
-| `forged_at` | Timestamp at creation | Age → facet count → intricacy |
-| `facet_count` | Derived from age | Number of geometric facets |
-| `trade_count` | Number of trades | Number of fracture lines |
-| `resonance_seed` | Hash of forge tx | Base color palette + shape tendency |
-| `fracture_lines` | Trade history | Visible cracks/marks on z surface |
-| `is_listed` | Whether for sale | Glow indicator (listed Z pulse) |
+| `locked_lamports` | Total SOL inside | Size (more SOL = bigger) |
+| `forged_at` | Timestamp at creation | Age → intricacy |
+| `trade_count` | Number of trades | Fracture lines |
+| `resonance_seed` | Provided at forge | Color palette + shape |
+| `fracture_lines` | Trade history | Visible marks of provenance |
+
+### Hybrid Model
+
+- **Layer 1 (Static):** Artist defines base shapes, color palettes, fracture styles
+- **Layer 2 (Dynamic):** Algorithm generates unique art from on-chain state
+- **Layer 3 (Real-time):** Client-side effects (glow, shimmer)
+
+### Determinism
+
+No `Math.random()` in the render path. No external API calls. Same input = same output, every time, for every viewer.
+
+### Pre-made Art Support (Future)
+
+For creators with pre-made collections:
+- `image_ref` — Arweave/IPFS URI stored on-chain
+- `image_hash` — hash to verify integrity
+- `merkle_root` — optional Merkle validation for approved seeds
+
+This is a **future enhancement**, not part of the core primitive.
 
 ---
 
-## The Hybrid Art Model
+## Rarity (When Art Exists)
 
-We use a **hybrid approach** — artist-designed base + algorithmically generated dynamic layers:
+Rarity emerges from behavior, not from assigned traits:
 
-### Layer 1: Artist-Defined Base (Static)
-- The artist designs the **base z shape** and **rendering style**
-- The artist defines **color palettes** mapped to resonance seed ranges
-- The artist creates the **facet geometry templates** (how facets look at each level)
-- The artist sets the **fracture line style** (how cracks appear)
-- This is the visual identity of the collection — the brand
+| Factor | Why It's Rare |
+|---|---|
+| Age | Old EVOs can't be faked. Many were shattered. |
+| Size | Big EVOs require real SOL locked. |
+| Provenance | Rich trade history = storied object |
+| Clean (never traded) | Pristine EVOs become rare as trading happens |
+| Creator reputation | First edition from a known creator |
+| Supply decrease | Shattering makes survivors more scarce |
 
-### Layer 2: Algorithmically Generated (Dynamic)
-- The algorithm places facets based on `facet_count` and `resonance_seed`
-- The algorithm colors the z based on `resonance_seed` → palette mapping
-- The algorithm sizes the z based on `locked_lamports`
-- The algorithm draws fracture lines based on `fracture_lines` data
-- The algorithm adds inner glow based on total value × time multiplier
-- This is what makes each z unique and evolving
-
-### Layer 3: Real-Time Effects (Client-side)
-- Listed Z pulse softly
-- Newly fed Z flash briefly
-- Facets shimmer subtly (ambient animation)
-- Inner glow breathes slowly
-- These are purely cosmetic — they don't affect the on-chain data
+Rarity is earned through time, value, and trading — not assigned at mint.
 
 ---
 
-## Visual Progression
+## Rendering (Future)
 
-A z's appearance changes dramatically over its lifecycle:
+| Method | Use Case |
+|---|---|
+| SVG | Thumbnails, marketplace grid (lightweight) |
+| Canvas 2D | Good performance, widely supported |
+| WebGL | Best visuals, shaders, 3D effects |
 
-### Just Forged (0 SOL, 0 facets)
-```
-- Tiny, rough shard
-- Single muted color
-- No facets, no glow
-- Raw, unpolished appearance
-```
-
-### Fed 1 SOL, 2 weeks old (2 facets)
-```
-- Small z, starting to take shape
-- Color palette emerging
-- 2 visible facets catching light
-- Faint inner glow beginning
-```
-
-### Fed 10 SOL, 6 months old (26 facets)
-```
-- Medium-large z
-- Rich, saturated colors
-- 26 intricate facets refracting light
-- Strong inner glow
-- Complex geometry visible
-```
-
-### Fed 50 SOL, 2 years old, traded 5 times
-```
-- Large, magnificent z
-- Deep, layered color palette
-- 100+ facets (capped) — extremely intricate
-- 5 visible fracture lines telling its trade history
-- Powerful inner glow
-- Legendary appearance
-```
-
----
-
-## Rendering Options
-
-| Method | Pros | Cons |
-|---|---|---|
-| **SVG** | Crisp at any size, lightweight, inspectable | Limited effects (no shaders) |
-| **Canvas 2D** | Good performance, widely supported | No 3D, limited shaders |
-| **WebGL** | Best visuals, shaders, 3D effects, glow | Heavier, needs GPU |
-
-**Recommended: WebGL with SVG fallback.**
-- WebGL for the full experience (shaders for refraction, glow, fractures)
-- SVG for thumbnails and marketplace grid views (fast, crisp)
-- Same deterministic algorithm, different render targets
-
----
-
-## Determinism Guarantee
-
-The art must be **perfectly deterministic:**
-
-```
-function renderz(onChainData) → Image {
-  // Pure function — no randomness, no external calls
-  // Same input = same output, every time
-  
-  size = map(locked_lamports, 0, MAX_SOL, MIN_SIZE, MAX_SIZE)
-  facets = min(facet_count, MAX_FACETS)
-  palette = palettes[resonance_seed % NUM_PALETTES]
-  fractures = fracture_lines.map(fl => drawFracture(fl))
-  glow = map(locked_lamports * age, 0, MAX_GLOW, 0, 1)
-  
-  return render(size, facets, palette, fractures, glow)
-}
-```
-
-- No `Math.random()` anywhere in the render path
-- No external API calls
-- No time-based randomness (time is read from on-chain `forged_at`, not `Date.now()`)
-- Every viewer sees the exact same z for the same on-chain state
-
----
-
-## Rarity System
-
-Rarity emerges naturally from the data:
-
-| Rarity Factor | How It's Determined | Why It's Rare |
-|---|---|---|
-| Color palette | Resonance seed hash | Some palettes are rarer (e.g., 5% chance for "Aurora") |
-| Shape tendency | Resonance seed hash | Some shapes are rarer (e.g., elongated vs round) |
-| Size | Total SOL fed | Big Z require real money |
-| Facet count | Time held | Old Z are rare (many were shattered) |
-| Fracture patterns | Trade history | Unique to each z's journey |
-| Clean Z | Never traded | Pristine Z become rare as trading happens |
-| Legendary Z | Oldest + largest + most-traded | The intersection is extremely rare |
-
-**Rarity is not forced — it emerges from behavior.** This is fundamentally different from NFT rarity (where traits are assigned at mint). EVO rarity is earned through time, value, and trading.
-
----
-
-## Artist's Role
-
-The artist is responsible for:
-
-1. **Visual identity** — The overall aesthetic (dark, luminous, geometric)
-2. **Color palettes** — 10-20 curated palettes mapped to resonance seeds
-3. **Facet geometry** — How facets look at each level (0-100)
-4. **Fracture line style** — How trade marks appear
-5. **Glow and lighting** — How the z catches light
-6. **Base shapes** — z morphology variations
-
-The artist does NOT:
-- Draw individual Z (the algorithm does that)
-- Choose which z gets which palette (the resonance seed does that)
-- Manually update any art (the on-chain data does that)
-- Have any "update authority" (nobody does)
-
-The artist builds the **visual language.** The algorithm speaks it. The on-chain data provides the words.
+Recommended: WebGL for full experience, SVG for thumbnails.
 
 ---
 

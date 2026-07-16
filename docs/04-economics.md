@@ -1,164 +1,155 @@
 # 04 — Economics
 
-## Overview
+## The Core Idea
 
-EVO economics have three layers:
-1. **Per-z economics** — how individual Z are priced
-2. **Collection economics** — how the Z collection works as a whole
-3. **Protocol economics** — how the EVO protocol earns from all collections
+> **Speculation with a floor.**
+
+Degens trade narratives — rarity, provenance, status, upside. EVO gives that speculation a safety net: the locked SOL inside is always reclaimable.
+
+Not a store of value (too boring). Not a pure degen casino (too risky). Both.
+
+---
+
+## Two-Layer Value Model
+
+```
+Total cost to forge = mint_price + lock_amount
+
+  mint_price  → goes to creator        (the speculative entry — buying the shell)
+  lock_amount → locked inside EVO PDA  (the floor — always reclaimable via shatter)
+```
+
+| Layer | What it is | Who gets it | When |
+|-------|-----------|-------------|------|
+| **lock_amount** | SOL inside the EVO — the floor | Owner (reclaimable via shatter) | At forge |
+| **mint_price** | Price to forge — speculative entry | Creator | At forge |
+| **market premium** | What someone pays above floor | Seller | On resale |
+
+Both mint_price and lock_amount are **set at collection creation and locked forever.**
+
+---
+
+## The Floor
+
+```
+floor = locked_lamports - shatter_fee
+```
+
+A EVO with 5 SOL locked and a 10% shatter fee has a floor of 4.5 SOL.
+
+No rational seller would accept less than the floor — they'd shatter instead. This creates a hard price floor that no NFT has.
+
+**The actual PDA balance is the source of truth, not a stored field:**
+```
+redeemable = min(account.lamports() - rent_exempt, locked_lamports) - shatter_fee
+```
+
+If someone sends extra SOL to the PDA → they lose it (only locked_lamports tracked).
+If a bug reduces the balance → only what's actually there is redeemable.
+
+---
+
+## The Premium
+
+```
+market_price = floor + premium
+
+premium = f(rarity, provenance, age, creator reputation, community desire, scarcity)
+```
+
+| Factor | Why It Drives Premium |
+|---|---|
+| Creator reputation | First edition from a known artist |
+| Age | Time can't be faked. Old EVOs are scarce. |
+| Trade history | 500 trades = legendary provenance |
+| Clean (never traded) | Pristine EVOs become rare |
+| Large size (lots of SOL) | Visible wealth = status |
+| Supply decrease | Shattering makes survivors more rare |
+| Community desire | "I need THAT EVO" — collectible demand |
+
+### Example Scenarios
+
+```
+EVO A: 1 SOL locked, 1 week old, never traded
+  → Floor: 1 SOL (minus fee)
+  → Premium: ~0 (too new)
+  → Market price: ~1 SOL
+
+EVO B: 5 SOL locked, 6 months old, traded twice
+  → Floor: 5 SOL
+  → Premium: 2-5 SOL (decent age, some history)
+  → Market price: 7-10 SOL
+
+EVO C: 1 SOL locked, 2 years old, traded 500 times, first edition from famous creator
+  → Floor: 1 SOL
+  → Premium: 10-50 SOL (legendary provenance, rare, ancient)
+  → Market price: 11-51 SOL
+```
+
+The premium is pure speculation. The floor is pure guarantee. Together: **speculation with a floor.**
 
 ---
 
 ## Fee Structure
 
-| Action | Fee | Split | Who Pays |
-|---|---|---|---|
-| Mint (forge) | 0.05 SOL | 0.01 rent + 0.04 treasury | Minter |
-| Feed (deposit) | 0 or 0.001 SOL | Treasury | Feeder |
-| Trade (sale) | 2% of sale price | 1% protocol + 1% collection | Buyer (included in price) |
-| Shatter (redeem) | 1% of locked SOL | Protocol treasury | Shatterer |
-
-### Fee Distribution
-
+### Collection Creation
 ```
-Mint fee:
-  → 0.01 SOL: Solana rent (stays in PDA, reclaimable on shatter)
-  → 0.04 SOL: Collection treasury (Z team)
-
-Trade fee (2% of sale price):
-  → 1%: Protocol treasury (EVO protocol — benefits all collections)
-  → 1%: Collection treasury (the specific collection's team)
-
-Shatter fee (1% of locked SOL):
-  → 100%: Protocol treasury
+0.06789 SOL → Protocol treasury (fixed, one-time)
 ```
 
-**For competitor collections on the EVO protocol:**
-- They set their own mint price and collection trade fee
-- The protocol always takes its 1% cut on trades
-- The protocol always takes its 1% cut on shatters
-- This is how the EVO protocol earns from the entire ecosystem
-
----
-
-## Pricing Model
-
-### The Price Floor
-
+### Forge
 ```
-floor_price = locked_lamports (in SOL)
+mint_price → Creator wallet
+lock_amount → Stays inside EVO PDA
 ```
 
-A z with 5 SOL locked inside has a floor of 5 SOL. Why? Because you can always shatter it to reclaim 5 SOL (minus 1% fee = 4.95 SOL). No rational seller would accept less than 4.95 SOL — they'd shatter instead.
-
-### The Premium
-
+### Feed
 ```
-market_price = locked_sol + premium
-
-premium = f(rarity, facets, trade_history, market_demand, aesthetic_appeal)
+0 fees — adding SOL is free
 ```
 
-The premium is set by the free market. Factors that increase premium:
+### Trade (Royalty)
+```
+sale_price * royalty_bps / 10000 → Creator's chosen destination
+0-25% (set at collection creation, locked forever)
+```
 
-| Factor | Why It Increases Premium |
+### Shatter
+```
+locked_lamports * shatter_fee_bps / 10000 → Creator's chosen destination
+0-20% (set at collection creation, locked forever)
+```
+
+### Fee Destinations (Creator Chooses)
+
+| Destination | What happens |
 |---|---|
-| Many facets (old z) | Time can't be faked. Old Z are scarce. |
-| Rare color palette | Some resonance seeds produce rare palettes |
-| Rich fracture history | Traded many times = storied provenance |
-| Pristine (never traded) | Clean Z become rare as trading happens |
-| Large size (lots of SOL) | Visible wealth = status symbol |
-| Legendary status | Oldest + largest + most-traded Z |
+| `Treasury` | Goes to protocol treasury |
+| `Creator` | Goes to creator's wallet |
+| `Burn` | Permanently destroyed (deflationary) |
+| `Split` | Split between multiple destinations |
 
-### Example Pricing Scenarios
-
-```
-z A: 0.5 SOL locked, 1 week old, never traded
-  → Floor: 0.5 SOL
-  → Premium: ~0 (too new, too small)
-  → Market price: ~0.5 SOL
-
-z B: 5 SOL locked, 6 months old, traded twice
-  → Floor: 5 SOL
-  → Premium: 2-5 SOL (decent age, some history)
-  → Market price: 7-10 SOL
-
-z C: 50 SOL locked, 2 years old, traded 8 times, rare palette
-  → Floor: 50 SOL
-  → Premium: 30-100 SOL (legendary status, rare, huge, ancient)
-  → Market price: 80-150 SOL
-```
+All fees are **immutable after collection creation.** Creators cannot change fees once the first EVO is forged.
 
 ---
 
 ## Supply Dynamics
 
-### Total Supply
 ```
-Max Z: 2,000 (hardcoded, can never increase)
-```
-
-### Supply Decreases Over Time
-```
-Z shattered → supply decreases → remaining Z more scarce
-
-Year 1:  ~2,000 Z (some shattered)
-Year 2:  ~1,600 Z (more shattered)
-Year 3:  ~1,200 Z (survivors becoming rare)
-Year 5:  ~800 Z (legendary survivors)
+Max supply = supply_cap (set at collection creation)
+Current supply = forged count - shattered count
 ```
 
-Unlike NFTs where supply is fixed forever, EVO supply **decreases** as people shatter to reclaim SOL. This creates increasing scarcity over time — the survivors become more valuable.
-
-### New Supply = Zero After Cap
-Once all 2,000 Z are minted, no new ones can ever be created. The only way to get one is to buy from an existing holder. Combined with decreasing supply from shattering, this creates strong scarcity pressure.
-
----
-
-## Treasury
-
-### Collection Treasury (Z)
-Funds:
-- Artist commissions and ongoing art development
-- Frontend development and hosting
-- Community rewards and incentives
-- Marketing and partnerships
-- Team operations
-
-### Protocol Treasury (EVO)
-Funds:
-- Protocol development and maintenance
-- Ecosystem grants (for competitors building on EVO)
-- Open source contributions
-- Long-term: DAO governance
-
-### Treasury Management
-- Initially: multisig (team-controlled)
-- Phase 2: community proposals for treasury usage
-- Phase 3: full DAO governance
-
----
-
-## Protocol Revenue Model
-
-The EVO protocol earns from ALL collections built on it:
+Unlike NFTs where supply is fixed forever, EVO supply **decreases** as people shatter:
 
 ```
-Revenue sources:
-  1. 1% protocol fee on every trade (all collections)
-  2. 1% protocol fee on every shatter (all collections)
-  3. Protocol-level mint fees (if any)
-
-Example (hypothetical, mature ecosystem):
-  Z:  500 trades/month × avg 10 SOL × 1% = 50 SOL/month
-  Orbs:      300 trades/month × avg 5 SOL × 1%  = 15 SOL/month
-  Geodes:    200 trades/month × avg 3 SOL × 1%  = 6 SOL/month
-  Others:    100 trades/month × avg 2 SOL × 1%  = 2 SOL/month
-  
-  Total protocol revenue: ~73 SOL/month ≈ $5,600/month (at $77/SOL)
+Year 1:  ~2,000 EVOs (some shattered)
+Year 2:  ~1,600 EVOs (more shattered)
+Year 3:  ~1,200 EVOs (survivors becoming rare)
+Year 5:  ~800 EVOs (legendary survivors)
 ```
 
-As more collections launch on EVO, protocol revenue grows — even if Z trading volume stays flat.
+Increasing scarcity over time. The survivors become more valuable.
 
 ---
 
@@ -167,13 +158,28 @@ As more collections launch on EVO, protocol revenue grows — even if Z trading 
 | Motivation | Description |
 |---|---|
 | **Speculation** | Buy young, sell old. Buy small, feed SOL, sell bigger. |
-| **Collection** | Collect rare palettes, pristine Z, legendary pieces. |
-| **Status** | Owning a massive ancient z is a flex. Display it. |
-| **Story** | Each fracture line tells who held it and when. Rich history = valuable. |
 | **Floor safety** | Can always shatter for locked SOL. Downside is limited. |
-| **Gamification** | Challenges: "hold for 1 year," "trade 10 times," "grow to 100 facets." |
-| **Art appreciation** | The Z are genuinely beautiful. Some people just want to own pretty things. |
-| **Store of value** | It's SOL with a face. You're holding value, but it's beautiful. |
+| **Collection** | Collect rare EVOs, pristine pieces, legendary objects. |
+| **Status** | Owning a massive ancient EVO is a flex. |
+| **Story** | Each fracture line tells who held it and when. |
+| **Creator support** | mint_price goes to creators. Royalties on every trade. |
+
+Volume never comes from technology. It comes from desire. EVO creates desire with a safety net.
+
+---
+
+## Protocol Revenue
+
+The EVO protocol earns from ALL collections built on it:
+
+```
+Revenue sources:
+  1. Collection creation fee (0.06789 SOL per collection)
+  2. Protocol fee on trades (if configured)
+  3. Protocol fee on shatters (if configured)
+```
+
+As more collections launch on EVO, protocol revenue grows — even if individual collection trading volume stays flat.
 
 ---
 
