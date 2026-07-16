@@ -107,12 +107,12 @@ EVO exposes the interface. The community builds the behaviors.
 |----------|-------------|
 | [01 — Concept](docs/01-concept.md) | Why capital needs identity — the stateful capital thesis |
 | [02 — Mechanics](docs/02-mechanics.md) | Forge, feed, trade, shatter — the lifecycle |
-| [03 — Art System](docs/03-art-system.md) | Optional visual layer (future, not priority) |
+| [03 — Art System](docs/03-art-system.md) | Generative art from on-chain data — ships with the primitive |
 | [04 — Economics](docs/04-economics.md) | Two-layer value, speculation with a floor, fee structure |
 | [05 — Protocol](docs/05-protocol.md) | Minimal primitive, behavior interface, composability |
 | [06 — Competitive Moat](docs/06-competitive-moat.md) | Why EVO wins as a category |
 | [07 — EVO vs Everything](docs/07-comparison.md) | EVO vs tokens, NFTs, escrow |
-| [08 — Roadmap](docs/08-roadmap.md) | Build phases — primitive first, art last |
+| [08 — Roadmap](docs/08-roadmap.md) | Build phases — primitive + art together, behaviors next |
 | [09 — Security](docs/09-security-review.md) | Audit notes, security model |
 | [10 — Wallet Integration](docs/10-wallet-integration.md) | SDK for wallets and developers |
 

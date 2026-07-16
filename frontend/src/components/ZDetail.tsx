@@ -3,22 +3,212 @@
 import { EVOData, getStage, getAgeString } from '@/lib/evo-data';
 import { ELEMENT_COLORS, RARITY_COLORS, STAGE_NAMES, Stage } from '@/lib/creatures';
 import { useState } from 'react';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { Transaction, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import {
+  createFeedIx,
+  createListIx,
+  createDelistIx,
+  createBuyIx,
+  createShatterIx,
+  createTransferIx,
+  readCollectionConfig,
+  readProtocolConfig,
+  getCollectionPDA,
+} from '@/lib/evo-program';
 
 interface ZDetailProps {
   evo: EVOData;
   onBack: () => void;
+  onRefresh?: () => void;
 }
 
-export function ZDetail({ evo, onBack }: ZDetailProps) {
+export function ZDetail({ evo, onBack, onRefresh }: ZDetailProps) {
+  const { connection } = useConnection();
+  const wallet = useWallet();
   const [imgError, setImgError] = useState(false);
+  const [action, setAction] = useState<string | null>(null);
+  const [txResult, setTxResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [listPrice, setListPrice] = useState('');
+  const [feedAmount, setFeedAmount] = useState('');
+  const [transferAddress, setTransferAddress] = useState('');
+
   const stage = getStage(evo);
   const elementColor = ELEMENT_COLORS[evo.creature.element];
   const rarityColor = RARITY_COLORS[evo.creature.rarity];
   const scale = 0.6 + Math.min(1, evo.lockedLamports / 50) * 0.4;
-
   const stages: Stage[] = ['baby', 'juvenile', 'adult', 'elder'];
   const currentStageIndex = stages.indexOf(stage);
+
+  const isOwner = wallet.connected && wallet.publicKey && 
+    evo.owner === wallet.publicKey.toBase58();
+
+  const sendTx = async (ix: any) => {
+    if (!wallet.connected || !wallet.publicKey) {
+      setError('Connect wallet first');
+      return null;
+    }
+    const tx = new Transaction().add(ix);
+    tx.feePayer = wallet.publicKey;
+    const { blockhash } = await connection.getLatestBlockhash();
+    tx.recentBlockhash = blockhash;
+    const signed = await wallet.signTransaction?.(tx);
+    if (!signed) throw new Error('Transaction signing failed');
+    const sig = await connection.sendRawTransaction(signed.serialize());
+    await connection.confirmTransaction(sig, 'confirmed');
+    return sig;
+  };
+
+  const handleFeed = async () => {
+    setAction('feed');
+    setError(null);
+    setTxResult(null);
+    try {
+      const lamports = Math.floor(parseFloat(feedAmount) * LAMPORTS_PER_SOL);
+      if (!lamports || lamports <= 0) throw new Error('Enter a valid SOL amount');
+      const evoPda = new PublicKey(evo.evoPda!);
+      const ix = createFeedIx(evoPda, wallet.publicKey!, lamports);
+      const sig = await sendTx(ix);
+      if (sig) {
+        setTxResult(sig);
+        setFeedAmount('');
+        onRefresh?.();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Feed failed');
+    } finally {
+      setAction(null);
+    }
+  };
+
+  const handleList = async () => {
+    setAction('list');
+    setError(null);
+    setTxResult(null);
+    try {
+      const lamports = Math.floor(parseFloat(listPrice) * LAMPORTS_PER_SOL);
+      if (!lamports || lamports <= 0) throw new Error('Enter a valid price');
+      const evoPda = new PublicKey(evo.evoPda!);
+      const ix = createListIx(evoPda, wallet.publicKey!, lamports);
+      const sig = await sendTx(ix);
+      if (sig) {
+        setTxResult(sig);
+        setListPrice('');
+        onRefresh?.();
+      }
+    } catch (err: any) {
+      setError(err.message || 'List failed');
+    } finally {
+      setAction(null);
+    }
+  };
+
+  const handleDelist = async () => {
+    setAction('delist');
+    setError(null);
+    setTxResult(null);
+    try {
+      const evoPda = new PublicKey(evo.evoPda!);
+      const ix = createDelistIx(evoPda, wallet.publicKey!);
+      const sig = await sendTx(ix);
+      if (sig) {
+        setTxResult(sig);
+        onRefresh?.();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Delist failed');
+    } finally {
+      setAction(null);
+    }
+  };
+
+  const handleBuy = async () => {
+    setAction('buy');
+    setError(null);
+    setTxResult(null);
+    try {
+      const evoPda = new PublicKey(evo.evoPda!);
+      const [collectionPda] = getCollectionPDA('Z');
+      const cfg = await readCollectionConfig(connection, 'Z');
+      if (!cfg) throw new Error('Collection not found');
+      const proto = await readProtocolConfig(connection);
+      if (!proto) throw new Error('Protocol not found');
+      const seller = new PublicKey(evo.owner);
+      const creator = cfg.creator;
+      const ix = createBuyIx(
+        evoPda,
+        collectionPda,
+        seller,
+        creator,
+        wallet.publicKey!,
+        proto.treasury,
+      );
+      const sig = await sendTx(ix);
+      if (sig) {
+        setTxResult(sig);
+        onRefresh?.();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Buy failed');
+    } finally {
+      setAction(null);
+    }
+  };
+
+  const handleShatter = async () => {
+    if (!confirm(`Shatter this Z and recover ${(evo.lockedLamports * 0.95).toFixed(4)} SOL (after 5% fee)? This cannot be undone.`)) return;
+    setAction('shatter');
+    setError(null);
+    setTxResult(null);
+    try {
+      const evoPda = new PublicKey(evo.evoPda!);
+      const [collectionPda] = getCollectionPDA('Z');
+      const cfg = await readCollectionConfig(connection, 'Z');
+      if (!cfg) throw new Error('Collection not found');
+      const proto = await readProtocolConfig(connection);
+      if (!proto) throw new Error('Protocol not found');
+      const ix = createShatterIx(
+        evoPda,
+        collectionPda,
+        wallet.publicKey!,
+        cfg.creator,
+        proto.treasury,
+        evo.id,
+      );
+      const sig = await sendTx(ix);
+      if (sig) {
+        setTxResult(sig);
+        onRefresh?.();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Shatter failed');
+    } finally {
+      setAction(null);
+    }
+  };
+
+  const handleTransfer = async () => {
+    setAction('transfer');
+    setError(null);
+    setTxResult(null);
+    try {
+      const newOwner = new PublicKey(transferAddress);
+      const evoPda = new PublicKey(evo.evoPda!);
+      const ix = createTransferIx(evoPda, wallet.publicKey!, newOwner);
+      const sig = await sendTx(ix);
+      if (sig) {
+        setTxResult(sig);
+        setTransferAddress('');
+        onRefresh?.();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Transfer failed');
+    } finally {
+      setAction(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-950 to-black p-4 md:p-8">
@@ -157,6 +347,9 @@ export function ZDetail({ evo, onBack }: ZDetailProps) {
               <span className="text-gray-600">|</span>
               <span className="text-gray-400">Stage: {STAGE_NAMES[stage]}</span>
             </div>
+            <div className="mt-1 text-xs text-gray-500">
+              Z #{evo.id} · Owner: {evo.owner.slice(0, 8)}...{evo.owner.slice(-4)}
+            </div>
           </div>
 
           {/* EVO Stats */}
@@ -192,25 +385,122 @@ export function ZDetail({ evo, onBack }: ZDetailProps) {
             </div>
           )}
 
-          {/* Actions (demo) */}
-          <div className="grid grid-cols-2 gap-3">
-            <button className="rounded-xl bg-yellow-500/20 border border-yellow-500/40 px-4 py-3 font-bold text-yellow-400 hover:bg-yellow-500/30 transition-colors">
-              🔨 Feed SOL
-            </button>
-            <button className="rounded-xl bg-green-500/20 border border-green-500/40 px-4 py-3 font-bold text-green-400 hover:bg-green-500/30 transition-colors">
-              🏷️ List for Sale
-            </button>
-            <button className="rounded-xl bg-blue-500/20 border border-blue-500/40 px-4 py-3 font-bold text-blue-400 hover:bg-blue-500/30 transition-colors">
-              📤 Transfer
-            </button>
-            <button className="rounded-xl bg-red-500/20 border border-red-500/40 px-4 py-3 font-bold text-red-400 hover:bg-red-500/30 transition-colors">
-              💥 Shatter
-            </button>
-          </div>
+          {/* Tx result */}
+          {txResult && (
+            <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm">
+              <span className="text-green-400 font-bold">✅ Transaction confirmed </span>
+              <a href={`https://solscan.io/tx/${txResult}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+                View on Solscan →
+              </a>
+            </div>
+          )}
+          {error && (
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+              ❌ {error}
+            </div>
+          )}
 
-          <p className="text-center text-xs text-gray-600">
-            Demo mode — connect wallet to interact with on-chain EVOs
-          </p>
+          {/* Actions */}
+          {!wallet.connected ? (
+            <p className="rounded-xl border border-white/10 bg-gray-900/50 p-4 text-center text-sm text-gray-500">
+              Connect wallet to interact with this Z
+            </p>
+          ) : evo.isShattered ? (
+            <p className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-center text-sm text-red-400">
+              This Z has been shattered
+            </p>
+          ) : isOwner ? (
+            <div className="space-y-3">
+              {/* Feed */}
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  placeholder="SOL to feed"
+                  value={feedAmount}
+                  onChange={(e) => setFeedAmount(e.target.value)}
+                  className="flex-1 rounded-lg border border-white/10 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-yellow-500 focus:outline-none"
+                  step="0.001"
+                  min="0.001"
+                />
+                <button
+                  onClick={handleFeed}
+                  disabled={action === 'feed'}
+                  className="rounded-xl bg-yellow-500/20 border border-yellow-500/40 px-4 py-2 font-bold text-yellow-400 hover:bg-yellow-500/30 transition-colors disabled:opacity-50"
+                >
+                  {action === 'feed' ? '...' : '🔨 Feed'}
+                </button>
+              </div>
+
+              {/* List / Delist */}
+              {evo.isListed ? (
+                <button
+                  onClick={handleDelist}
+                  disabled={action === 'delist'}
+                  className="w-full rounded-xl bg-gray-500/20 border border-gray-500/40 px-4 py-3 font-bold text-gray-300 hover:bg-gray-500/30 transition-colors disabled:opacity-50"
+                >
+                  {action === 'delist' ? '...' : '✕ Delist'}
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="List price (SOL)"
+                    value={listPrice}
+                    onChange={(e) => setListPrice(e.target.value)}
+                    className="flex-1 rounded-lg border border-white/10 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-green-500 focus:outline-none"
+                    step="0.01"
+                    min="0.01"
+                  />
+                  <button
+                    onClick={handleList}
+                    disabled={action === 'list'}
+                    className="rounded-xl bg-green-500/20 border border-green-500/40 px-4 py-2 font-bold text-green-400 hover:bg-green-500/30 transition-colors disabled:opacity-50"
+                  >
+                    {action === 'list' ? '...' : '🏷️ List'}
+                  </button>
+                </div>
+              )}
+
+              {/* Transfer */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Recipient address"
+                  value={transferAddress}
+                  onChange={(e) => setTransferAddress(e.target.value)}
+                  className="flex-1 rounded-lg border border-white/10 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none"
+                />
+                <button
+                  onClick={handleTransfer}
+                  disabled={action === 'transfer' || !transferAddress}
+                  className="rounded-xl bg-blue-500/20 border border-blue-500/40 px-4 py-2 font-bold text-blue-400 hover:bg-blue-500/30 transition-colors disabled:opacity-50"
+                >
+                  {action === 'transfer' ? '...' : '📤 Transfer'}
+                </button>
+              </div>
+
+              {/* Shatter */}
+              <button
+                onClick={handleShatter}
+                disabled={action === 'shatter'}
+                className="w-full rounded-xl bg-red-500/20 border border-red-500/40 px-4 py-3 font-bold text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
+              >
+                {action === 'shatter' ? '...' : `💥 Shatter (recover ~${(evo.lockedLamports * 0.95).toFixed(4)}◎)`}
+              </button>
+            </div>
+          ) : evo.isListed ? (
+            <button
+              onClick={handleBuy}
+              disabled={action === 'buy'}
+              className="w-full rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 px-4 py-4 text-lg font-bold text-black transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {action === 'buy' ? 'Buying...' : `🛒 Buy for ${evo.listPrice}◎`}
+            </button>
+          ) : (
+            <p className="rounded-xl border border-white/10 bg-gray-900/50 p-4 text-center text-sm text-gray-500">
+              This Z is not listed for sale
+            </p>
+          )}
         </div>
       </div>
     </div>

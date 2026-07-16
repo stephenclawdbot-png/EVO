@@ -1,9 +1,11 @@
-// Simulated EVO on-chain data for demo purposes
-// In production, this would be read from Solana PDAs via @solana/web3.js
+// Bridge between on-chain EVOAccount data and display format
+// Also provides the EVOData interface used by UI components
 
 import { CREATURES, Creature, getStageFromFacets, Stage } from './creatures';
+import { EVOAccount, CollectionConfig, lamportsToSol } from './evo-program';
+import type { PublicKey } from '@solana/web3.js';
 
-export interface FractureLine {
+export interface FractureLineDisplay {
   tradeNumber: number;
   previousOwner: string;
   timestamp: number;
@@ -16,95 +18,88 @@ export interface EVOData {
   creatureId: string;
   creature: Creature;
   owner: string;
-  lockedLamports: number; // in SOL (not lamports for demo)
-  forgedAt: number; // timestamp
+  lockedLamports: number; // displayed in SOL
+  forgedAt: number; // unix timestamp (ms)
   facetCount: number;
   tradeCount: number;
   resonanceSeed: string; // hex
-  fractureLines: FractureLine[];
+  fractureLines: FractureLineDisplay[];
   isListed: boolean;
-  listPrice: number | null;
+  listPrice: number | null; // in SOL
   isShattered: boolean;
+  // On-chain references
+  evoPda?: string;
+  collectionPda?: string;
 }
 
-// Deterministic pseudo-random from seed
-function seededRandom(seed: string): () => number {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) {
-    h = ((h << 5) - h) + seed.charCodeAt(i);
-    h |= 0;
-  }
-  return () => {
-    h = (h * 1103515245 + 12345) & 0x7fffffff;
-    return h / 0x7fffffff;
-  };
+export interface CollectionData {
+  name: string;
+  creator: string;
+  supplyCap: number;
+  currentSupply: number;
+  shatterFeeBps: number;
+  tradeRoyaltyBps: number;
+  mintPriceSol: number;
+  lockAmountSol: number;
+  bump: number;
 }
 
-const GROWTH_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const GROWTH_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days per facet
 
-function computeFacets(forgedAt: number): number {
+export function computeFacets(forgedAt: number): number {
   const now = Date.now();
   const elapsed = now - forgedAt;
   return Math.min(100, Math.floor(elapsed / GROWTH_INTERVAL_MS));
 }
 
-// Generate demo EVOs — one per creature, with varied states
-export function generateDemoEVOs(): EVOData[] {
-  const now = Date.now();
-  const evos: EVOData[] = [];
+// Map an on-chain EVOAccount to display EVOData
+export function evoAccountToData(
+  evo: EVOAccount,
+  creatures: Creature[],
+): EVOData | null {
+  if (evo.evoId === undefined) return null;
+  const creature = creatures[evo.evoId % creatures.length];
+  if (!creature) return null;
 
-  CREATURES.forEach((creature, index) => {
-    const seed = `${creature.id}-evo-${index}`;
-    const rng = seededRandom(seed);
+  const seedHex = Buffer.from(evo.resonanceSeed).toString('hex');
 
-    // Vary the forged time: some ancient, some new
-    const ageWeeks = Math.floor(rng() * 104); // 0-104 weeks (2 years)
-    const forgedAt = now - ageWeeks * 7 * 24 * 60 * 60 * 1000;
-    const facets = computeFacets(forgedAt);
+  return {
+    id: evo.evoId,
+    creatureId: creature.id,
+    creature,
+    owner: evo.owner.toBase58(),
+    lockedLamports: lamportsToSol(evo.lockedLamports),
+    forgedAt: evo.forgedAt,
+    facetCount: evo.facetCount,
+    tradeCount: evo.tradeCount,
+    resonanceSeed: seedHex,
+    fractureLines: evo.fractureLines.map(fl => ({
+      tradeNumber: fl.tradeNumber,
+      previousOwner: fl.previousOwner.toBase58().slice(0, 8) + '...',
+      timestamp: fl.timestamp,
+      position: fl.position,
+      intensity: fl.intensity,
+    })),
+    isListed: evo.isListed,
+    listPrice: evo.isListed ? lamportsToSol(evo.listPriceLamports) : null,
+    isShattered: evo.isShattered,
+    evoPda: evo.pda?.toBase58(),
+    collectionPda: evo.collection.toBase58(),
+  };
+}
 
-    // Vary locked SOL: 0.05 to 50
-    const lockedSol = Math.round((0.05 + rng() * 49.95) * 1000) / 1000;
-
-    // Vary trade count: 0 to 8
-    const tradeCount = Math.floor(rng() * 9);
-
-    // Generate fracture lines from trades
-    const fractureLines: FractureLine[] = [];
-    for (let t = 1; t <= tradeCount; t++) {
-      fractureLines.push({
-        tradeNumber: t,
-        previousOwner: `0x${Math.floor(rng() * 0xffffff).toString(16).padStart(6, '0')}`,
-        timestamp: forgedAt + Math.floor(rng() * (now - forgedAt)),
-        position: Math.floor(rng() * 360),
-        intensity: Math.floor(rng() * 100),
-      });
-    }
-
-    // Some are listed
-    const isListed = rng() < 0.15;
-    const listPrice = isListed ? Math.round((lockedSol * (1.2 + rng() * 3)) * 1000) / 1000 : null;
-
-    // Some are shattered (5%)
-    const isShattered = rng() < 0.05;
-
-    evos.push({
-      id: index,
-      creatureId: creature.id,
-      creature,
-      owner: `0x${Math.floor(rng() * 0xffffff).toString(16).padStart(6, '0')}`,
-      lockedLamports: lockedSol,
-      forgedAt,
-      facetCount: facets,
-      tradeCount,
-      resonanceSeed: seed.slice(0, 32).padEnd(32, '0'),
-      fractureLines,
-      isListed,
-      listPrice,
-      isShattered,
-    });
-  });
-
-  return evos;
+export function collectionConfigToData(cfg: CollectionConfig): CollectionData {
+  return {
+    name: cfg.name,
+    creator: cfg.creator.toBase58(),
+    supplyCap: cfg.supplyCap,
+    currentSupply: cfg.currentSupply,
+    shatterFeeBps: cfg.shatterFeeBps,
+    tradeRoyaltyBps: cfg.tradeRoyaltyBps,
+    mintPriceSol: lamportsToSol(cfg.mintPriceLamports),
+    lockAmountSol: lamportsToSol(cfg.lockAmountLamports),
+    bump: cfg.bump,
+  };
 }
 
 export function getStage(evo: EVOData): Stage {
@@ -121,3 +116,5 @@ export function getAgeString(forgedAt: number): string {
   if (days < 365) return `${Math.floor(days / 30)}mo ago`;
   return `${(days / 365).toFixed(1)}y ago`;
 }
+
+export { CREATURES };

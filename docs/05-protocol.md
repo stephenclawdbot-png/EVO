@@ -16,7 +16,7 @@ Everything else is built BY OTHER PEOPLE:
 | Apps | Vault, Legacy, Patron, games, DeFi integrations | Anyone |
 | Marketplace | Trading layer | Independent protocols |
 | History | Provenance tracking | Indexers |
-| Art/media | Visual presentation | Frontends |
+| Art/media | Visual expression — ships with the primitive | Frontends |
 
 ---
 
