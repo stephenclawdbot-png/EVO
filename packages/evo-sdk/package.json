@@ -1,0 +1,21 @@
+{
+  "name": "@evo/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for reading EVO (Evolving Value Object) data from Solana",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist"
+  },
+  "keywords": ["solana", "evo", "evolving-value-object", "pda", "sdk"],
+  "license": "MIT",
+  "dependencies": {
+    "@solana/web3.js": "^1.95.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "rimraf": "^6.0.0"
+  }
+}
