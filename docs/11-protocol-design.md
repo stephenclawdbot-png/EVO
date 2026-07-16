@@ -198,3 +198,47 @@ If they say "no, because Metaplex account lamports are rent" — EVO has identif
 If they say "yes, with Token-2022 transfer hooks and a vault" — then EVO's advantage is structural simplicity and atomic guarantees, not impossibility. Still valid, but framed as superiority for a specific class.
 
 Either way, the honest claim holds: **structural, not enforced. Account-oriented, not reference-based. A floor you can't break because there's nothing to break.**
+
+---
+
+## Why EVO is Solana-native: cross-chain analysis
+
+EVO's architecture depends on one property: **the account IS the asset.** The SOL lives inside the same account as the identity. This is native on Solana. On EVM chains (Ethereum, BSC), it's a workaround.
+
+### The fundamental difference
+
+On Solana, every asset is an account — a first-class object with its own lamport balance. Accounts are cheap (~0.002 SOL rent). One account = one EVO. The SOL is in the account. Transfer the account, the SOL goes with it. Close the account, the SOL is released. Structural.
+
+On EVM, assets are entries in a contract's storage (`mapping(uint256 => address) owner`). There is no per-token account. No per-token ETH balance. The "account IS the asset" model does not exist.
+
+### Option A: One contract per EVO (CREATE2)
+
+Each EVO is its own smart contract with its own ETH balance and storage. Closest to Solana's model: transfer = change ownership, shatter = selfdestruct + send ETH.
+
+Problems:
+- **Cost:** Deploying a contract per asset on Ethereum costs ~$50-200 in gas. BSC is cheaper (~$0.10-1) but still far more than Solana's ~$0.001.
+- **EIP-6780:** Ethereum's Cancun upgrade changed `selfdestruct` — it only works if called in the same transaction as contract creation. This would break shatter. You could not destroy an EVO and reclaim ETH in a later transaction. BSC may or may not follow this change.
+
+### Option B: Vault mapping inside NFT contract
+
+`mapping(uint256 => uint256) lockedValue` inside an ERC-721 contract. Override `transfer` to prevent moving the NFT without the locked value.
+
+Problem: This is **enforced, not structural.** You're back to custom transfer logic on top of a model that assumes tokens are just ownership entries. The exact weakness identified above — a lock on a door, not a wall.
+
+### Comparison
+
+| | Solana | Ethereum | BSC |
+|---|---|---|---|
+| Account-per-asset | Native, cheap | Expensive (contract deploy) | Cheaper but still costly |
+| Atomic destruction | Native (close account) | Broken by EIP-6780 | Uncertain |
+| Lamports as economic state | Native | N/A (no rent model) | N/A |
+| Inseparability | Structural | Enforced (custom logic) | Enforced |
+| Per-asset cost | ~$0.001 | ~$50-200 | ~$0.10-1 |
+
+### The honest position
+
+EVO is doable on EVM chains, but architecturally weaker. On Solana, "the account IS the asset" is native — one account, one atomic object, structural inseparability. On EVM, you either pay a premium for contract-per-asset (and fight selfdestruct changes), or fall back to enforced inseparability — the exact weakness that distinguishes EVO from NFT+Vault.
+
+This is not a limitation. It's a moat. EVO belongs on Solana where the primitive is native, not bolted on. Cross-chain expansion, if it happens, should be honest about the tradeoff: the same mechanic implemented on a different architecture is not the same primitive — it's an emulation.
+
+> **EVO on Solana: the wall. EVO on EVM: the lock.**
