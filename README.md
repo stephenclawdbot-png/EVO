@@ -33,7 +33,7 @@ An EVO trades like a collectible, holds like an NFT, and can't go below its floo
 
 An EVO is one atomic economic object — identity, value, and behavior in the same account. Not a token pointing to a vault. The account IS the asset. The SOL is in the account, not next to it.
 
-> Transfer a Metaplex NFT without its vault. You can. Transfer an EVO without its SOL. You can't.
+> Transfer a Metaplex NFT without its vault. You can. Transfer an EVO without its SOL. You can't — the reserve and object state occupy the same program-owned account, and every ownership transition is governed by the same protocol.
 
 See [Protocol Design](docs/11-protocol-design.md) for the full architectural thesis.
 

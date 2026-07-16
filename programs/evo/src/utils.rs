@@ -1,4 +1,3 @@
-use crate::constants::*;
 use crate::errors::EvoError;
 use crate::state::*;
 use anchor_lang::prelude::*;
@@ -14,14 +13,16 @@ pub fn calculate_fee(amount: u64, bps: u16) -> u64 {
     (amount as u128 * bps as u128 / 10000) as u64
 }
 
-/// Route a fee to the configured destination
+/// Route a fee to the configured destination.
+/// `from` must be a system-owned account (signer) — System Program transfer is used.
+/// `incinerator` is required when destination == Burn.
 pub fn route_fee<'info>(
     system_program: &Program<'info, System>,
     from: &Signer<'info>,
     destination: &FeeDestination,
     creator: &SystemAccount<'info>,
     treasury: Option<&SystemAccount<'info>>,
-    creator_pubkey: Pubkey,
+    incinerator: Option<&UncheckedAccount<'info>>,
     amount: u64,
 ) -> Result<()> {
     if amount == 0 {
@@ -51,21 +52,22 @@ pub fn route_fee<'info>(
             transfer(cpi_ctx, amount)?;
         }
         FeeDestination::Burn => {
-            // Burn = transfer to SystemProgram address (effectively destroyed)
-            let burn_address = System::id();
-            // We can't easily transfer to the system program itself.
-            // Instead, we just don't send it anywhere — it stays with the payer.
-            // For a true burn, we'd need a different mechanism.
-            // For now, we skip the transfer (fee is effectively burned from circulation
-            // because it's not sent to anyone).
-            // The fee was already deducted from the seller's proceeds.
-            msg!("Burned {} lamports (not routed to any recipient)", amount);
+            let incinerator = incinerator.ok_or(EvoError::IncineratorRequired)?;
+            let cpi_ctx = CpiContext::new(
+                system_program.to_account_info(),
+                Transfer {
+                    from: from.to_account_info(),
+                    to: incinerator.to_account_info(),
+                },
+            );
+            transfer(cpi_ctx, amount)?;
+            msg!("Burned {} lamports to incinerator", amount);
         }
         FeeDestination::Split => {
             let half = amount / 2;
             let other_half = amount - half;
 
-            // Creator gets half
+            // Creator always gets their half
             let cpi_ctx = CpiContext::new(
                 system_program.to_account_info(),
                 Transfer {
@@ -75,13 +77,22 @@ pub fn route_fee<'info>(
             );
             transfer(cpi_ctx, half)?;
 
-            // Treasury gets half
+            // Treasury gets the other half, or creator gets it if no treasury supplied
             if let Some(treasury) = treasury {
                 let cpi_ctx = CpiContext::new(
                     system_program.to_account_info(),
                     Transfer {
                         from: from.to_account_info(),
                         to: treasury.to_account_info(),
+                    },
+                );
+                transfer(cpi_ctx, other_half)?;
+            } else {
+                let cpi_ctx = CpiContext::new(
+                    system_program.to_account_info(),
+                    Transfer {
+                        from: from.to_account_info(),
+                        to: creator.to_account_info(),
                     },
                 );
                 transfer(cpi_ctx, other_half)?;

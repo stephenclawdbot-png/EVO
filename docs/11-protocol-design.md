@@ -157,7 +157,7 @@ The difference between enforced and structural is the difference between a lock 
 
 ## The one-liner
 
-> Transfer a Metaplex NFT without its vault. You can. Transfer an EVO without its SOL. You can't — the SOL is in the account, not next to it.
+> Transfer a Metaplex NFT without its vault. You can. Transfer an EVO without its SOL. You can't — the reserve and object state occupy the same program-owned account, and every ownership or redemption transition is governed by the same protocol.
 
 ---
 

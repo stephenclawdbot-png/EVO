@@ -61,4 +61,10 @@ pub enum EvoError {
 
     #[msg("Metadata URI is too long")]
     MetadataUriTooLong,
+
+    #[msg("EVO account has insufficient lamports for shatter")]
+    InsufficientReserve,
+
+    #[msg("Incinerator account required for burn fee destination")]
+    IncineratorRequired,
 }

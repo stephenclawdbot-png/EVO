@@ -15,7 +15,7 @@ pub enum FeeDestination {
     Treasury,
     /// Send to the collection creator
     Creator,
-    /// Burn — send to SystemProgram (effectively destroyed)
+    /// Burn — permanently destroyed (sent to incinerator)
     Burn,
     /// Split between creator and treasury (50/50)
     Split,

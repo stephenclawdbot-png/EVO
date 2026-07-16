@@ -3,7 +3,6 @@ use crate::errors::EvoError;
 use crate::state::*;
 use crate::utils::*;
 use anchor_lang::prelude::*;
-use anchor_lang::system_program::{Transfer, transfer};
 
 #[derive(Accounts)]
 #[instruction(evo_id: u32)]
@@ -33,10 +32,15 @@ pub struct Shatter<'info> {
     #[account(mut, address = collection_config.creator)]
     pub creator: SystemAccount<'info>,
 
-    /// Protocol treasury — may receive shatter fee
-    /// CHECK: Optional, only used when destination == Treasury
+    /// Protocol treasury — optional, used when destination == Treasury or Split
+    /// CHECK: Optional, only used when destination == Treasury or Split
     #[account(mut)]
-    pub treasury: Option<SystemAccount<'info>>,
+    pub treasury: Option<UncheckedAccount<'info>>,
+
+    /// Incinerator — used when fee destination is Burn
+    /// CHECK: Verified against INCINERATOR constant
+    #[account(mut, address = INCINERATOR)]
+    pub incinerator: Option<UncheckedAccount<'info>>,
 
     pub system_program: Program<'info, System>,
 }
@@ -49,84 +53,57 @@ pub fn shatter(ctx: Context<Shatter>, evo_id: u32) -> Result<()> {
     let fee = calculate_fee(locked, collection.shatter_fee_bps);
     let owner_proceeds = locked - fee;
 
-    // Mark as shattered BEFORE transferring (prevents re-entrancy)
+    // Mark as shattered BEFORE any lamport movement (prevents re-entrancy)
     evo.is_shattered = true;
     evo.locked_lamports = 0;
 
-    // PDA signer seeds for the EVO account
-    let collection_key = collection.key();
-    let evo_id_bytes = evo_id.to_le_bytes();
-    let bump = [evo.bump];
-    let evo_seeds: Vec<&[u8]> = vec![
-        EVO_SEED,
-        collection_key.as_ref(),
-        &evo_id_bytes,
-        &bump,
-    ];
-    let signer = &[evo_seeds.as_slice()];
-
-    // Transfer the fee from the EVO PDA to the destination
+    // Move the fee out of the EVO PDA using direct lamport manipulation.
+    // System Program transfer CPI does NOT work on program-owned accounts.
+    // The EVO PDA is owned by the EVO program, so we must debit/credit lamports directly.
     if fee > 0 {
+        let evo_info = evo.to_account_info();
         match collection.shatter_fee_destination {
             FeeDestination::Creator => {
-                let cpi_ctx = CpiContext::new_with_signer(
-                    ctx.accounts.system_program.to_account_info(),
-                    Transfer {
-                        from: evo.to_account_info(),
-                        to: ctx.accounts.creator.to_account_info(),
-                    },
-                    signer,
-                );
-                transfer(cpi_ctx, fee)?;
+                **evo_info.lamports.borrow_mut() -= fee;
+                **ctx.accounts.creator.to_account_info().lamports.borrow_mut() += fee;
             }
             FeeDestination::Treasury => {
-                let treasury = ctx.accounts.treasury.as_ref().ok_or(EvoError::CollectionInactive)?;
-                let cpi_ctx = CpiContext::new_with_signer(
-                    ctx.accounts.system_program.to_account_info(),
-                    Transfer {
-                        from: evo.to_account_info(),
-                        to: treasury.to_account_info(),
-                    },
-                    signer,
-                );
-                transfer(cpi_ctx, fee)?;
+                let treasury = ctx.accounts.treasury.as_ref()
+                    .ok_or(EvoError::CollectionInactive)?;
+                **evo_info.lamports.borrow_mut() -= fee;
+                **treasury.to_account_info().lamports.borrow_mut() += fee;
             }
             FeeDestination::Burn => {
-                msg!("Burned {} lamports (fee not routed to any recipient)", fee);
+                let incinerator = ctx.accounts.incinerator.as_ref()
+                    .ok_or(EvoError::IncineratorRequired)?;
+                **evo_info.lamports.borrow_mut() -= fee;
+                **incinerator.to_account_info().lamports.borrow_mut() += fee;
             }
             FeeDestination::Split => {
                 let half = fee / 2;
                 let other_half = fee - half;
+                let creator_info = ctx.accounts.creator.to_account_info();
 
-                let cpi_ctx = CpiContext::new_with_signer(
-                    ctx.accounts.system_program.to_account_info(),
-                    Transfer {
-                        from: evo.to_account_info(),
-                        to: ctx.accounts.creator.to_account_info(),
-                    },
-                    signer,
-                );
-                transfer(cpi_ctx, half)?;
+                // Creator always gets their half
+                **evo_info.lamports.borrow_mut() -= half;
+                **creator_info.lamports.borrow_mut() += half;
 
+                // Treasury gets the other half, or creator gets it if no treasury supplied
                 if let Some(treasury) = ctx.accounts.treasury.as_ref() {
-                    let cpi_ctx = CpiContext::new_with_signer(
-                        ctx.accounts.system_program.to_account_info(),
-                        Transfer {
-                            from: evo.to_account_info(),
-                            to: treasury.to_account_info(),
-                        },
-                        signer,
-                    );
-                    transfer(cpi_ctx, other_half)?;
+                    **evo_info.lamports.borrow_mut() -= other_half;
+                    **treasury.to_account_info().lamports.borrow_mut() += other_half;
+                } else {
+                    **evo_info.lamports.borrow_mut() -= other_half;
+                    **creator_info.lamports.borrow_mut() += other_half;
                 }
-
-                msg!("Split fee: {} to creator, {} to treasury", half, other_half);
             }
         }
     }
 
-    // close=owner transfers remaining lamports (locked - fee + rent) to owner.
-
-    msg!("EVO #{} shattered. Returned {} lamports to owner. Fee: {} lamports.", evo_id, owner_proceeds, fee);
+    // close = owner sends remaining lamports (owner_proceeds + rent + any surplus) to owner.
+    msg!(
+        "EVO #{} shattered. Returned {} lamports to owner. Fee: {} lamports.",
+        evo_id, owner_proceeds, fee
+    );
     Ok(())
 }

@@ -31,9 +31,14 @@ pub struct Buy<'info> {
     pub creator: SystemAccount<'info>,
 
     /// Protocol treasury — may receive royalty depending on config
-    /// CHECK: Only used when royalty_destination == Treasury
+    /// CHECK: Only used when royalty_destination == Treasury or Split
     #[account(mut)]
     pub treasury: Option<SystemAccount<'info>>,
+
+    /// Incinerator — used when royalty destination is Burn
+    /// CHECK: Verified against INCINERATOR constant
+    #[account(mut, address = INCINERATOR)]
+    pub incinerator: Option<UncheckedAccount<'info>>,
 
     #[account(mut)]
     pub buyer: Signer<'info>,
@@ -48,7 +53,7 @@ pub fn buy(ctx: Context<Buy>) -> Result<()> {
 
     require!(price > 0, EvoError::InsufficientLamports);
 
-    // Check buyer has enough (the transfer will fail if not, but we check for clear error)
+    // Check buyer has enough
     let buyer_balance = ctx.accounts.buyer.lamports();
     require!(buyer_balance >= price, EvoError::InsufficientPayment);
 
@@ -74,7 +79,7 @@ pub fn buy(ctx: Context<Buy>) -> Result<()> {
             &collection.royalty_destination,
             &ctx.accounts.creator,
             ctx.accounts.treasury.as_ref(),
-            collection.creator,
+            ctx.accounts.incinerator.as_ref(),
             royalty,
         )?;
     }
