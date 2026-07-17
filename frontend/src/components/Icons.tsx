@@ -150,6 +150,47 @@ export const IconEvoMark = ({ className }: IconProps) => (
   </svg>
 );
 
+// Feed — a droplet / plus into the object.
+export const IconFeed = ({ className }: IconProps) => (
+  <svg {...base(className)}>
+    <path d="M12 2.69 17.66 8.35a8 8 0 1 1-11.31 0L12 2.69Z" />
+    <path d="M9 13a3 3 0 0 0 3 3" />
+  </svg>
+);
+
+// Shatter — a cracked / broken hexagon.
+export const IconShatter = ({ className }: IconProps) => (
+  <svg {...base(className)}>
+    <path d="M12 2 21 7v10l-9 5-9-5V7l9-5Z" />
+    <path d="M12 2v6l-4 4 4 2-2 5 2 5" />
+    <path d="M12 8l4 2" />
+  </svg>
+);
+
+// Evolve — circular arrows / transform.
+export const IconEvolve = ({ className }: IconProps) => (
+  <svg {...base(className)}>
+    <path d="M12 2v4" />
+    <path d="m16.24 7.76 2.83-2.83" />
+    <path d="M18 12h4" />
+    <path d="m16.24 16.24 2.83 2.83" />
+    <path d="M12 18v4" />
+    <path d="m4.93 19.07 2.83-2.83" />
+    <path d="M2 12h4" />
+    <path d="m4.93 4.93 2.83 2.83" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+// Sparkle — intrigue / new.
+export const IconSparkle = ({ className }: IconProps) => (
+  <svg {...base(className)}>
+    <path d="M12 3 13.5 9 19 10.5 13.5 12 12 18 10.5 12 5 10.5 12 3Z" />
+    <path d="M19 3v4" />
+    <path d="M21 5h-4" />
+  </svg>
+);
+
 // Collection grid icon.
 export const IconCollection = ({ className }: IconProps) => (
   <svg {...base(className)}>
