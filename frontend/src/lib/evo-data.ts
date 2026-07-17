@@ -3,7 +3,7 @@
 // Visual identity (images, stage names, etc.) comes from the collection's
 // visual manifest (fetched from metadata_uri), not from this file.
 
-import { EVOAccount, CollectionConfig, lamportsToSol } from './evo-program';
+import { EVOAccount, CollectionConfig, lamportsToSol, getEvoPDA } from './evo-program';
 import type { PublicKey } from '@solana/web3.js';
 
 export interface FractureLineDisplay {
@@ -59,8 +59,21 @@ export function evoAccountToData(
   collectionName?: string,
 ): EVOData | null {
   if (evo.evoId === undefined) {
-    if (evo.mintIndex !== undefined) evo.evoId = evo.mintIndex;
-    else return null;
+    if (evo.mintIndex !== undefined) {
+      // Try mintIndex first (fast path), then verify against PDA
+      if (evo.pda && evo.collection) {
+        const [testPda] = getEvoPDA(evo.collection, evo.mintIndex);
+        if (testPda.equals(evo.pda)) {
+          evo.evoId = evo.mintIndex;
+        } else {
+          return null; // Cannot determine evoId without PDA match
+        }
+      } else {
+        evo.evoId = evo.mintIndex;
+      }
+    } else {
+      return null;
+    }
   }
 
   const name = `${collectionName || 'EVO'} #${evo.evoId}`;

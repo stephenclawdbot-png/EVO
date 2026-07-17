@@ -762,7 +762,19 @@ export async function readAllEVOsByOwner(conn: Connection, owner: PublicKey): Pr
     const evo = parseEVOAccount(account.data);
     if (evo) {
       evo.pda = pubkey;
-      evo.evoId = evo.mintIndex;
+      // Derive evoId from PDA, not mintIndex (they may differ for non-sequential forges)
+      const [testPda] = getEvoPDA(evo.collection, evo.mintIndex);
+      if (testPda.equals(pubkey)) {
+        evo.evoId = evo.mintIndex;
+      } else {
+        // Non-sequential evo_id — search for the matching PDA seed
+        let found = false;
+        for (let i = 0; i < 100000 && !found; i++) {
+          const [p] = getEvoPDA(evo.collection, i);
+          if (p.equals(pubkey)) { evo.evoId = i; found = true; }
+        }
+        if (!found) evo.evoId = evo.mintIndex;
+      }
       evos.push(evo);
     }
   }

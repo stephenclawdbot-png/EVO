@@ -9,7 +9,6 @@ import {
   readAllEVOsByOwner,
   readCollectionConfig,
   getCollectionPDA,
-  lamportsToSol,
   EVOAccount,
 } from '@/lib/evo-program';
 import { evoAccountToData, EVOData, collectionConfigToData, CollectionData } from '@/lib/evo-data';
@@ -112,13 +111,13 @@ export default function PortfolioPage() {
 
     // Recoverable SOL = locked SOL minus shatter fee (estimate using first collection's fee)
     const shatterFeeBps = groups[0]?.data?.shatterFeeBps || 0;
-    const recoverableSol = lamportsToSol(active.reduce((s, e) => s + e.lockedLamports * 10000, 0) / 10000 * (1 - shatterFeeBps / 10000));
+    const recoverableSol = active.reduce((s, e) => s + e.lockedLamports * 10000, 0) / 10000 * (1 - shatterFeeBps / 10000);
 
     return {
       total: allEvos.length,
       active: active.length,
       shattered: shattered.length,
-      totalLockedSol: lamportsToSol(totalLocked),
+      totalLockedSol: totalLocked,
       totalListValueSol: totalListValue,
       totalListed,
       totalFed,

@@ -45,6 +45,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
   const [manifest, setManifest] = useState<EvoVisualManifest | null>(null);
   const [stageImages, setStageImages] = useState<{ name: string; image: string }[]>([]);
   const [manifestVerification, setManifestVerification] = useState<ManifestVerification | null>(null);
+  const [shatterFeeBps, setShatterFeeBps] = useState<number>(500);
 
   useEffect(() => {
     readCollectionConfig(connection, collectionName).then(cfg => {
@@ -52,6 +53,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
         setCreator(cfg.creator.toBase58());
         setMetadataUri(cfg.metadataUri);
         setIsRevealed(cfg.isRevealed);
+        setShatterFeeBps(cfg.shatterFeeBps);
       }
     }).catch(() => {});
   }, [connection, collectionName]);
@@ -158,7 +160,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
     if (!cfg) throw new Error('Collection not found');
     const feeBps = cfg.shatterFeeBps;
     const refundLamports = Math.floor(evo.lockedLamports * (10000 - feeBps) / 10000);
-    if (!confirm(`Shatter this EVO and recover ${(refundLamports / 1e9).toFixed(4)} SOL (after ${(feeBps / 100).toFixed(1)}% fee)? This cannot be undone.`)) return;
+    if (!confirm(`Shatter this EVO and recover ${refundLamports.toFixed(4)} SOL (after ${(feeBps / 100).toFixed(1)}% fee)? This cannot be undone.`)) return;
     setAction('shatter'); setError(null); setTxResult(null);
     try {
       const collectionPda = new PublicKey(evo.collectionPda!);
@@ -571,7 +573,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                 </div>
                 <button onClick={handleShatter} disabled={action === 'shatter'}
                   className="w-full rounded border border-negative/30 bg-negative-soft py-2.5 text-xs font-medium text-negative transition-colors hover:bg-negative/10 disabled:opacity-50">
-                  {action === 'shatter' ? 'Shattering...' : `Shatter - recover ${(evo.lockedLamports * 0.95).toFixed(4)} SOL`}
+                  {action === 'shatter' ? 'Shattering...' : `Shatter - recover ${(evo.lockedLamports * (10000 - shatterFeeBps) / 10000).toFixed(4)} SOL`}
                 </button>
               </div>
             )}
