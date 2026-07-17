@@ -425,9 +425,9 @@ A creator should think about their collection, not about account sizes and PDA s
 - ✅ Protocol-native visual lifecycle (per-asset current_stage, on-chain source of truth)
 - ✅ set_visual_stage instruction for Custom lifecycle authority override
 - ✅ Visual manifest resolver + wallet integration guide
-- ✅ Comprehensive test suite — 40+ tests (forge, feed, transfer, buy, shatter, evolution, commit-reveal, burn destination, visual lifecycle)
-- ✅ 9+ consecutive green CI runs, zero flaky tests
-- ⬜ Devnet testing with real RPC
+- ✅ Comprehensive test suite — 41 tests (forge, feed, transfer, buy, shatter, evolution, commit-reveal, burn destination, visual lifecycle)
+- ✅ 11 consecutive green localnet CI runs, zero flaky tests (41 tests each)
+- ⬜ Devnet testing with real RPC (workflow configured, needs funded keypair)
 - ⬜ Independent security review
 
 ### Phase 2: Developer Experience
