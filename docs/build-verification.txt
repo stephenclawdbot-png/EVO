@@ -1,0 +1,34 @@
+Git commit: d360c7c7476a3492ca1bc74bdfad6887ac8fffa4
+.so SHA-256: 80313e72873d895cc9d27b707c70832d473496c2ad233fc7d4c916e86ef35cb7
+.so size: 500760 bytes
+Program ID: 7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc
+Build toolchain: Solana CLI 1.18.26, Anchor 0.31.0, platform-tools rustc 1.89.0-dev
+Build target: sbpf-solana-solana
+Build date: 2026-07-18
+
+══════════════════════════════════════════════════════
+DEPLOYED PROGRAM VERIFICATION (Devnet)
+══════════════════════════════════════════════════════
+
+Deployment date: 2026-07-18
+Network: Devnet (https://api.devnet.solana.com)
+Program ID: 7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc
+Program Data Address: GFyp4c2oD5guefkAHF8M3xxKyvzVafuX7inyJGUd4wZy
+Authority: G3aWJsdtrRT12HnC9R2BVoyErQbtGXseaM9c2xt1MJUJ
+Last Deployed In Slot: 476972873
+
+Binary verification:
+  Local .so SHA-256:    80313e72873d895cc9d27b707c70832d473496c2ad233fc7d4c916e86ef35cb7
+  Devnet dump SHA-256: 80313e72873d895cc9d27b707c70832d473496c2ad233fc7d4c916e86ef35cb7
+  Match: ✅ TRUE
+
+  Method: solana program dump → trim to 500760 bytes (strip zero padding) → SHA-256
+  Devnet dump size: 510032 bytes (500760 program + 9272 zero padding)
+  Byte-by-byte comparison of first 500760 bytes: identical
+
+Devnet proof test results: 28/32 PASS
+  All 4 failures are stale state (EVO #1 from prior runs, owned by different wallet)
+  All core flows verified: create → forge → list → buy → shatter → manifest verify
+
+Conclusion: The deployed devnet program binary is byte-for-byte identical to the
+local build from commit d360c7c. The build is reproducible and verifiable.

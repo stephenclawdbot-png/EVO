@@ -4,7 +4,7 @@
     "expected": "true",
     "actual": "true",
     "pass": true,
-    "txSig": "4vg7c6ZF1CYtKoeA6a7VePLgzD2mqocshkxehD4ZenAgVC1HCAz6G5aCafqvT2VNM5zokMzXPHsSGeaXrcJED137",
+    "txSig": "3qmcaL41LUFbn6rwynQB58ccxqqeJrL6TtFr6W6hYQerzG9sf35vFzwppU4LkRSob7hUk9CeAbyVXg3bwjFV1ae8",
     "buyerBalance": "0.050000",
     "revealAuthBalance": "0.010000"
   },
@@ -83,7 +83,7 @@
     "expected": "success",
     "actual": "success",
     "pass": true,
-    "txSig": "4Nhoqhm9mHmej1AtZ4BZTrF7wCKT49gi2YqwQzz2KY83MY3ZseDD4Zu3FonNLW1hhUxT5GPNDyHjp7jqi1SFaVDt"
+    "txSig": "3BqMTtucxBoWkRx3otSyyXMNUAQo5NS7qBoAVdZEHgxNdeHDnLmTheTejhT787VxLLF2FgWJVWLprmBbzsw7e3kT"
   },
   {
     "step": "Forge EVO #1",
@@ -94,8 +94,8 @@
   },
   {
     "step": "EVO #0 owner",
-    "expected": "GfLTqAiuYyX5MzLad7jDqndN1iumDv4RKDstbun5rwg3",
-    "actual": "GfLTqAiuYyX5MzLad7jDqndN1iumDv4RKDstbun5rwg3",
+    "expected": "3tDmdTq6PLuqFnZrr45qyiSFepHUthiwt3mJEWjrh2Ho",
+    "actual": "3tDmdTq6PLuqFnZrr45qyiSFepHUthiwt3mJEWjrh2Ho",
     "pass": true,
     "txSig": null
   },
@@ -122,7 +122,7 @@
   },
   {
     "step": "EVO #1 owner",
-    "expected": "GfLTqAiuYyX5MzLad7jDqndN1iumDv4RKDstbun5rwg3",
+    "expected": "3tDmdTq6PLuqFnZrr45qyiSFepHUthiwt3mJEWjrh2Ho",
     "actual": "2q3PxvozimqbmgRyQVQwnhAFXPWDFyXYKsYzk3afLsPW",
     "pass": false,
     "txSig": null
@@ -160,7 +160,7 @@
     "expected": "true",
     "actual": "true",
     "pass": true,
-    "txSig": "2BvDNZHoS9CLjjMsLoAR9nti3bdA2vWAAajWj56pqBjMcD9t4oKHyf7zq2zhWnRkwbSMgPNzWriuzSEzW3rK76jX"
+    "txSig": "frqTzDWeLVG5viyK4bHZNcdESXxAAgA8VgEfYUERRuzvjCpZmyRtHvzRYSesmNzXHqBEWhaBMZJ7ZvmmVg64J3E"
   },
   {
     "step": "List EVO #0 - price",
@@ -174,7 +174,7 @@
     "expected": "G3aWJsdtrRT12HnC9R2BVoyErQbtGXseaM9c2xt1MJUJ",
     "actual": "G3aWJsdtrRT12HnC9R2BVoyErQbtGXseaM9c2xt1MJUJ",
     "pass": true,
-    "txSig": "3r736YBZRyUMEjP5r82A8adF2npXyAV8Jh2UuJHVsrDEeyHarE4xESuvwZJyeZmgaRpQYULNbJQJuLGbf8EgtWau"
+    "txSig": "3ozyrSn5L4eQ83AxL5C4NUJmcw7jFd78q18F5A5DV6S6kkEKYWcs177Qi2qB9BTUDbZTFt8NntAxiK1N4d2uqMQb"
   },
   {
     "step": "Buy EVO #0 - not listed",
@@ -205,7 +205,7 @@
     "expected": "true",
     "actual": "true",
     "pass": true,
-    "txSig": "3gPv5q3gKDsCfZtSyL2NKtatkv9uHvva8odTUBmVDdWYGyvjUgt2UkzLxRqASdSus1p8dVXBHiAxpW3DroSDuCJY",
+    "txSig": "3R13UwDPijjbjEHqAhQ1iv4x79Ut1JMy74ifLP3k2y2ZjxNzsUAnkdhoWvMFTiLocuMfqQw9xk11BQtwQsLVCeVj",
     "received": "0.009605",
     "expectedMin": "0.000950",
     "fee": "0.000050",
