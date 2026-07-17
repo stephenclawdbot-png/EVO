@@ -30,6 +30,7 @@ interface ZDetailProps {
 export function ZDetail({ evo, onBack, onRefresh }: ZDetailProps) {
   const { connection } = useConnection();
   const wallet = useWallet();
+  const collectionName = evo.collectionName || 'Z';
   const [imgError, setImgError] = useState(false);
   const [resolvedImage, setResolvedImage] = useState<string | null>(null);
   const [action, setAction] = useState<string | null>(null);
@@ -44,7 +45,7 @@ export function ZDetail({ evo, onBack, onRefresh }: ZDetailProps) {
   const [isRevealed, setIsRevealed] = useState<boolean | undefined>(undefined);
 
   useEffect(() => {
-    readCollectionConfig(connection, 'Z').then(cfg => {
+    readCollectionConfig(connection, collectionName).then(cfg => {
       if (cfg) {
         setCreator(cfg.creator.toBase58());
         setMetadataUri(cfg.metadataUri);
@@ -118,8 +119,8 @@ export function ZDetail({ evo, onBack, onRefresh }: ZDetailProps) {
   const handleBuy = async () => {
     setAction('buy'); setError(null); setTxResult(null);
     try {
-      const [collectionPda] = getCollectionPDA('Z');
-      const cfg = await readCollectionConfig(connection, 'Z');
+      const [collectionPda] = getCollectionPDA(collectionName);
+      const cfg = await readCollectionConfig(connection, collectionName);
       if (!cfg) throw new Error('Collection not found');
       const proto = await readProtocolConfig(connection);
       if (!proto) throw new Error('Protocol not found');
@@ -135,8 +136,8 @@ export function ZDetail({ evo, onBack, onRefresh }: ZDetailProps) {
     if (!confirm(`Shatter this Z and recover ${(evo.lockedLamports * 0.95).toFixed(4)} SOL (after 5% fee)? This cannot be undone.`)) return;
     setAction('shatter'); setError(null); setTxResult(null);
     try {
-      const [collectionPda] = getCollectionPDA('Z');
-      const cfg = await readCollectionConfig(connection, 'Z');
+      const [collectionPda] = getCollectionPDA(collectionName);
+      const cfg = await readCollectionConfig(connection, collectionName);
       if (!cfg) throw new Error('Collection not found');
       const proto = await readProtocolConfig(connection);
       if (!proto) throw new Error('Protocol not found');
@@ -171,7 +172,7 @@ export function ZDetail({ evo, onBack, onRefresh }: ZDetailProps) {
     : [0, 100];
 
   const ticker = [
-    { label: 'Z', value: `#${evo.id}` },
+    { label: collectionName, value: `#${evo.id}` },
     { label: 'Locked', value: `${evo.lockedLamports} SOL`, tone: 'pos' as const },
     { label: 'Trades', value: String(evo.tradeCount) },
     { label: 'Facets', value: `${evo.facetCount}/100` },

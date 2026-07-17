@@ -32,6 +32,7 @@ export interface EVOData {
   // On-chain references
   evoPda?: string;
   collectionPda?: string;
+  collectionName?: string;
 }
 
 export interface CollectionData {
@@ -113,6 +114,7 @@ export function evoAccountToData(
     currentState: evo.currentState,
     evoPda: evo.pda?.toBase58(),
     collectionPda: evo.collection.toBase58(),
+    collectionName: collectionName,
   };
 }
 
