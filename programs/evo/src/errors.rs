@@ -133,4 +133,7 @@ pub enum EvoError {
 
     #[msg("Static collections do not support stage transitions")]
     StaticNoTransitions,
+
+    #[msg("Cannot buy your own listed EVO — self-trades are not allowed")]
+    SelfTradeNotAllowed,
 }

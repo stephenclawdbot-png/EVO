@@ -59,6 +59,9 @@ pub fn buy(ctx: Context<Buy>) -> Result<()> {
 
     require!(price > 0, EvoError::InsufficientLamports);
 
+    // Prevent self-trade — buyer cannot be the seller
+    require!(ctx.accounts.buyer.key() != ctx.accounts.seller.key(), EvoError::SelfTradeNotAllowed);
+
     // Check buyer has enough
     let buyer_balance = ctx.accounts.buyer.lamports();
     require!(buyer_balance >= price, EvoError::InsufficientPayment);

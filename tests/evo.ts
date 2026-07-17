@@ -1251,7 +1251,42 @@ describe("EVO", () => {
         .rpc();
     });
 
-    // --- Shatter while listed — now REJECTED by the protocol ---
+    // --- Self-trade guard: buyer cannot be seller ---
+    it("rejects self-trade (buyer == seller)", async () => {
+      // List evoPk with buyer as owner
+      await program.methods
+        .list(SOL(0.01))
+        .accounts({ evo: evoPk, seller: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
+
+      try {
+        await program.methods
+          .buy()
+          .accounts({
+            evo: evoPk,
+            collectionConfig: collectionPk,
+            protocolConfig: protocolPda,
+            seller: buyer.publicKey,
+            creator: creator.publicKey,
+            treasury: treasury.publicKey,
+            incinerator: INCINERATOR,
+            buyer: buyer.publicKey, // same as seller — self-trade
+          })
+          .signers([buyer])
+          .rpc();
+        assert.fail("should reject self-trade");
+      } catch (e: any) {
+        expect(e.message).to.match(/SelfTradeNotAllowed|self.trade|0x[0-9a-f]+/i);
+      }
+
+      // cleanup: delist
+      await program.methods
+        .delist()
+        .accounts({ evo: evoPk, seller: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
+    });
     it("rejects shatter while listed (require !is_listed)", async () => {
       // Forge a fresh EVO for this test
       const evoId = 5;
