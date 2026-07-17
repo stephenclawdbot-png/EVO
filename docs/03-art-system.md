@@ -143,6 +143,74 @@ Creators can use generative art (computed from resonance_seed) OR pre-made art (
 
 ---
 
+## Visual Lifecycle (Protocol-Native)
+
+EVO supports protocol-native visual lifecycles. The collection creator chooses one lifecycle type at creation. Every individual EVO asset stores its own `current_stage` on-chain, and the program enforces valid stage transitions.
+
+### Lifecycle Types
+
+| Type | Stages | Transitions | Source of Truth |
+|---|---|---|---|
+| `Static` | 1 (stage 0) | None — always stage 0 | Program |
+| `Reveal` | 2 (0→1) | `reveal_collection()` moves 0→1 | `is_revealed` flag |
+| `CommitReveal` | 2 (0→1) | `commit_reveal()` then `reveal_collection()` | `is_revealed` flag + commitment hash |
+| `RevealAndEvolve` | N (0→max) | `reveal_collection()` then `evolve()` | `current_stage` field |
+| `Custom` | N (0→max) | `set_visual_stage()` by authority | `current_stage` field |
+
+### How It Works
+
+```
+Collection (on-chain)
+  ├─ lifecycle_type: u8
+  ├─ max_states: u16
+  ├─ artwork_manifest_uri: metadata_uri (existing field)
+  ├─ artwork_manifest_hash: [u8;32] (integrity check)
+  └─ reveal_authority: Pubkey
+
+EVO Asset (on-chain)
+  ├─ current_state: u16 (per-asset visual stage)
+  └─ last_transition_at: i64 (timestamp)
+
+Manifest (off-chain JSON)
+  └─ stages: [{ id, name, image }]
+```
+
+### Resolution Flow
+
+1. Read `lifecycle_type` and `current_state`/`is_revealed` from on-chain accounts
+2. Fetch the artwork manifest from `metadata_uri`
+3. Verify manifest hash matches `artwork_manifest_hash` (if non-zero)
+4. Resolve the active stage using protocol state:
+   - Static → always stage 0
+   - Reveal/CommitReveal → `is_revealed ? 1 : 0`
+   - RevealAndEvolve/Custom → `current_state`
+5. Display the image for the resolved stage
+
+The marketplace never decides the stage — it only reads what the program says. This makes visual state verifiable, tamper-proof, and consistent across all marketplaces and wallets.
+
+### Commit-Reveal for Provably Fair Reveal
+
+For `CommitReveal` lifecycle, the creator commits `keccak256(secret)` before minting begins. After all mints complete, the creator reveals the secret. The program verifies it matches the commitment, then uses it as entropy for the reveal.
+
+This prevents the creator from trying different entropy values to find a favorable outcome after seeing who owns which mint index.
+
+### Permissionless Evolution
+
+For `RevealAndEvolve`, evolution is permissionless — anyone can call `evolve()` on an EVO that meets the evolution thresholds. Thresholds are configurable:
+
+- **Trade trigger:** EVO has been traded N times
+- **Feed trigger:** EVO has been fed N times
+- **Hold trigger:** EVO has existed for N seconds
+- **Locked value trigger:** EVO has ≥ N lamports locked
+
+This means evolution can happen automatically as EVOs are used, traded, and fed — without requiring the creator to manually advance each one.
+
+### Authority Override for Custom
+
+For `Custom` lifecycle, the collection's `reveal_authority` can call `set_visual_stage()` to set any stage 0..max_states-1. This gives creators full manual control when they want it, while the program still enforces bounds and authorization.
+
+---
+
 ## Rarity System
 
 Rarity emerges from behavior, not from assigned traits:
