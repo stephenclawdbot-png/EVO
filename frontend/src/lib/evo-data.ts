@@ -58,14 +58,35 @@ export function computeFacets(forgedAt: number): number {
   return Math.min(100, Math.floor(elapsed / GROWTH_INTERVAL_MS));
 }
 
+function genericCreature(evoId: number, collectionName: string): Creature {
+  const id = `${collectionName}-${evoId}`;
+  return {
+    id,
+    name: id,
+    displayName: `${collectionName} #${evoId}`,
+    element: 'Void',
+    rarity: 'Common',
+    stages: { baby: '', juvenile: '', adult: '', elder: '' },
+    baseSprite: '',
+  };
+}
+
 // Map an on-chain EVOAccount to display EVOData
+// creatures and collectionName are optional — generic display used when not provided
 export function evoAccountToData(
   evo: EVOAccount,
-  creatures: Creature[],
+  creatures?: Creature[],
+  collectionName?: string,
 ): EVOData | null {
-  if (evo.evoId === undefined) return null;
-  const creature = creatures[evo.evoId % creatures.length];
-  if (!creature) return null;
+  // Use mintIndex as evoId fallback (needed for getProgramAccounts reads)
+  if (evo.evoId === undefined) {
+    if (evo.mintIndex !== undefined) evo.evoId = evo.mintIndex;
+    else return null;
+  }
+
+  const creature = creatures && creatures.length > 0
+    ? creatures[evo.evoId % creatures.length]
+    : genericCreature(evo.evoId, collectionName || 'EVO');
 
   const seedHex = Buffer.from(evo.resonanceSeed).toString('hex');
 

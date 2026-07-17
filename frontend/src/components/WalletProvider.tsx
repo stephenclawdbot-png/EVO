@@ -10,7 +10,10 @@ import { clusterApiUrl } from '@solana/web3.js';
 import { useMemo, type ReactNode } from 'react';
 
 export function WalletContextProvider({ children }: { children: ReactNode }) {
-  const endpoint = useMemo(() => clusterApiUrl('mainnet-beta'), []);
+  const endpoint = useMemo(
+    () => process.env.NEXT_PUBLIC_SOLANA_RPC || clusterApiUrl('devnet'),
+    []
+  );
   const wallets = useMemo(
     () => [
       new PhantomWalletAdapter(),

@@ -654,6 +654,54 @@ export async function readAllEVOs(conn: Connection, collectionPda: PublicKey, su
   return evos;
 }
 
+// ─── Collection & Portfolio Discovery ────────────────────────
+
+// Account sizes (from on-chain SPACE constants)
+export const COLLECTION_CONFIG_SPACE = 568;
+export const EVO_ACCOUNT_SPACE = 1109;
+
+export interface CollectionDiscovery {
+  config: CollectionConfig;
+  pda: PublicKey;
+}
+
+// Read ALL collections on the protocol via getProgramAccounts
+// Uses dataSize filter to find CollectionConfig accounts, then validates discriminator
+export async function readAllCollections(conn: Connection): Promise<CollectionDiscovery[]> {
+  const accounts = await conn.getProgramAccounts(PROGRAM_ID, {
+    filters: [{ dataSize: COLLECTION_CONFIG_SPACE }],
+  });
+  const collections: CollectionDiscovery[] = [];
+  for (const { pubkey, account } of accounts) {
+    const config = parseCollectionConfig(account.data);
+    if (config) {
+      collections.push({ config, pda: pubkey });
+    }
+  }
+  return collections;
+}
+
+// Read ALL EVOs owned by a specific wallet (across ALL collections)
+// Uses dataSize + memcmp filters for efficient scanning
+export async function readAllEVOsByOwner(conn: Connection, owner: PublicKey): Promise<EVOAccount[]> {
+  const accounts = await conn.getProgramAccounts(PROGRAM_ID, {
+    filters: [
+      { dataSize: EVO_ACCOUNT_SPACE },
+      { memcmp: { offset: 40, bytes: owner.toBase58() } },
+    ],
+  });
+  const evos: EVOAccount[] = [];
+  for (const { pubkey, account } of accounts) {
+    const evo = parseEVOAccount(account.data);
+    if (evo) {
+      evo.pda = pubkey;
+      evo.evoId = evo.mintIndex;
+      evos.push(evo);
+    }
+  }
+  return evos;
+}
+
 // ─── Utility ─────────────────────────────────────────────────
 export function lamportsToSol(lamports: number): number {
   return lamports / LAMPORTS_PER_SOL;

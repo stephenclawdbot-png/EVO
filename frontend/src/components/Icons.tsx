@@ -149,3 +149,21 @@ export const IconZMark = ({ className }: IconProps) => (
     <path d="M11 10h10l-7 9h7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+
+// Collection grid icon.
+export const IconCollection = ({ className }: IconProps) => (
+  <svg {...base(className)}>
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <rect x="14" y="14" width="7" height="7" rx="1" />
+  </svg>
+);
+
+// Portfolio / wallet icon.
+export const IconPortfolio = ({ className }: IconProps) => (
+  <svg {...base(className)}>
+    <path d="M19 7V4a1 1 0 0 0-1-1H3a2 2 0 0 0 0 4h18a1 1 0 0 1 1 1v4M3 7v12a2 2 0 0 0 2 2h13a1 1 0 0 0 1-1V11a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2Z" />
+    <circle cx="16" cy="14" r="1" fill="currentColor" />
+  </svg>
+);

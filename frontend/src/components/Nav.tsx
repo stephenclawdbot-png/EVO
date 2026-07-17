@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { ThemeToggle } from './ThemeToggle';
-import { IconZMark, IconHammer } from './Icons';
+import { IconZMark, IconHammer, IconCollection, IconPortfolio } from './Icons';
 
 interface TickerStat { label: string; value: string; tone?: 'pos' | 'neg' | 'neutral' }
 
@@ -23,15 +23,21 @@ export function Nav({ onRefresh, ticker = [] }: NavProps) {
             <span className="text-sm font-semibold tracking-tight text-text-strong">EVO</span>
             <span className="hidden text-[10px] uppercase tracking-[0.15em] text-dim md:inline">Terminal</span>
           </Link>
+          <Link
+            href="/portfolio"
+            className="hidden h-7 items-center gap-1.5 rounded border border-border-strong bg-surface px-3 text-xs font-semibold text-text transition-colors hover:border-accent hover:text-text-strong sm:inline-flex"
+          >
+            <IconPortfolio className="h-3.5 w-3.5" />
+            Portfolio
+          </Link>
         </div>
 
         <div className="flex items-center gap-2">
           <Link
-            href="/forge"
-            className="inline-flex h-7 items-center gap-1.5 rounded border border-border-strong bg-surface px-3 text-xs font-semibold text-text transition-colors hover:border-accent hover:text-text-strong"
+            href="/portfolio"
+            className="inline-flex h-7 items-center gap-1.5 rounded border border-border-strong bg-surface px-3 text-xs font-semibold text-text transition-colors hover:border-accent hover:text-text-strong sm:hidden"
           >
-            <IconHammer className="h-3.5 w-3.5" />
-            Forge
+            <IconPortfolio className="h-3.5 w-3.5" />
           </Link>
           <Link
             href="/admin"
