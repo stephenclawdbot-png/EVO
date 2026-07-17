@@ -10,7 +10,7 @@ import {
 } from '@solana/web3.js';
 
 // ─── Constants ──────────────────────────────────────────────
-export const PROGRAM_ID = new PublicKey('2AUfmSABAwfSAzMWuDfWXzm6TVVvVapWgtrAEBU4FHeR');
+export const PROGRAM_ID = new PublicKey('7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc');
 export const PROTOCOL_PDA = (() => {
   const [pda] = PublicKey.findProgramAddressSync([Buffer.from('protocol')], PROGRAM_ID);
   return pda;
@@ -46,6 +46,31 @@ export type FeeDestination = 'Treasury' | 'Creator' | 'Burn' | 'Split';
 const FEE_DEST_MAP: Record<FeeDestination, number> = {
   Treasury: 0, Creator: 1, Burn: 2, Split: 3,
 };
+
+export const INCINERATOR = new PublicKey('1nc1nerator11111111111111111111111111111111');
+
+const LIFECYCLE_FWD: Record<LifecycleType, number> = {
+  Static: 0, Reveal: 1, CommitReveal: 2, RevealAndEvolve: 3, Custom: 4,
+};
+
+const RANDOMNESS_FWD: Record<RandomnessPolicy, number> = {
+  None: 0, Predetermined: 1, BatchReveal: 2,
+};
+
+export interface LifecycleParamsInput {
+  lifecycleType: LifecycleType;
+  maxStates: number;
+  revealAuthority: PublicKey;
+  randomnessPolicy: RandomnessPolicy;
+  manifestRoot: Uint8Array;
+  evolveTradeThreshold: number;
+  evolveFeedThreshold: number;
+  evolveHoldSeconds: number;
+  evolveLockedThreshold: number;
+  transitionPolicyHash: Uint8Array;
+  burnDestination: PublicKey;
+  artworkManifestHash: Uint8Array;
+}
 
 export type LifecycleType = 'Static' | 'Reveal' | 'CommitReveal' | 'RevealAndEvolve' | 'Custom';
 const LIFECYCLE_MAP: LifecycleType[] = ['Static', 'Reveal', 'CommitReveal', 'RevealAndEvolve', 'Custom'];
@@ -204,6 +229,34 @@ function writeFeeDest(val: FeeDestination): Buffer {
   return Buffer.from([FEE_DEST_MAP[val]]);
 }
 
+function writeI64(val: number): Buffer {
+  const b = Buffer.alloc(8);
+  b.writeInt32LE(val & 0xffffffff, 0);
+  b.writeInt32LE(Math.floor(val / 0x100000000) & 0xffffffff, 4);
+  return b;
+}
+
+function writeBytes32(val: Uint8Array): Buffer {
+  return Buffer.from(val);
+}
+
+function writeLifecycleParams(val: LifecycleParamsInput): Buffer {
+  return Buffer.concat([
+    Buffer.from([LIFECYCLE_FWD[val.lifecycleType]]),
+    writeU16(val.maxStates),
+    writePubkey(val.revealAuthority),
+    Buffer.from([RANDOMNESS_FWD[val.randomnessPolicy]]),
+    writeBytes32(val.manifestRoot),
+    writeU32(val.evolveTradeThreshold),
+    writeU64(val.evolveFeedThreshold),
+    writeI64(val.evolveHoldSeconds),
+    writeU64(val.evolveLockedThreshold),
+    writeBytes32(val.transitionPolicyHash),
+    writePubkey(val.burnDestination),
+    writeBytes32(val.artworkManifestHash),
+  ]);
+}
+
 // ─── Account Parsers ─────────────────────────────────────────
 export function parseProtocolConfig(data: Buffer): ProtocolConfig | null {
   if (data.length < 50) return null;
@@ -347,6 +400,8 @@ export function createCreateCollectionIx(
   royaltyDest: FeeDestination,
   mintPriceLamports: number,
   lockAmountLamports: number,
+  metadataUri: string,
+  lifecycle: LifecycleParamsInput,
 ): TransactionInstruction {
   const [collectionPda] = getCollectionPDA(name);
   const data = Buffer.concat([
@@ -359,6 +414,8 @@ export function createCreateCollectionIx(
     writeFeeDest(royaltyDest),
     writeU64(mintPriceLamports),
     writeU64(lockAmountLamports),
+    writeString(metadataUri),
+    writeLifecycleParams(lifecycle),
   ]);
   return new TransactionInstruction({
     programId: PROGRAM_ID,
@@ -460,21 +517,25 @@ export function createBuyIx(
   seller: PublicKey,
   creator: PublicKey,
   buyer: PublicKey,
-  treasury?: PublicKey,
+  treasury: PublicKey,
+  royaltyDest: FeeDestination,
+  burnDestination: PublicKey,
 ): TransactionInstruction {
+  const incinerator = (royaltyDest === 'Burn')
+    ? (burnDestination.equals(PublicKey.default) ? INCINERATOR : burnDestination)
+    : SystemProgram.programId;
+
   const keys = [
     { pubkey: evoPda, isSigner: false, isWritable: true },
     { pubkey: collectionPda, isSigner: false, isWritable: false },
+    { pubkey: PROTOCOL_PDA, isSigner: false, isWritable: false },
     { pubkey: seller, isSigner: false, isWritable: true },
     { pubkey: creator, isSigner: false, isWritable: true },
-  ];
-  if (treasury) {
-    keys.push({ pubkey: treasury, isSigner: false, isWritable: true });
-  }
-  keys.push(
+    { pubkey: (royaltyDest === 'Treasury' || royaltyDest === 'Split') ? treasury : SystemProgram.programId, isSigner: false, isWritable: true },
+    { pubkey: incinerator, isSigner: false, isWritable: true },
     { pubkey: buyer, isSigner: true, isWritable: true },
     { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-  );
+  ];
   return new TransactionInstruction({
     programId: PROGRAM_ID,
     keys,
@@ -489,17 +550,23 @@ export function createShatterIx(
   creator: PublicKey,
   treasury: PublicKey | null,
   evoId: number,
+  shatterFeeDest: FeeDestination,
+  burnDestination: PublicKey,
 ): TransactionInstruction {
+  const incinerator = (shatterFeeDest === 'Burn')
+    ? (burnDestination.equals(PublicKey.default) ? INCINERATOR : burnDestination)
+    : INCINERATOR;
+
   const keys = [
     { pubkey: evoPda, isSigner: false, isWritable: true },
     { pubkey: collectionPda, isSigner: false, isWritable: false },
+    { pubkey: PROTOCOL_PDA, isSigner: false, isWritable: false },
     { pubkey: owner, isSigner: true, isWritable: true },
     { pubkey: creator, isSigner: false, isWritable: true },
+    { pubkey: (treasury && (shatterFeeDest === 'Treasury' || shatterFeeDest === 'Split')) ? treasury : SystemProgram.programId, isSigner: false, isWritable: true },
+    { pubkey: incinerator, isSigner: false, isWritable: true },
+    { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
   ];
-  if (treasury) {
-    keys.push({ pubkey: treasury, isSigner: false, isWritable: true });
-  }
-  keys.push({ pubkey: SystemProgram.programId, isSigner: false, isWritable: false });
   const data = Buffer.concat([DISC.shatter, writeU32(evoId)]);
   return new TransactionInstruction({
     programId: PROGRAM_ID,

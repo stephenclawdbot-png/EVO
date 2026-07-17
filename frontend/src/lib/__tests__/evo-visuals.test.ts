@@ -440,7 +440,7 @@ describe('resolveActiveStage — on-chain protocol state', () => {
 describe('Manifest hash verification', () => {
   async function sha256Hex(data: string): Promise<string> {
     const buf = new TextEncoder().encode(data);
-    const digest = await crypto.subtle.digest('SHA-256', buf);
+    const ab = new ArrayBuffer(buf.byteLength); new Uint8Array(ab).set(buf); const digest = await crypto.subtle.digest('SHA-256', ab);
     return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
@@ -506,7 +506,7 @@ describe('Manifest hash verification', () => {
 describe('verifyEvoImageHash', () => {
   async function sha256Hex(data: string): Promise<string> {
     const buf = new TextEncoder().encode(data);
-    const digest = await crypto.subtle.digest('SHA-256', buf);
+    const ab = new ArrayBuffer(buf.byteLength); new Uint8Array(ab).set(buf); const digest = await crypto.subtle.digest('SHA-256', ab);
     return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
   }
 

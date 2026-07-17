@@ -24,6 +24,9 @@ pub struct Shatter<'info> {
     )]
     pub collection_config: Account<'info, CollectionConfig>,
 
+    #[account(seeds = [PROTOCOL_SEED], bump = protocol_config.bump)]
+    pub protocol_config: Account<'info, ProtocolConfig>,
+
     /// EVO owner — receives locked SOL minus shatter fee
     #[account(mut)]
     pub owner: Signer<'info>,
@@ -33,9 +36,9 @@ pub struct Shatter<'info> {
     #[account(mut, address = collection_config.creator)]
     pub creator: SystemAccount<'info>,
 
-    /// Protocol treasury — required when destination == Treasury or Split
-    /// CHECK: Optional, only used when destination == Treasury or Split
-    #[account(mut)]
+    /// Protocol treasury — verified against protocol_config.treasury
+    /// CHECK: Verified by address constraint
+    #[account(mut, address = protocol_config.treasury)]
     pub treasury: Option<UncheckedAccount<'info>>,
 
     /// Incinerator — used when fee destination is Burn.

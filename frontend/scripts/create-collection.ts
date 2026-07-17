@@ -9,6 +9,7 @@ import {
   Transaction,
   sendAndConfirmTransaction,
   LAMPORTS_PER_SOL,
+  PublicKey,
 } from '@solana/web3.js';
 import fs from 'fs';
 import path from 'path';
@@ -76,6 +77,21 @@ async function main() {
     'Creator',
     MINT_PRICE,
     LOCK_AMOUNT,
+    '',  // metadata_uri — empty for now, update via update_metadata
+    {    // lifecycle — Static by default
+      lifecycleType: 'Static',
+      maxStates: 1,
+      revealAuthority: payer.publicKey,
+      randomnessPolicy: 'None',
+      manifestRoot: new Uint8Array(32),
+      evolveTradeThreshold: 0,
+      evolveFeedThreshold: 0,
+      evolveHoldSeconds: 0,
+      evolveLockedThreshold: 0,
+      transitionPolicyHash: new Uint8Array(32),
+      burnDestination: new PublicKey('1nc1nerator11111111111111111111111111111111'),
+      artworkManifestHash: new Uint8Array(32),
+    },
   );
 
   console.log('Instruction data length:', ix.data.length);

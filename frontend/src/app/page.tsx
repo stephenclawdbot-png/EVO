@@ -157,7 +157,7 @@ export default function Home() {
           <span>EVO Protocol - Stateful Capital. SOL that remembers.</span>
           <div className="flex items-center gap-4">
             <a href="https://github.com/stephenclawdbot-png/EVO" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">GitHub</a>
-            <a href="https://solscan.io/account/2AUfmSABAwfSAzMWuDfWXzm6TVVvVapWgtrAEBU4FHeR" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Program</a>
+            <a href="https://solscan.io/account/7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Program</a>
             <span>Powered by Solana</span>
           </div>
         </div>

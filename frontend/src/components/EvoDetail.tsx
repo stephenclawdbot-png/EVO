@@ -139,7 +139,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
   const handleBuy = async () => {
     setAction('buy'); setError(null); setTxResult(null);
     try {
-      const [collectionPda] = getCollectionPDA(collectionName);
+      const collectionPda = new PublicKey(evo.collectionPda!);
       const cfg = await readCollectionConfig(connection, collectionName);
       if (!cfg) throw new Error('Collection not found');
       const proto = await readProtocolConfig(connection);
@@ -147,22 +147,26 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
       const sig = await sendTx(createBuyIx(
         new PublicKey(evo.evoPda!), collectionPda,
         new PublicKey(evo.owner), cfg.creator, wallet.publicKey!, proto.treasury,
+        cfg.royaltyDestination, cfg.burnDestination,
       ));
       if (sig) { setTxResult(sig); onRefresh?.(); }
     } catch (err: any) { setError(err.message || 'Buy failed'); } finally { setAction(null); }
   };
 
   const handleShatter = async () => {
-    if (!confirm(`Shatter this EVO and recover ${(evo.lockedLamports * 0.95).toFixed(4)} SOL (after 5% fee)? This cannot be undone.`)) return;
+    const cfg = await readCollectionConfig(connection, collectionName);
+    if (!cfg) throw new Error('Collection not found');
+    const feeBps = cfg.shatterFeeBps;
+    const refundLamports = Math.floor(evo.lockedLamports * (10000 - feeBps) / 10000);
+    if (!confirm(`Shatter this EVO and recover ${(refundLamports / 1e9).toFixed(4)} SOL (after ${(feeBps / 100).toFixed(1)}% fee)? This cannot be undone.`)) return;
     setAction('shatter'); setError(null); setTxResult(null);
     try {
-      const [collectionPda] = getCollectionPDA(collectionName);
-      const cfg = await readCollectionConfig(connection, collectionName);
-      if (!cfg) throw new Error('Collection not found');
+      const collectionPda = new PublicKey(evo.collectionPda!);
       const proto = await readProtocolConfig(connection);
       if (!proto) throw new Error('Protocol not found');
       const sig = await sendTx(createShatterIx(
         new PublicKey(evo.evoPda!), collectionPda, wallet.publicKey!, cfg.creator, proto.treasury, evo.id,
+        cfg.shatterFeeDestination, cfg.burnDestination,
       ));
       if (sig) { setTxResult(sig); onRefresh?.(); }
     } catch (err: any) { setError(err.message || 'Shatter failed'); } finally { setAction(null); }
@@ -513,9 +517,12 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                 }
                 if (v.status === 'no-hash') {
                   return (
-                    <div className="mt-1 flex items-center gap-1.5 text-[11px] text-dim">
-                      <IconAlertTriangle className="h-3.5 w-3.5" />
-                      <span>No hash committed by creator</span>
+                    <div className="mt-1 space-y-0.5">
+                      <div className="flex items-center gap-1.5 text-[11px] text-warn">
+                        <IconAlertTriangle className="h-3.5 w-3.5" />
+                        <span>No hash committed — art unverified</span>
+                      </div>
+                      <p className="text-[10px] text-dim">This collection did not commit a manifest hash. Artwork cannot be cryptographically verified.</p>
                     </div>
                   );
                 }

@@ -170,8 +170,18 @@ export async function fetchVisualManifest(
 
     if (expectedHash && !isZeroHash(expectedHash)) {
       const expectedHex = bytesToHex(expectedHash);
+      if (actualHash !== expectedHex) {
+        verification = {
+          status: 'mismatch',
+          expectedHash: expectedHex,
+          actualHash,
+        };
+        verificationCache.set(metadataUri, verification);
+        // Do NOT cache or return a mismatched manifest — prevent rendering tampered art
+        return null;
+      }
       verification = {
-        status: actualHash === expectedHex ? 'verified' : 'mismatch',
+        status: 'verified',
         expectedHash: expectedHex,
         actualHash,
       };

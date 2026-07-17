@@ -11,6 +11,7 @@ pub struct Buy<'info> {
         mut,
         constraint = evo.is_listed @ EvoError::EvoNotListed,
         constraint = !evo.is_shattered @ EvoError::EvoShattered,
+        constraint = evo.collection == collection_config.key() @ EvoError::CollectionMismatch,
     )]
     pub evo: Account<'info, EVOAccount>,
 
@@ -19,6 +20,9 @@ pub struct Buy<'info> {
         bump = collection_config.bump
     )]
     pub collection_config: Account<'info, CollectionConfig>,
+
+    #[account(seeds = [PROTOCOL_SEED], bump = protocol_config.bump)]
+    pub protocol_config: Account<'info, ProtocolConfig>,
 
     /// Current seller — receives the sale price minus royalty
     /// CHECK: Verified by evo.owner
@@ -30,9 +34,9 @@ pub struct Buy<'info> {
     #[account(mut, address = collection_config.creator)]
     pub creator: SystemAccount<'info>,
 
-    /// Protocol treasury — may receive royalty depending on config
-    /// CHECK: Only used when royalty_destination == Treasury or Split
-    #[account(mut)]
+    /// Protocol treasury — verified against protocol_config.treasury
+    /// CHECK: Verified by address constraint
+    #[account(mut, address = protocol_config.treasury)]
     pub treasury: Option<SystemAccount<'info>>,
 
     /// Incinerator — used when royalty destination is Burn.

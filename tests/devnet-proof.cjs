@@ -574,6 +574,7 @@ async function main() {
       .accounts({
         evo: evo0Pk,
         collectionConfig: collPk,
+        protocolConfig: protocolPda,
         seller: buyer.publicKey,
         creator: deployerPk,
         buyer: deployerPk,
@@ -635,6 +636,7 @@ async function main() {
       .accounts({
         evo: evo0Pk,
         collectionConfig: collPk,
+        protocolConfig: protocolPda,
         owner: deployerPk,
         creator: deployerPk,
         treasury: treasury.publicKey,
