@@ -47,7 +47,7 @@ The program is live on mainnet with these instructions:
 | Instruction | What it does |
 |---|---|
 | `initialize_protocol` | One-time setup — treasury, creation fee |
-| `create_collection` | Creator sets supply, mint_price, lock_amount, fees |
+| `create_collection` | Creator sets supply, mint_price, lock_amount, fees, lifecycle |
 | `forge` | Mint EVO — pays mint_price to creator, locks SOL inside |
 | `feed` | Add SOL to existing EVO — increases floor |
 | `list` | Owner sets sale price |
@@ -55,6 +55,12 @@ The program is live on mainnet with these instructions:
 | `buy` | Purchase listed EVO — royalties distributed |
 | `shatter` | Destroy EVO — reclaim locked SOL (minus fee) |
 | `transfer` | Send EVO to new owner — no payment |
+| `close_collection` | Close empty collection, refund rent |
+| `update_metadata` | Update collection metadata_uri (creator only) |
+| `commit_reveal` | Creator commits keccak256(secret) before minting |
+| `reveal_collection` | Reveal authority reveals collection (commit-reveal verified) |
+| `evolve` | Permissionless stage advancement when thresholds met |
+| `set_visual_stage` | Authority-only stage override (Custom lifecycle) |
 
 ### Future Architecture (Redesign)
 
