@@ -68,9 +68,26 @@ describe("EVO", () => {
     ...overrides,
   });
 
+  const isDevnet = connection.rpcEndpoint.includes("devnet");
+
   const airdrop = async (kp: Keypair, sol: number) => {
-    const sig = await connection.requestAirdrop(kp.publicKey, sol * LAMPORTS_PER_SOL);
-    await connection.confirmTransaction(sig, "confirmed");
+    if (isDevnet) {
+      // On devnet, faucet is rate-limited — transfer from pre-funded provider wallet
+      if (kp.publicKey.equals(wallet.publicKey)) return; // provider is pre-funded
+      const devnetSol = sol > 1 ? Math.max(sol * 0.05, 0.05) : sol;
+      const tx = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: wallet.publicKey,
+          toPubkey: kp.publicKey,
+          lamports: Math.ceil(devnetSol * LAMPORTS_PER_SOL),
+        })
+      );
+      const sig = await provider.sendAndConfirm(tx);
+      await connection.confirmTransaction(sig, "confirmed");
+    } else {
+      const sig = await connection.requestAirdrop(kp.publicKey, sol * LAMPORTS_PER_SOL);
+      await connection.confirmTransaction(sig, "confirmed");
+    }
   };
 
   // ============================================================
