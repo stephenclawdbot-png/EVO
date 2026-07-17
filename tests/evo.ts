@@ -896,7 +896,7 @@ describe("EVO", () => {
           .rpc();
         assert.fail("should not evolve on Reveal collection");
       } catch (e) {
-        expect(e.message).to.match(/evolution not enabled|0x1c/i);
+        expect(e.message).to.match(/EvolutionNotEnabled|does not support evolution/i);
       }
     });
 
@@ -1003,7 +1003,7 @@ describe("EVO", () => {
           .rpc();
         assert.fail("non-authority should not set stage");
       } catch (e) {
-        expect(e.message).to.match(/stage authority|0x2e/i);
+        expect(e.message).to.match(/NotStageAuthority|reveal authority can set/i);
       }
     });
 
@@ -1020,7 +1020,7 @@ describe("EVO", () => {
           .rpc();
         assert.fail("should reject stage >= maxStates");
       } catch (e) {
-        expect(e.message).to.match(/invalid stage|0x2c/i);
+        expect(e.message).to.match(/InvalidStage|exceeds max_states/i);
       }
     });
 
@@ -1094,7 +1094,7 @@ describe("EVO", () => {
           .rpc();
         assert.fail("should not evolve on Static collection");
       } catch (e) {
-        expect(e.message).to.match(/evolution not enabled|0x1c/i);
+        expect(e.message).to.match(/EvolutionNotEnabled|does not support evolution/i);
       }
     });
 
