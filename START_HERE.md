@@ -73,7 +73,7 @@
    - Ready for professional review
 ### 3. VRF integration (Switchboard/ORAO adapter for provably fair reveal)
 ### 4. Builder SDK (CollectionBuilder pattern)
-### 5. Frontend updates (meowdot.fun, Vercel deploy)
+### 5. Frontend updates (Vercel deploy)
 ### 6. Mainnet upgrade — only after audit passes
 
 ## Key Files
