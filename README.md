@@ -179,7 +179,7 @@ Wallets read `current_state` from the EVO account and resolve the image from the
 
 ## Testing
 
-### Localnet CI (Passing — 11 consecutive green runs)
+### Localnet CI (Passing — 17 consecutive green runs #36-#52)
 
 Every push to `main` triggers `.github/workflows/test.yml` which:
 - Builds the Solana program with Anchor

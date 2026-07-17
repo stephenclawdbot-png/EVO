@@ -1,6 +1,6 @@
 # EVO — Session Handoff (START HERE)
 
-**Last updated:** Session 5f076f54 — Devnet CI workflow + documentation update
+**Last updated:** Session 5f076f54 — Devnet SOL acquisition + scheduled retries
 
 ## Current State
 
@@ -11,10 +11,13 @@
 - **GitHub:** https://github.com/stephenclawdbot-png/EVO
 
 ### CI Status
-- **Localnet:** 11 consecutive green runs (#36-#46) — 41 tests each, all passing
+- **Localnet:** 17 consecutive green runs (#36-#52) — 41 tests each, all passing
 - **Devnet:** Workflow configured (`.github/workflows/devnet-test.yml`), BLOCKED on SOL
-  - Devnet faucet rate-limited (2 SOL / 8h / IP)
-  - Solution: fund a keypair, add as `DEVNET_FUNDED_KEYPAIR` GitHub secret
+  - Devnet faucet rate-limited (2 requests / 8h / IP, max 5 SOL each)
+  - Both local IP and GitHub CI IP are rate-limited
+  - Workflow now scheduled every 8h (cron) to auto-retry when limit resets
+  - When funded: workflow will deploy program + run 41 tests on devnet
+  - Solution for manual funding: fund a keypair, add as `DEVNET_FUNDED_KEYPAIR` GitHub secret
   - See README Testing section for instructions
 
 ### What's Done
