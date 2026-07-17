@@ -49,6 +49,16 @@
 **Fix:** Add `version: u16` field to EVOAccount.
 **Status:** Future redesign. Add in next program upgrade.
 
+#### 7. Commit-Reveal Entropy Selected by Creator
+**Risk:** For `CommitReveal` lifecycle, the creator commits `keccak256(secret)` before minting and reveals the secret after. While they cannot change the secret after committing, a sophisticated creator could pre-compute many secrets and pick a favorable one before committing.
+**Fix:** Mix creator commitment with Switchboard/ORAO VRF randomness: `final_seed = hash(creator_secret + VRF_randomness)`. This closes the gap entirely — neither the creator nor any single party controls the entropy.
+**Status:** V2 enhancement. Current commit-reveal is a significant improvement over arbitrary entropy selection. Full VRF closes the remaining gap.
+
+#### 8. Burn Destination Defaults to Incinerator
+**Risk:** In production, burn fees go to the Solana Incinerator (`1nc1nerator11111111111111111111111111111111`). This is correct for production, but makes it hard to verify in tests that the burn fee actually arrived.
+**Fix:** Burn destination is configurable at collection creation. In tests, a fake burn wallet is used so the test can verify the exact burn fee amount arrives. In production, defaults to the real incinerator.
+**Status:** Done — configurable burn destination implemented and tested.
+
 ---
 
 ## Upgrade Policy
@@ -122,9 +132,12 @@ redeemable = min(account.lamports() - rent_exempt, locked_lamports) - shatter_fe
 - [ ] Minimum feed amount
 - [ ] First collection created
 - [ ] Full cycle tested (forge → trade → shatter)
+- [ ] Visual lifecycle tested on localnet (reveal, evolve, set_visual_stage)
+- [ ] Devnet testing — full transaction suite with real RPC
 - [ ] Upgrade authority locked (post-audit)
 - [ ] SDK published
 - [ ] Security audit (professional, pre-scale)
+- [ ] VRF integration for commit-reveal (Switchboard/ORAO)
 
 ---
 
