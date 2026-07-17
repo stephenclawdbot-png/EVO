@@ -49,15 +49,21 @@ jobs:
 
       - name: Fund wallet on devnet
         run: |
-          solana config set --url devnet
+          solana config set --url devnet --keypair ~/.config/solana/evo-deployer.json
           echo "Attempting airdrop 1..."
-          solana airdrop 2 --url devnet || echo "Airdrop 1 failed"
+          solana airdrop 2 || echo "Airdrop 1 failed (rate limit)"
           sleep 15
           echo "Attempting airdrop 2..."
-          solana airdrop 2 --url devnet || echo "Airdrop 2 failed"
+          solana airdrop 2 || echo "Airdrop 2 failed (rate limit)"
           sleep 5
-          echo "Balance:"
-          solana balance --url devnet
+          echo "Wallet balance:"
+          solana balance || true
+          # Check if we have enough SOL to proceed
+          BAL=$(solana balance 2>/dev/null | awk '{print $1}' || echo "0")
+          echo "Balance: $BAL SOL"
+          if [ "$BAL" = "0" ] || [ -z "$BAL" ]; then
+            echo "⚠️ No SOL — tests will likely fail. Consider retrying later."
+          fi
 
       - name: Build program
         run: anchor build
