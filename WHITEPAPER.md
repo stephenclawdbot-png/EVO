@@ -431,7 +431,7 @@ A creator should think about their collection, not about account sizes and PDA s
 - ✅ 18+ consecutive green localnet CI runs, zero flaky tests
 - ✅ Devnet testing PASSED — 41/41 tests on real Solana devnet cluster
 - ✅ Threat model document (docs/threat-model.md)
-- ✅ Formal proof of invariant 18 (locked_lamports vs PDA balance)
+- ✅ Invariant 18 justified by code inspection, documented reasoning, and test coverage
 
 ### Phase 2: Developer Experience
 - ⬜ SDK with CollectionBuilder pattern
@@ -522,7 +522,7 @@ These invariants define the safety guarantees the EVO protocol must always uphol
 - **shatter:** Sets `locked_lamports = 0` before moving lamports out, closes account to owner ✓
 - **transfer, list, delist, buy, evolve, set_visual_stage:** Do not touch EVO PDA lamports or `locked_lamports` ✓
 
-#### Formal proof of invariant 18
+#### Justification of invariant 18 (code inspection + documented reasoning + tests)
 
 The invariant is a **lower bound**: `PDA_balance >= rent_minimum + locked_lamports`.
 
@@ -558,7 +558,7 @@ Solana credits rent-exempt accounts periodically from the runtime, not from any 
 
 The only CPIs in the program are `system_program::transfer` (in `forge`, `feed`, `buy`, `create_collection`, and `route_fee`) and direct `transfer_lamports` (in `shatter`). None of these debit the EVO PDA except `shatter`, which is analyzed above. `route_fee` debits the `buyer` signer, never the EVO PDA.
 
-**Conclusion:** For every EVO program instruction, the lower-bound invariant `PDA_balance >= rent_minimum + locked_lamports` is preserved. External deposits can only strengthen it. The only debit path is `shatter`, which zeroes both sides atomically. ∎
+**Conclusion:** For every EVO program instruction, the lower-bound invariant `PDA_balance >= rent_minimum + locked_lamports` is preserved. External deposits can only strengthen it. The only debit path is `shatter`, which zeroes both sides atomically. This justification is based on code inspection of all 15 instructions, documented reasoning about each lamport path, and test coverage verifying the invariant at runtime. It is not a machine-verified formal proof (K framework, Coq, Lean, SMT, etc.) — that level of verification would require an independent formal verification engagement.
 
 ---
 
