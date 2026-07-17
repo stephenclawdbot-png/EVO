@@ -1,0 +1,44 @@
+{
+  "schema": "evo-visual-manifest-v1",
+  "name": "DevTest Genesis",
+  "description": "Devnet proof collection — 5 EVOs, 2 stages, placeholder art",
+  "lifecycle": "reveal_and_evolve",
+  "fallback_image": "https://raw.githubusercontent.com/stephenclawdbot-png/EVO/main/tests/devnet-assets/evo0_stage0.png",
+  "image_template": "https://raw.githubusercontent.com/stephenclawdbot-png/EVO/main/tests/devnet-assets/evo{id}_stage{stage}.png",
+  "stages": [
+    {
+      "id": 0,
+      "name": "Genesis",
+      "image": "https://raw.githubusercontent.com/stephenclawdbot-png/EVO/main/tests/devnet-assets/evo0_stage0.png"
+    },
+    {
+      "id": 1,
+      "name": "Evolved",
+      "image": "https://raw.githubusercontent.com/stephenclawdbot-png/EVO/main/tests/devnet-assets/evo0_stage1.png"
+    }
+  ],
+  "provenance": {
+    "items": [
+      {
+        "id": 0,
+        "hash": "9934fc0f5d0e110b7907d9380c74b7b8ab022fe121e81db636c26cec2b2728e0"
+      },
+      {
+        "id": 1,
+        "hash": "ad0bc7551f249cb2756c67490ca3ad1c958d2043fe207bac89b71725d484969a"
+      },
+      {
+        "id": 2,
+        "hash": "ac970158896d7ccecb40625cbf0e4a7623d4d0473b72cfc6cbb1913a1d194010"
+      },
+      {
+        "id": 3,
+        "hash": "8367bd7fbd28f900c226e6c8078d0631d319ed74415a68308a19e1e5687a9dad"
+      },
+      {
+        "id": 4,
+        "hash": "d0679cd3775ce161fe973e10c21e34cd7e98b4568eb3945245f40bf74d493757"
+      }
+    ]
+  }
+}
