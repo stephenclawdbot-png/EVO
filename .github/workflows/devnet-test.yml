@@ -64,9 +64,6 @@ jobs:
           sed -i "s/7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc/$TEST_PID/g" programs/evo/src/lib.rs Anchor.toml
           grep -n "$TEST_PID" programs/evo/src/lib.rs Anchor.toml
 
-      - name: Install devnet-pow (for SOL mining)
-        run: cargo install devnet-pow --locked
-
       - name: Fund wallet on devnet
         env:
           DEVNET_FUNDED_KEYPAIR: ${{ secrets.DEVNET_FUNDED_KEYPAIR }}
@@ -74,41 +71,44 @@ jobs:
           solana config set --url devnet --keypair ~/.config/solana/evo-deployer.json
           DEPLOYER_PUBKEY=$(solana-keygen pubkey ~/.config/solana/evo-deployer.json)
           echo "Deployer pubkey: $DEPLOYER_PUBKEY"
-          echo "Current balance: $(solana balance || echo '0 SOL')"
+          echo "Current balance: $(solana balance 2>/dev/null || echo '0 SOL')"
 
           if [ -n "$DEVNET_FUNDED_KEYPAIR" ]; then
-            echo "Using pre-funded keypair — skipping mining"
+            echo "Using pre-funded keypair — skipping airdrop/mining"
           else
-            # Try a small airdrop first for tx fees (CI IP may not be rate-limited)
-            echo "Attempting small airdrop (0.05 SOL) for tx fees..."
-            solana airdrop 0.05 2>&1 || echo "⚠️ Airdrop failed"
+            # CI runner has a different IP — try airdrops
+            # Devnet faucet allows 2 SOL per request, rate-limited per IP
+            for i in 1 2 3; do
+              echo "=== Airdrop attempt $i (2 SOL) ==="
+              solana airdrop 2 2>&1 && echo "✅ Airdrop $i succeeded" || echo "⚠️ Airdrop $i failed"
+              sleep 10
+              BALANCE=$(solana balance 2>/dev/null | awk '{print $1}' || echo "0")
+              echo "Balance after airdrop $i: $BALANCE SOL"
+              # Stop early if we have enough
+              HAS=$(echo "$BALANCE >= 4.5" | bc -l 2>/dev/null || echo 0)
+              [ "$HAS" = "1" ] && break
+            done
 
+            # Try installing devnet-pow for mining if airdrops aren't enough
             BALANCE=$(solana balance 2>/dev/null | awk '{print $1}' || echo "0")
-            echo "Balance after airdrop: $BALANCE SOL"
-
-            # If we have at least 0.01 SOL, try mining with devnet-pow
-            HAS_FEE=$(echo "$BALANCE >= 0.01" | bc -l 2>/dev/null || echo 0)
-            if [ "$HAS_FEE" = "1" ]; then
-              echo "✅ Have tx fee SOL — mining with devnet-pow (difficulty 3, reward 0.02)..."
-              # Mine for ~10 minutes (timeout), targeting 5 SOL
-              timeout 600 devnet-pow mine -d 3 --reward 0.02 --no-infer \
-                -u dev -k ~/.config/solana/evo-deployer.json -t 5000000000 2>&1 || true
-              echo "Mining complete. Balance: $(solana balance)"
-            else
-              echo "⚠️ No tx fee SOL — cannot mine. Will try airdrop instead."
-              echo "Attempting airdrop 1 (2 SOL)..."
-              solana airdrop 2 2>&1 || echo "⚠️ Airdrop 1 failed"
-              sleep 15
-              echo "Attempting airdrop 2 (2 SOL)..."
-              solana airdrop 2 2>&1 || echo "⚠️ Airdrop 2 failed"
-              sleep 5
+            HAS_SOL=$(echo "$BALANCE >= 4.0" | bc -l 2>/dev/null || echo 0)
+            if [ "$HAS_SOL" != "1" ] && [ "$BALANCE" != "0" ]; then
+              echo "Balance: $BALANCE SOL — trying devnet-pow mining for more..."
+              # Install devnet-pow with compatible Rust settings
+              RUSTFLAGS="--cfg ignore_wasm" cargo install devnet-pow --force 2>&1 || true
+              if command -v devnet-pow &>/dev/null; then
+                timeout 600 devnet-pow mine -d 3 --reward 0.02 --no-infer \
+                  -u dev -k ~/.config/solana/evo-deployer.json -t 5000000000 2>&1 || true
+                echo "Mining complete. Balance: $(solana balance)"
+              else
+                echo "⚠️ devnet-pow not available"
+              fi
             fi
           fi
 
           BALANCE=$(solana balance 2>/dev/null | awk '{print $1}' || echo "0")
-          echo "Wallet balance: $BALANCE SOL"
+          echo "Final wallet balance: $BALANCE SOL"
 
-          # Program rent is ~2.7 SOL, tests need ~1.5 SOL more
           MIN_SOL=4.0
           HAS_SOL=$(echo "$BALANCE >= $MIN_SOL" | bc -l 2>/dev/null || echo 0)
           if [ "$HAS_SOL" != "1" ]; then
