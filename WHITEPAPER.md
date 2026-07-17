@@ -142,14 +142,14 @@ EVO does not hardcode a single lifecycle. Each collection chooses its own:
 | LifecycleType | Behavior |
 |---|---|
 | `Static` | Art is final from forge. No reveal, no evolution. |
-| `ImmediateReveal` | Art visible immediately. No evolution. |
+| `Reveal` | Pre-reveal art shown at stage 0; reveal advances to stage 1. No evolution. |
 | `CommitReveal` | Commit before mint, reveal after mint-out with injected entropy. |
-| `Evolution` | EVOs progress through stages based on on-chain conditions. |
-| `Custom` | Creator defines custom transition rules (hash-committed). |
+| `RevealAndEvolve` | Reveal then per-asset evolution through multiple stages based on on-chain conditions. |
+| `Custom` | Creator defines custom transition rules; authority can call `set_visual_stage` to any valid stage. |
 
 ### 5.2 Evolution Triggers
 
-For `Evolution` collections, the program supports modular triggers — all enabled thresholds must be met (AND logic) to advance one stage:
+For `RevealAndEvolve` collections, the program supports modular triggers — all enabled thresholds must be met (AND logic) to advance one stage:
 
 | Trigger | Field | Example |
 |---|---|---|
@@ -198,6 +198,118 @@ genetic_seed = hash(reveal_entropy + collection_address + mint_index)
 ```
 
 This avoids updating 10,000 on-chain accounts at reveal time.
+
+### 5.5 Visual Lifecycle — Protocol as Source of Truth
+
+Every EVO collection declares its visual lifecycle on-chain at creation. Every individual EVO asset stores its own `current_stage: u16` on-chain. The Solana program is the **sole source of truth** for stage state. The marketplace and wallets only read and render — they never decide which image to show.
+
+#### Collection-level fields
+
+| Field | Type | Purpose |
+|---|---|---|
+| `lifecycle_type` | `LifecycleType` (1 byte) | Which lifecycle this collection uses |
+| `max_states` | `u16` | Total number of visual stages (0 = single-stage) |
+| `artwork_manifest_hash` | `[u8; 32]` | Optional keccak256 hash of the off-chain manifest for integrity verification |
+
+The collection's existing `metadata_uri` field points to an off-chain **visual manifest** (JSON) that maps each stage to an image URL. The manifest is not stored on-chain — only the `metadata_uri` pointer and the optional hash are.
+
+#### EVO asset-level fields
+
+| Field | Type | Purpose |
+|---|---|---|
+| `current_state` | `u16` | The asset's current visual stage (0-indexed) |
+| `last_transition_at` | `i64` | Timestamp of last stage transition |
+
+#### Stage transition rules (enforced by the program)
+
+| LifecycleType | Allowed transitions | Authority |
+|---|---|---|
+| `Static` | None — `StaticNoTransitions` error | N/A |
+| `Reveal` | Stage 0 → 1 only (via `reveal_collection`) | Reveal authority |
+| `CommitReveal` | Stage 0 → 1 only (via `reveal_collection` with committed secret) | Reveal authority |
+| `RevealAndEvolve` | Reveal (0→1), then `evolve()` advances by 1 when conditions met | Permissionless (conditions enforced on-chain) |
+| `Custom` | Any stage < `max_states` via `set_visual_stage` | Reveal authority only |
+
+The program rejects:
+- Backward transitions on non-`Custom` lifecycles
+- Transitions past `max_states`
+- Unauthorized callers
+- Transitions on `Static` collections
+
+#### Visual manifest schema (`evo-visual-manifest-v1`)
+
+```json
+{
+  "schema": "evo-visual-manifest-v1",
+  "name": "Collection Name",
+  "description": "Collection description",
+  "lifecycle": "reveal_and_evolve",
+  "fallback_image": "https://arweave.net/hidden.png",
+  "stages": [
+    { "id": 0, "name": "Pre-Reveal", "image": "https://arweave.net/hidden.png" },
+    { "id": 1, "name": "Revealed",  "image": "https://arweave.net/revealed.png" },
+    { "id": 2, "name": "Evolved",   "image": "https://arweave.net/evolved.png" }
+  ]
+}
+```
+
+The `fallback_image` is used when the manifest is unavailable, invalid, or references a missing stage. Wallets and marketplaces must **never crash** because metadata cannot be loaded.
+
+---
+
+### 5.6 Wallet Integration Guide
+
+Wallets and third-party marketplaces that want to display EVO artwork must follow this resolution flow:
+
+```
+1. Read CollectionConfig from chain
+   → get lifecycle_type, max_states, metadata_uri, artwork_manifest_hash, is_revealed
+
+2. Read EVOAccount from chain
+   → get current_state (the asset's visual stage)
+
+3. Fetch the visual manifest from metadata_uri (off-chain JSON)
+   → parse as evo-visual-manifest-v1
+
+4. (Optional) Verify integrity
+   → keccak256(manifest_bytes) == artwork_manifest_hash
+   → if mismatch, use fallback_image
+
+5. Resolve the active image
+   → stage = current_state from EVOAccount
+   → image = manifest.stages[stage].image
+   → if stage out of range, use fallback_image
+```
+
+#### Resolution rules by lifecycle
+
+| LifecycleType | Stage source | Image |
+|---|---|---|
+| `Static` | Always 0 | `stages[0].image` |
+| `Reveal` / `CommitReveal` | `is_revealed ? 1 : 0` | `stages[stage].image` |
+| `RevealAndEvolve` | `EVOAccount.current_state` | `stages[stage].image` |
+| `Custom` | `EVOAccount.current_state` | `stages[stage].image` |
+
+#### TypeScript resolver reference
+
+The frontend ships a reference resolver at `frontend/src/lib/evo-visuals.ts`:
+
+```ts
+function resolveActiveStage(
+  manifest: EvoVisualManifest,
+  onChainStage?: number,    // from EVOAccount.current_state
+  isRevealed?: boolean,      // from CollectionConfig.is_revealed
+): EvoVisualStage
+```
+
+Wallets can import or reimplement this resolver. The on-chain `current_state` always takes precedence over any manifest `state.current_stage` field (which exists only for backward compatibility with older collections).
+
+#### What NOT to do
+
+- Do not use `metadata_uri` as a direct image URL — it points to a JSON manifest
+- Do not trust an off-chain `current_stage` field — always read `current_state` from the EVO account
+- Do not assume all collections use reveal — check `lifecycle_type` first
+- Do not crash on invalid manifests — always fall back to `fallback_image`
 
 ---
 
@@ -304,13 +416,16 @@ A creator should think about their collection, not about account sizes and PDA s
 - ✅ Shatter bugs fixed (direct lamport manipulation)
 - ✅ Reserve invariant enforced
 - ✅ Checked math throughout
-- ✅ Configurable lifecycle system (Static, CommitReveal, Evolution, Custom)
+- ✅ Configurable lifecycle system (Static, Reveal, CommitReveal, RevealAndEvolve, Custom)
 - ✅ Configurable randomness (None, Predetermined, BatchReveal)
 - ✅ Permissionless evolution with modular triggers
 - ✅ Commit-reveal for provably fair reveal (keccak256 commitment before minting)
 - ✅ Configurable burn destination for test verification
-- ✅ Evolve boundary fixed (off-by-one: max_states = total states, not transitions)
-- ✅ Comprehensive test suite — 30 tests (forge, feed, transfer, buy, shatter, evolution, commit-reveal, burn destination)
+- ✅ Evolve boundary fixed (off-by-one: max_states = total stages, not transitions)
+- ✅ Protocol-native visual lifecycle (per-asset current_stage, on-chain source of truth)
+- ✅ set_visual_stage instruction for Custom lifecycle authority override
+- ✅ Visual manifest resolver + wallet integration guide
+- ✅ Comprehensive test suite — 40+ tests (forge, feed, transfer, buy, shatter, evolution, commit-reveal, burn destination, visual lifecycle)
 - ✅ 9+ consecutive green CI runs, zero flaky tests
 - ⬜ Devnet testing with real RPC
 - ⬜ Independent security review

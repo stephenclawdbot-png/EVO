@@ -120,6 +120,7 @@ EVO exposes the interface. The community builds the behaviors.
 - `update_metadata` — update collection metadata_uri (creator only)
 - `reveal_collection` — reveal authority provides secret, program verifies against commitment and derives entropy = keccak256(secret)
 - `evolve` — permissionless, advances EVO to next lifecycle stage if thresholds met
+- `set_visual_stage` — authority-only, override EVO visual stage (Custom lifecycle only)
 
 ### Provably Fair Reveal
 
@@ -138,6 +139,22 @@ Collections can configure a custom burn destination (defaults to Solana's incine
 - **Testing**: Burn fees go to a test wallet — enabling exact balance verification
 
 Set via `burn_destination` in `LifecycleParams` at collection creation time.
+
+### Visual Lifecycle (Protocol-Native)
+
+Every EVO collection declares a visual lifecycle type on-chain. Every EVO asset stores its own `current_stage` on-chain. The program enforces valid stage transitions — the marketplace only reads and renders.
+
+| LifecycleType | Behavior |
+|---|---|
+| `Static` | No transitions (art final at forge) |
+| `Reveal` | Pre-reveal → revealed (one transition via `reveal_collection`) |
+| `CommitReveal` | Like Reveal but with pre-committed secret |
+| `RevealAndEvolve` | Reveal then per-asset evolution via `evolve()` |
+| `Custom` | Authority can set any valid stage via `set_visual_stage()` |
+
+The collection's `metadata_uri` points to an off-chain **visual manifest** (`evo-visual-manifest-v1` JSON) that maps each stage to an image URL. An optional `artwork_manifest_hash` on the collection allows wallets to verify manifest integrity.
+
+Wallets read `current_state` from the EVO account and resolve the image from the manifest. See the [Wallet Integration Guide](WHITEPAPER.md#56-wallet-integration-guide) in the white paper for the full resolution flow.
 
 ---
 
