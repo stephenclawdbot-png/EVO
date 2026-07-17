@@ -93,9 +93,63 @@ export function LivingEvo() {
 
   return (
     <section className="relative border-b border-border">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-0 lg:grid-cols-2">
+      {/* ─── Mobile: compact tabbed stepper, one stage at a time ─── */}
+      <div className="mx-auto max-w-6xl px-4 py-12 lg:hidden">
+        <div className="mb-8 text-center">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-dim">One object</p>
+          <h2 className="mt-2 text-xl font-bold tracking-tight text-text-strong">
+            Follow a single EVO through its entire life.
+          </h2>
+        </div>
+
+        {/* tap stepper */}
+        <div className="mb-6 flex items-center justify-center gap-1.5">
+          {STAGES.map((s, i) => {
+            const Icon = s.icon;
+            return (
+              <button
+                key={s.id}
+                onClick={() => setActive(i)}
+                aria-label={s.title}
+                className={`flex h-9 w-9 items-center justify-center rounded border transition-colors ${
+                  i === active
+                    ? 'border-accent bg-accent-soft text-accent'
+                    : 'border-border-strong bg-surface text-dim'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+              </button>
+            );
+          })}
+        </div>
+
+        {/* active stage visual + copy */}
+        <div className="flex flex-col items-center">
+          <EvoVisual stage={active} lockedSol={stage.lockedSol} note={stage.note} stageId={stage.id} compact />
+          <div className="mt-6 max-w-sm text-center">
+            <span className="font-mono text-[11px] uppercase tracking-wider text-dim">
+              {String(active + 1).padStart(2, '0')} / 05
+            </span>
+            <h3 className="mt-2 text-2xl font-bold tracking-tight text-text-strong">{stage.title}</h3>
+            <p className="mt-3 text-sm leading-relaxed text-text">{stage.body}</p>
+          </div>
+        </div>
+
+        {/* progress rail */}
+        <div className="mt-8 flex items-center gap-1.5">
+          {STAGES.map((s, i) => (
+            <div
+              key={s.id}
+              className={`h-0.5 flex-1 rounded-full transition-colors duration-300 ${i <= active ? 'bg-accent' : 'bg-border-strong'}`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* ─── Desktop: sticky-scroll narrative ─── */}
+      <div className="mx-auto hidden max-w-6xl grid-cols-1 gap-0 lg:grid lg:grid-cols-2">
         {/* Sticky visual — the one EVO */}
-        <div className="sticky top-11 hidden h-[calc(100vh-2.75rem)] items-center justify-center border-r border-border bg-bg lg:flex">
+        <div className="sticky top-11 h-[calc(100vh-2.75rem)] items-center justify-center border-r border-border bg-bg lg:flex">
           <EvoVisual stage={active} lockedSol={stage.lockedSol} note={stage.note} stageId={stage.id} />
         </div>
 
@@ -117,7 +171,7 @@ export function LivingEvo() {
                   key={s.id}
                   data-index={i}
                   ref={(el) => { sectionRefs.current[i] = el; }}
-                  className="min-h-[60vh] lg:min-h-[70vh] flex flex-col justify-center"
+                  className="min-h-[70vh] flex flex-col justify-center"
                 >
                   <div className={`flex items-center gap-2.5 transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-40'}`}>
                     <span className="flex h-8 w-8 items-center justify-center rounded border border-border-strong bg-surface text-accent">
@@ -133,11 +187,6 @@ export function LivingEvo() {
                   <p className={`mt-3 max-w-md text-sm leading-relaxed transition-colors duration-300 ${isActive ? 'text-text' : 'text-dim'}`}>
                     {s.body}
                   </p>
-
-                  {/* Mobile visual inline */}
-                  <div className="mt-6 lg:hidden">
-                    <EvoVisual stage={i} lockedSol={s.lockedSol} note={s.note} stageId={s.id} compact />
-                  </div>
                 </div>
               );
             })}
