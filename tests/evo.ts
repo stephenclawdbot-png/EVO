@@ -1040,7 +1040,7 @@ describe("EVO", () => {
           .rpc();
         assert.fail("should reject on RevealAndEvolve collection");
       } catch (e) {
-        expect(e.message).to.match(/transition not allowed|0x2d/i);
+        expect(e.message).to.match(/transition not allowed|0x26/i);
       }
     });
   });
@@ -1108,7 +1108,7 @@ describe("EVO", () => {
           .rpc();
         assert.fail("should not reveal Static collection");
       } catch (e) {
-        expect(e.message).to.match(/reveal authority|transition not allowed|0x1d|0x2d/i);
+        expect(e.message).to.match(/reveal authority|transition not allowed|0x1d|0x26/i);
       }
     });
   });
