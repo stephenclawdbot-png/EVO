@@ -442,12 +442,79 @@ A creator should think about their collection, not about account sizes and PDA s
 - ⬜ Create Z collection on mainnet
 - ⬜ Deploy frontend to Vercel
 - ⬜ Public launch with "hello world" collection tutorial
+- ⬜ Observe protocol for several months (do NOT revoke authority yet)
 
 ### Phase 4: Maturity
 - ⬜ On-chain VRF verification (Switchboard/ORAO adapter)
 - ⬜ Multisig upgrade authority
-- ⬜ Revoke upgrade authority after audit
+- ⬜ Engage independent Solana security firm for formal audit
+- ⬜ Apply audit fixes if needed
+- ⬜ Revoke upgrade authority only after audit passes and protocol is stable for months
 - ⬜ Ecosystem grants for third-party collections
+
+---
+
+## Protocol Invariants
+
+These invariants define the safety guarantees the EVO protocol must always uphold. Auditors should focus on verifying these properties hold across all code paths.
+
+### Value Invariants
+
+1. **Locked SOL never decreases except via shatter.** The `locked_lamports` field on an EVO account can only decrease when the owner calls `shatter`. No other instruction — forge, feed, transfer, list, buy, evolve, reveal, set_visual_stage — may reduce `locked_lamports`.
+
+2. **Only the owner can shatter.** The `shatter` instruction requires the EVO owner's signature. No other wallet can trigger redemption of locked SOL.
+
+3. **Feed only increases principal.** The `feed` instruction may only increase `locked_lamports` and `total_fed_lamports`. It can never decrease them.
+
+4. **Transfer never moves locked SOL.** The `transfer` instruction changes the `owner` field but does not touch `locked_lamports`. The locked SOL stays in the EVO PDA, not the owner's wallet.
+
+5. **Reserve invariant always holds.** Every EVO account maintains `balance >= rent_minimum + locked_lamports` at all times. This is enforced after forge, feed, and shatter via `verify_reserve_invariant`.
+
+### Lifecycle Invariants
+
+6. **current_state never exceeds max_states.** The `current_state` field on an EVO account is always `<= max_states - 1` (zero-indexed). Forge initializes to 0. Evolve checks `current_state < max_states - 1`. set_visual_stage checks `new_stage < max_states`.
+
+7. **Lifecycle type is immutable after creation.** Once a collection is created with a lifecycle type (Static, Reveal, CommitReveal, RevealAndEvolve, Custom), it cannot be changed. No instruction modifies `lifecycle_type` on an existing collection.
+
+8. **Static assets cannot transition.** Collections with `Static` lifecycle reject all calls to `evolve`, `reveal`, and `set_visual_stage`.
+
+9. **Reveal assets can only move from stage 0 to stage 1.** The `reveal_collection` instruction sets the collection's `is_revealed` flag. Individual EVO accounts in a Reveal collection cannot evolve beyond stage 1.
+
+10. **RevealAndEvolve assets advance only through valid stages.** Evolution requires cumulative feed thresholds to be met. No backward transitions are supported. Each call to `evolve` advances `current_state` by exactly 1.
+
+### Authority Invariants
+
+11. **Unauthorized wallets cannot change stages.** Only the collection authority (for set_visual_stage) or the protocol-defined conditions (for evolve) can change an EVO's visual state. The EVO owner cannot manually set their stage.
+
+12. **Creation fee always routes to treasury.** Every `create_collection` call transfers the creation fee to the protocol treasury PDA. This fee cannot be redirected or skipped.
+
+13. **Shatter fee routes to configurable burn destination.** The shatter fee is sent to the collection's configured `burn_destination` (defaults to the Solana incinerator). The owner receives `locked_lamports - fee`. The fee recipient receives exactly `fee`.
+
+14. **Buy uses checked math.** The buy instruction uses `checked_sub` for `price - royalty`. If royalty exceeds price (impossible with valid config, but defense-in-depth), the transaction fails with `MathOverflow` rather than wrapping around.
+
+### Commit-Reveal Invariants
+
+15. **Commit must precede reveal.** `reveal_collection` requires a prior `commit_reveal` with a matching hash. No reveal is possible without a committed secret.
+
+16. **Double commit is rejected.** Once a commit hash is submitted, no further commits are accepted.
+
+17. **Reveal uses keccak256 verification.** The revealed secret is hashed with keccak256 and compared to the committed hash. Mismatched secrets are rejected.
+
+---
+
+## Mainnet Launch Strategy
+
+> **Do NOT revoke upgrade authority immediately after launch.**
+
+Crypto history is full of protocols that wished they had more time before becoming immutable. The recommended sequence is:
+
+1. **Launch** — Deploy, initialize, create first collection
+2. **Observe** — Monitor protocol for several months. Track SOL flows, edge cases, user behavior
+3. **Audit** — Engage an independent Solana security firm for formal review
+4. **Fix** — Apply any audit findings via program upgrade
+5. **Revoke** — Only after audit passes and protocol is stable for months, revoke upgrade authority
+
+Upgrade authority revocation is permanent. It should be the last step, not the first.
 
 ---
 

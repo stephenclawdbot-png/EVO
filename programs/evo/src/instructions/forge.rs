@@ -102,6 +102,9 @@ pub fn forge(
     );
     transfer(cpi_ctx, lock_amount)?;
 
+    // Defense-in-depth: verify reserve invariant after forge
+    verify_reserve_invariant(&evo.to_account_info(), evo.locked_lamports)?;
+
     msg!("EVO #{} forged in collection '{}'. Mint price: {} lamports to creator, {} lamports locked", evo_id, collection.name, mint_price, lock_amount);
     Ok(())
 }

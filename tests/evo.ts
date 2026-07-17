@@ -26,9 +26,9 @@ describe("EVO", () => {
   let revealSecret: Buffer;
 
   // Constants
-  const CREATION_FEE = SOL(0.05);
-  const MINT_PRICE = SOL(0.001);
-  const LOCK_AMOUNT = SOL(0.01);
+  const CREATION_FEE = SOL(0.001);
+  const MINT_PRICE = SOL(0.0001);
+  const LOCK_AMOUNT = SOL(0.001);
   const SHATTER_FEE_BPS = 500; // 5%
   const ROYALTY_BPS = 500; // 5%
 
@@ -70,16 +70,16 @@ describe("EVO", () => {
 
   const isDevnet = connection.rpcEndpoint.includes("devnet");
 
-  const airdrop = async (kp: Keypair, sol: number) => {
+  const airdrop = async (kp: Keypair, sol: number, devnetSol?: number) => {
     if (isDevnet) {
       // On devnet, faucet is rate-limited — transfer from pre-funded provider wallet
       if (kp.publicKey.equals(wallet.publicKey)) return; // provider is pre-funded
-      const devnetSol = sol > 1 ? Math.max(sol * 0.05, 0.05) : sol;
+      const devnetSolAmount = devnetSol ?? (sol > 1 ? Math.max(sol * 0.05, 0.05) : sol);
       const tx = new Transaction().add(
         SystemProgram.transfer({
           fromPubkey: wallet.publicKey,
           toPubkey: kp.publicKey,
-          lamports: Math.ceil(devnetSol * LAMPORTS_PER_SOL),
+          lamports: Math.ceil(devnetSolAmount * LAMPORTS_PER_SOL),
         })
       );
       const sig = await provider.sendAndConfirm(tx);
@@ -135,9 +135,9 @@ describe("EVO", () => {
       creator = Keypair.generate();
       buyer = Keypair.generate();
       other = Keypair.generate();
-      await airdrop(creator, 10);
-      await airdrop(buyer, 10);
-      await airdrop(other, 5);
+      await airdrop(creator, 10, 0.10);
+      await airdrop(buyer, 10, 0.06);
+      await airdrop(other, 5, 0.03);
       collectionPk = collectionPda(NAME);
     });
 
@@ -231,7 +231,7 @@ describe("EVO", () => {
     });
 
     it("feeds SOL: balance + locked + feed_count + total_fed increase", async () => {
-      const FEED = SOL(0.005);
+      const FEED = SOL(0.001);
       const evoBefore = await program.account.evoAccount.fetch(evoPk);
       const evoBalBefore = await lamportsOf(evoPk);
       const ownerBefore = await lamportsOf(other.publicKey);
@@ -300,7 +300,7 @@ describe("EVO", () => {
     });
 
     it("lists the EVO for sale", async () => {
-      const PRICE = SOL(0.1);
+      const PRICE = SOL(0.01);
       await program.methods
         .list(PRICE)
         .accounts({ evo: evoPk, seller: buyer.publicKey })
@@ -314,7 +314,7 @@ describe("EVO", () => {
     it("rejects double listing", async () => {
       try {
         await program.methods
-          .list(SOL(0.2))
+          .list(SOL(0.02))
           .accounts({ evo: evoPk, seller: buyer.publicKey })
           .signers([buyer])
           .rpc();
@@ -325,7 +325,7 @@ describe("EVO", () => {
     });
 
     it("buys: seller gets price-royalty, creator gets royalty, owner changes, locked unchanged", async () => {
-      const PRICE = SOL(0.1);
+      const PRICE = SOL(0.01);
       const royalty = Math.floor((PRICE.toNumber() * ROYALTY_BPS) / 10000);
       const sellerProceeds = PRICE.toNumber() - royalty;
 
@@ -517,11 +517,11 @@ describe("EVO", () => {
     let collectionPk: PublicKey;
     let evoPk: PublicKey;
     const EVO_ID = 0;
-    const FEED_THRESHOLD = SOL(0.005); // 0.005 SOL per stage
+    const FEED_THRESHOLD = SOL(0.001); // 0.001 SOL per stage
 
     before(async () => {
       revealAuthority = Keypair.generate();
-      await airdrop(revealAuthority, 1);
+      await airdrop(revealAuthority, 1, 0.01);
       collectionPk = collectionPda(NAME);
     });
 
@@ -772,7 +772,7 @@ describe("EVO", () => {
 
     before(async () => {
       burnWallet = Keypair.generate();
-      await airdrop(burnWallet, 0.01);
+      await airdrop(burnWallet, 0.01, 0.01);
 
       collectionPk = collectionPda(NAME);
       await program.methods
@@ -863,7 +863,7 @@ describe("EVO", () => {
 
     before(async () => {
       revealAuth = Keypair.generate();
-      await airdrop(revealAuth, 1);
+      await airdrop(revealAuth, 1, 0.01);
       collectionPk = collectionPda(NAME);
 
       await program.methods
@@ -950,7 +950,7 @@ describe("EVO", () => {
 
     before(async () => {
       stageAuthority = Keypair.generate();
-      await airdrop(stageAuthority, 1);
+      await airdrop(stageAuthority, 1, 0.01);
       collectionPk = collectionPda(NAME);
 
       await program.methods

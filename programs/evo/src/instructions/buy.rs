@@ -61,7 +61,9 @@ pub fn buy(ctx: Context<Buy>) -> Result<()> {
 
     // Calculate royalty
     let royalty = calculate_fee(price, collection.trade_royalty_bps);
-    let seller_proceeds = price - royalty;
+    let seller_proceeds = price
+        .checked_sub(royalty)
+        .ok_or(EvoError::MathOverflow)?;
 
     // Pay the seller
     let cpi_ctx = CpiContext::new(

@@ -1,5 +1,6 @@
 use crate::errors::EvoError;
 use crate::state::*;
+use crate::utils::*;
 use anchor_lang::prelude::*;
 use anchor_lang::system_program::{Transfer, transfer};
 
@@ -45,6 +46,9 @@ pub fn feed(ctx: Context<Feed>, additional_lamports: u64) -> Result<()> {
         .feed_count
         .checked_add(1)
         .ok_or(EvoError::MathOverflow)?;
+
+    // Defense-in-depth: verify reserve invariant after feed
+    verify_reserve_invariant(&evo.to_account_info(), evo.locked_lamports)?;
 
     msg!("Fed {} lamports to EVO. Total locked: {}", additional_lamports, evo.locked_lamports);
     Ok(())
