@@ -64,23 +64,45 @@ jobs:
           sed -i "s/7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc/$TEST_PID/g" programs/evo/src/lib.rs Anchor.toml
           grep -n "$TEST_PID" programs/evo/src/lib.rs Anchor.toml
 
+      - name: Install devnet-pow (for SOL mining)
+        run: cargo install devnet-pow --locked
+
       - name: Fund wallet on devnet
         env:
           DEVNET_FUNDED_KEYPAIR: ${{ secrets.DEVNET_FUNDED_KEYPAIR }}
         run: |
           solana config set --url devnet --keypair ~/.config/solana/evo-deployer.json
-          echo "Deployer pubkey: $(solana-keygen pubkey ~/.config/solana/evo-deployer.json)"
+          DEPLOYER_PUBKEY=$(solana-keygen pubkey ~/.config/solana/evo-deployer.json)
+          echo "Deployer pubkey: $DEPLOYER_PUBKEY"
           echo "Current balance: $(solana balance || echo '0 SOL')"
 
           if [ -n "$DEVNET_FUNDED_KEYPAIR" ]; then
-            echo "Using pre-funded keypair — skipping airdrop"
+            echo "Using pre-funded keypair — skipping mining"
           else
-            echo "Attempting airdrop 1 (2 SOL)..."
-            solana airdrop 2 2>&1 || echo "⚠️ Airdrop 1 failed"
-            sleep 15
-            echo "Attempting airdrop 2 (2 SOL)..."
-            solana airdrop 2 2>&1 || echo "⚠️ Airdrop 2 failed"
-            sleep 5
+            # Try a small airdrop first for tx fees (CI IP may not be rate-limited)
+            echo "Attempting small airdrop (0.05 SOL) for tx fees..."
+            solana airdrop 0.05 2>&1 || echo "⚠️ Airdrop failed"
+
+            BALANCE=$(solana balance 2>/dev/null | awk '{print $1}' || echo "0")
+            echo "Balance after airdrop: $BALANCE SOL"
+
+            # If we have at least 0.01 SOL, try mining with devnet-pow
+            HAS_FEE=$(echo "$BALANCE >= 0.01" | bc -l 2>/dev/null || echo 0)
+            if [ "$HAS_FEE" = "1" ]; then
+              echo "✅ Have tx fee SOL — mining with devnet-pow (difficulty 3, reward 0.02)..."
+              # Mine for ~10 minutes (timeout), targeting 5 SOL
+              timeout 600 devnet-pow mine -d 3 --reward 0.02 --no-infer \
+                -u dev -k ~/.config/solana/evo-deployer.json -t 5000000000 2>&1 || true
+              echo "Mining complete. Balance: $(solana balance)"
+            else
+              echo "⚠️ No tx fee SOL — cannot mine. Will try airdrop instead."
+              echo "Attempting airdrop 1 (2 SOL)..."
+              solana airdrop 2 2>&1 || echo "⚠️ Airdrop 1 failed"
+              sleep 15
+              echo "Attempting airdrop 2 (2 SOL)..."
+              solana airdrop 2 2>&1 || echo "⚠️ Airdrop 2 failed"
+              sleep 5
+            fi
           fi
 
           BALANCE=$(solana balance 2>/dev/null | awk '{print $1}' || echo "0")
