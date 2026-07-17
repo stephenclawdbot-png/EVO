@@ -184,7 +184,7 @@ export default function CreateCollectionPage() {
           Deploy a new EVO collection on-chain. You become the collection creator and gain lifecycle management authority.
         </p>
 
-        {/* Wallet gate */}
+        {/* Wallet gate — connect first, then the form */}
         {!wallet.connected ? (
           <div className="mt-8 flex flex-col items-center gap-4 rounded-lg border border-border bg-surface p-10 text-center">
             <IconSparkle className="h-8 w-8 text-accent" />

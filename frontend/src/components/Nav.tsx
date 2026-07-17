@@ -65,26 +65,22 @@ export function Nav({ onRefresh, ticker = [] }: NavProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          {connected && (
-            <>
-              {hasCollections && (
-                <Link
-                  href="/my"
-                  className="inline-flex h-7 items-center gap-1.5 rounded border border-border-strong bg-surface px-3 text-xs font-semibold text-text transition-colors hover:border-accent hover:text-text-strong sm:hidden"
-                >
-                  <IconCollection className="h-3.5 w-3.5" />
-                </Link>
-              )}
-              <Link
-                href="/create"
-                className="inline-flex h-7 items-center gap-1.5 rounded border border-accent bg-accent px-3 text-xs font-bold text-white transition-colors hover:bg-accent-hover"
-              >
-                <IconHammer className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Create Collection</span>
-                <span className="sm:hidden">Create</span>
-              </Link>
-            </>
+          {connected && hasCollections && (
+            <Link
+              href="/my"
+              className="inline-flex h-7 items-center gap-1.5 rounded border border-border-strong bg-surface px-3 text-xs font-semibold text-text transition-colors hover:border-accent hover:text-text-strong sm:hidden"
+            >
+              <IconCollection className="h-3.5 w-3.5" />
+            </Link>
           )}
+          <Link
+            href="/create"
+            className="inline-flex h-7 items-center gap-1.5 rounded border border-accent bg-accent px-3 text-xs font-bold text-white transition-colors hover:bg-accent-hover"
+          >
+            <IconHammer className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Create Collection</span>
+            <span className="sm:hidden">Create</span>
+          </Link>
           {onRefresh && (
             <button
               onClick={onRefresh}

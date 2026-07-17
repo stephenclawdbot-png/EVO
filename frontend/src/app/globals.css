@@ -38,13 +38,13 @@
   --surface-2: #f4f4f5;
   --border: #e4e4e7;
   --border-strong: #d4d4d8;
-  --text: #27272a;
-  --text-strong: #18181b;
+  --text: #3f3f46;
+  --text-strong: #3f3f46;
   --muted: #71717a;
   --dim: #a1a1aa;
-  --accent: #6366f1;
-  --accent-hover: #4f46e5;
-  --accent-soft: #eef2ff;
+  --accent: #818cf8;
+  --accent-hover: #6366f1;
+  --accent-soft: #f5f5ff;
   --positive: #16a34a;
   --positive-soft: #f0fdf4;
   --negative: #dc2626;
