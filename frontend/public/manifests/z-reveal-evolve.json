@@ -1,0 +1,27 @@
+{
+  "schema": "evo-visual-manifest-v1",
+  "name": "Z Reveal & Evolve Collection",
+  "description": "Reveal then evolve — hidden art, revealed art, then evolved art.",
+  "lifecycle": "reveal_and_evolve",
+  "fallback_image": "/manifests/hidden-z.png",
+  "stages": [
+    {
+      "id": 0,
+      "name": "Pre-Reveal",
+      "image": "/manifests/hidden-z.png"
+    },
+    {
+      "id": 1,
+      "name": "Revealed",
+      "image": "/zenkos/abyssling_juvenile.png"
+    },
+    {
+      "id": 2,
+      "name": "Evolved",
+      "image": "/zenkos/abyssling_adult.png"
+    }
+  ],
+  "state": {
+    "current_stage": 0
+  }
+}

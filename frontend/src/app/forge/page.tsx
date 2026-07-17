@@ -13,6 +13,7 @@ import {
   generateResonanceSeed,
 } from '@/lib/evo-program';
 import { CollectionData, CREATURES, collectionConfigToData } from '@/lib/evo-data';
+import { resolveImage } from '@/lib/evo-visuals';
 import { IconCheck, IconAlertTriangle, IconExternalLink, IconArrowRight } from '@/components/Icons';
 
 const COLLECTION_NAME = 'Z';
@@ -26,6 +27,10 @@ export default function ForgePage() {
   const [forging, setForging] = useState(false);
   const [txSig, setTxSig] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [resolvedImage, setResolvedImage] = useState<string | null>(null);
+
+  const remaining = collection ? collection.supplyCap - currentSupply : 0;
+  const creature = collection ? CREATURES[currentSupply % CREATURES.length] : null;
 
   const fetchCollection = useCallback(async () => {
     setLoading(true);
@@ -43,6 +48,16 @@ export default function ForgePage() {
   }, [connection]);
 
   useEffect(() => { fetchCollection(); }, [fetchCollection]);
+
+  useEffect(() => {
+    const fallback = creature?.stages.baby || '/zenkos/abyssling_baby.png';
+    if (!collection?.metadataUri) { setResolvedImage(null); return; }
+    let active = true;
+    resolveImage(collection.metadataUri, fallback, 0, collection.isRevealed).then(img => {
+      if (active) setResolvedImage(img);
+    });
+    return () => { active = false; };
+  }, [collection?.metadataUri, creature?.stages.baby, collection?.isRevealed]);
 
   const handleForge = async () => {
     if (!wallet.connected || !wallet.publicKey || !collection) { setError('Connect your wallet first'); return; }
@@ -68,8 +83,6 @@ export default function ForgePage() {
     } catch (err: any) { setError(err.message || 'Forge failed'); } finally { setForging(false); }
   };
 
-  const remaining = collection ? collection.supplyCap - currentSupply : 0;
-  const creature = collection ? CREATURES[currentSupply % CREATURES.length] : null;
   const totalCost = collection ? collection.mintPriceSol + collection.lockAmountSol : 0;
   const shatterRecover = collection ? collection.lockAmountSol * (1 - collection.shatterFeeBps / 10000) : 0;
 
@@ -106,7 +119,7 @@ export default function ForgePage() {
               <div className="mt-5 flex flex-col items-center">
                 <div className="relative flex h-40 w-40 items-center justify-center overflow-hidden rounded border border-border bg-surface">
                   <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 45%, rgba(129,140,248,0.12), transparent 65%)` }} />
-                  <img src={creature.stages.baby} alt={creature.displayName} className="relative z-[1] pixelated" style={{ transform: 'scale(2)' }} />
+                  <img src={resolvedImage || creature.stages.baby} alt={creature.displayName} className="relative z-[1] pixelated" style={{ transform: 'scale(2)' }} />
                 </div>
                 <p className="mt-3 text-sm font-semibold">{creature.displayName}</p>
                 <p className="font-mono text-[11px] text-dim">Z #{currentSupply} - {creature.element} - {creature.rarity}</p>

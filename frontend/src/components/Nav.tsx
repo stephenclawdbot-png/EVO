@@ -33,6 +33,12 @@ export function Nav({ onRefresh, ticker = [] }: NavProps) {
             <IconHammer className="h-3.5 w-3.5" />
             Forge
           </Link>
+          <Link
+            href="/admin"
+            className="inline-flex h-7 items-center rounded border border-border-strong bg-surface px-3 text-xs font-semibold text-text transition-colors hover:border-accent hover:text-text-strong"
+          >
+            Admin
+          </Link>
           {onRefresh && (
             <button
               onClick={onRefresh}

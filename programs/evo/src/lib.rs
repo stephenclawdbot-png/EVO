@@ -156,4 +156,10 @@ pub mod evo {
     pub fn evolve(ctx: Context<Evolve>) -> Result<()> {
         instructions::evolve::evolve(ctx)
     }
+
+    /// Authority-only stage override for Custom lifecycle collections.
+    /// Sets an EVO's `current_state` to any valid stage without threshold checks.
+    pub fn set_visual_stage(ctx: Context<SetVisualStage>, stage: u16) -> Result<()> {
+        instructions::set_visual_stage::set_visual_stage(ctx, stage)
+    }
 }

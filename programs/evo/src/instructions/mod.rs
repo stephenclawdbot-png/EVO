@@ -12,6 +12,7 @@ pub mod update_metadata;
 pub mod reveal_collection;
 pub mod commit_reveal;
 pub mod evolve;
+pub mod set_visual_stage;
 
 pub use initialize::*;
 pub use create_collection::*;
@@ -27,3 +28,4 @@ pub use update_metadata::*;
 pub use reveal_collection::*;
 pub use commit_reveal::*;
 pub use evolve::*;
+pub use set_visual_stage::*;

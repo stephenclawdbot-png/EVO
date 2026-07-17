@@ -56,15 +56,16 @@ pub fn create_collection(
     require!(metadata_uri.len() <= MAX_METADATA_URI_LEN, EvoError::MetadataUriTooLong);
 
     // Validate lifecycle config.
-    // Evolution/Custom must declare max_states > 0.
-    // CommitReveal must set a reveal_authority.
-    if lifecycle.lifecycle_type == LifecycleType::Evolution
+    // RevealAndEvolve/Custom must declare max_states > 0.
+    // Reveal/CommitReveal/RevealAndEvolve/Custom must set a reveal_authority.
+    if lifecycle.lifecycle_type == LifecycleType::RevealAndEvolve
         || lifecycle.lifecycle_type == LifecycleType::Custom
     {
         require!(lifecycle.max_states > 0, EvoError::InvalidLifecycleConfig);
     }
-    if lifecycle.lifecycle_type == LifecycleType::CommitReveal
-        || lifecycle.lifecycle_type == LifecycleType::Evolution
+    if lifecycle.lifecycle_type == LifecycleType::Reveal
+        || lifecycle.lifecycle_type == LifecycleType::CommitReveal
+        || lifecycle.lifecycle_type == LifecycleType::RevealAndEvolve
         || lifecycle.lifecycle_type == LifecycleType::Custom
     {
         require!(
@@ -107,6 +108,9 @@ pub fn create_collection(
 
     // Configurable burn destination
     config.burn_destination = lifecycle.burn_destination;
+
+    // Artwork manifest integrity hash
+    config.artwork_manifest_hash = lifecycle.artwork_manifest_hash;
 
     // Pay the collection creation fee to the treasury
     let fee = ctx.accounts.protocol_config.creation_fee_lamports;

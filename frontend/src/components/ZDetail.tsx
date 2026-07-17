@@ -18,6 +18,7 @@ import {
   readProtocolConfig,
   getCollectionPDA,
 } from '@/lib/evo-program';
+import { resolveImage } from '@/lib/evo-visuals';
 import { IconCheck, IconAlertTriangle, IconExternalLink } from './Icons';
 
 interface ZDetailProps {
@@ -30,6 +31,7 @@ export function ZDetail({ evo, onBack, onRefresh }: ZDetailProps) {
   const { connection } = useConnection();
   const wallet = useWallet();
   const [imgError, setImgError] = useState(false);
+  const [resolvedImage, setResolvedImage] = useState<string | null>(null);
   const [action, setAction] = useState<string | null>(null);
   const [txResult, setTxResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,14 +40,32 @@ export function ZDetail({ evo, onBack, onRefresh }: ZDetailProps) {
   const [transferAddress, setTransferAddress] = useState('');
   const [tab, setTab] = useState<'overview' | 'activity' | 'holders'>('overview');
   const [creator, setCreator] = useState<string | null>(null);
+  const [metadataUri, setMetadataUri] = useState<string | null>(null);
+  const [isRevealed, setIsRevealed] = useState<boolean | undefined>(undefined);
 
   useEffect(() => {
     readCollectionConfig(connection, 'Z').then(cfg => {
-      if (cfg) setCreator(cfg.creator.toBase58());
+      if (cfg) {
+        setCreator(cfg.creator.toBase58());
+        setMetadataUri(cfg.metadataUri);
+        setIsRevealed(cfg.isRevealed);
+      }
     }).catch(() => {});
   }, [connection]);
 
   const stage = getStage(evo);
+  const fallbackSprite = evo.creature.stages[stage];
+
+  useEffect(() => {
+    if (!metadataUri) { setResolvedImage(null); return; }
+    let active = true;
+    resolveImage(metadataUri, fallbackSprite, evo.currentState, isRevealed).then(img => {
+      if (active) setResolvedImage(img);
+    });
+    return () => { active = false; };
+  }, [metadataUri, fallbackSprite, evo.currentState, isRevealed]);
+
+  const displayImage = resolvedImage || fallbackSprite;
   const elementColor = ELEMENT_COLORS[evo.creature.element];
   const rarityColor = RARITY_COLORS[evo.creature.rarity];
   const scale = 0.6 + Math.min(1, evo.lockedLamports / 50) * 0.4;
@@ -197,7 +217,7 @@ export function ZDetail({ evo, onBack, onRefresh }: ZDetailProps) {
               )}
 
               {!imgError ? (
-                <img src={evo.creature.stages[stage]} alt={evo.creature.displayName} className="relative z-[1]"
+                <img src={displayImage} alt={evo.creature.displayName} className="relative z-[1]"
                   style={{ transform: `scale(${scale * 1.5})`, imageRendering: 'pixelated',
                     filter: evo.isListed ? `drop-shadow(0 0 14px ${elementColor})` : `drop-shadow(0 0 6px ${elementColor}70)` }}
                   onError={() => setImgError(true)} />

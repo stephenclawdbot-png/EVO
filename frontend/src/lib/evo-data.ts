@@ -27,6 +27,8 @@ export interface EVOData {
   isListed: boolean;
   listPrice: number | null; // in SOL
   isShattered: boolean;
+  // Lifecycle state from protocol
+  currentState: number;
   // On-chain references
   evoPda?: string;
   collectionPda?: string;
@@ -42,6 +44,10 @@ export interface CollectionData {
   mintPriceSol: number;
   lockAmountSol: number;
   bump: number;
+  metadataUri: string;
+  lifecycleType: string;
+  maxStates: number;
+  isRevealed: boolean;
 }
 
 const GROWTH_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days per facet
@@ -83,6 +89,7 @@ export function evoAccountToData(
     isListed: evo.isListed,
     listPrice: evo.isListed ? lamportsToSol(evo.listPriceLamports) : null,
     isShattered: evo.isShattered,
+    currentState: evo.currentState,
     evoPda: evo.pda?.toBase58(),
     collectionPda: evo.collection.toBase58(),
   };
@@ -99,6 +106,10 @@ export function collectionConfigToData(cfg: CollectionConfig): CollectionData {
     mintPriceSol: lamportsToSol(cfg.mintPriceLamports),
     lockAmountSol: lamportsToSol(cfg.lockAmountLamports),
     bump: cfg.bump,
+    metadataUri: cfg.metadataUri,
+    lifecycleType: cfg.lifecycleType,
+    maxStates: cfg.maxStates,
+    isRevealed: cfg.isRevealed,
   };
 }
 

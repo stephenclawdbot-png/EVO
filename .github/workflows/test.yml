@@ -48,3 +48,9 @@ jobs:
 
       - name: Run tests
         run: anchor test --skip-build --provider.cluster localnet
+
+      - name: Install frontend dependencies
+        run: cd frontend && npm install
+
+      - name: Run frontend tests
+        run: cd frontend && npx vitest run

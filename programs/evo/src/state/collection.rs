@@ -42,6 +42,13 @@ pub struct CollectionConfig {
     /// If Pubkey::default(), burn fees go to the real Solana incinerator.
     /// Otherwise, burn fees go to this address (testing / custom burn wallets).
     pub burn_destination: Pubkey,
+
+    // --- Artwork manifest integrity ---
+    /// SHA-256 hash of the off-chain artwork manifest JSON.
+    /// Wallets/marketplaces verify hash(manifest) == artwork_manifest_hash
+    /// before displaying art, ensuring the manifest was not tampered with.
+    /// Zero hash = no verification (backward compatible).
+    pub artwork_manifest_hash: [u8; 32],
 }
 
 impl CollectionConfig {
@@ -73,5 +80,6 @@ impl CollectionConfig {
         1 +      // randomness_policy
         32 +     // manifest_root
         32 +     // reveal_commitment
-        32;      // burn_destination
+        32 +     // burn_destination
+        32;      // artwork_manifest_hash
 }

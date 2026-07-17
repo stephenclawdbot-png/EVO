@@ -24,6 +24,12 @@ pub fn reveal_collection(ctx: Context<RevealCollection>, secret: [u8; 32]) -> Re
 
     require!(!collection.is_revealed, EvoError::AlreadyRevealed);
 
+    // Static collections cannot be revealed
+    require!(
+        collection.lifecycle_type != crate::state::LifecycleType::Static,
+        EvoError::StageTransitionNotAllowed
+    );
+
     // If a commitment was set (commit_reveal before minting), verify the secret.
     if collection.reveal_commitment != [0u8; 32] {
         let hash = keccak::hashv(&[&secret]).0;

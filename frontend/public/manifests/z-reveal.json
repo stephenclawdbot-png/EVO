@@ -1,0 +1,22 @@
+{
+  "schema": "evo-visual-manifest-v1",
+  "name": "Z Reveal Collection",
+  "description": "Reveal collection — pre-reveal art until creator triggers reveal.",
+  "lifecycle": "reveal",
+  "fallback_image": "/manifests/hidden-z.png",
+  "stages": [
+    {
+      "id": 0,
+      "name": "Pre-Reveal",
+      "image": "/manifests/hidden-z.png"
+    },
+    {
+      "id": 1,
+      "name": "Revealed",
+      "image": "/zenkos/abyssling_adult.png"
+    }
+  ],
+  "state": {
+    "current_stage": 0
+  }
+}

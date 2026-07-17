@@ -18,17 +18,28 @@ pub enum FeeDestination {
 }
 
 /// Lifecycle type — determines how an EVO's visual state progresses.
+///
+/// Three primary modes (what creators choose):
+/// - `Static` — no transitions, art is final from forge
+/// - `Reveal` — stage 0 (hidden) → 1 (revealed) via `reveal_collection()`
+/// - `RevealAndEvolve` — reveal + ongoing per-asset evolution via `evolve()`
+///
+/// Two advanced modes:
+/// - `CommitReveal` — like Reveal but with pre-committed secret (provably fair)
+/// - `Custom` — creator-defined transition rules, `set_visual_stage()` allowed
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
 pub enum LifecycleType {
     /// No reveal, no evolution. Art is final from forge.
     Static,
-    /// Art is visible immediately, no evolution.
-    ImmediateReveal,
-    /// Commit before mint, reveal after mint-out with injected entropy.
+    /// Stage 0 → 1 via `reveal_collection()`. Art visible after reveal.
+    Reveal,
+    /// Like Reveal, but creator commits hash(secret) before minting.
+    /// `reveal_collection(secret)` verifies `keccak256(secret) == commitment`.
     CommitReveal,
-    /// EVOs progress through stages based on trades, feeds, holding, value.
-    Evolution,
+    /// Reveal + per-asset evolution. Stage 0 → 1 (reveal), then 1 → 2 → ... → max via `evolve()`.
+    RevealAndEvolve,
     /// Creator defines custom transition rules (off-chain, hash-committed).
+    /// `set_visual_stage()` allowed for authority override.
     Custom,
 }
 
@@ -58,6 +69,10 @@ pub struct LifecycleParams {
     pub evolve_locked_threshold: u64,
     pub transition_policy_hash: [u8; 32],
     pub burn_destination: Pubkey,
+    /// SHA-256 hash of the off-chain artwork manifest for integrity verification.
+    /// Wallets and marketplaces verify `hash(manifest_json) == artwork_manifest_hash`
+    /// before displaying art, ensuring the manifest was not tampered with.
+    pub artwork_manifest_hash: [u8; 32],
 }
 
 impl Default for LifecycleParams {
@@ -74,6 +89,7 @@ impl Default for LifecycleParams {
             evolve_locked_threshold: 0,
             transition_policy_hash: [0u8; 32],
             burn_destination: Pubkey::default(),
+            artwork_manifest_hash: [0u8; 32],
         }
     }
 }

@@ -2,21 +2,35 @@
 
 import { EVOData, getStage } from '@/lib/evo-data';
 import { ELEMENT_COLORS, RARITY_COLORS } from '@/lib/creatures';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { resolveImage } from '@/lib/evo-visuals';
 
 interface ZCardProps {
   evo: EVOData;
   onClick?: () => void;
   isFloor?: boolean;
+  metadataUri?: string;
+  isRevealed?: boolean;
 }
 
-export function ZCard({ evo, onClick, isFloor }: ZCardProps) {
+export function ZCard({ evo, onClick, isFloor, metadataUri, isRevealed }: ZCardProps) {
   const [imgError, setImgError] = useState(false);
+  const [resolvedImage, setResolvedImage] = useState<string | null>(null);
   const stage = getStage(evo);
   const elementColor = ELEMENT_COLORS[evo.creature.element];
   const rarityColor = RARITY_COLORS[evo.creature.rarity];
-  const sprite = evo.creature.stages[stage];
+  const fallbackSprite = evo.creature.stages[stage];
+  const sprite = resolvedImage || fallbackSprite;
   const scale = 0.6 + Math.min(1, evo.lockedLamports / 50) * 0.4;
+
+  useEffect(() => {
+    if (!metadataUri) { setResolvedImage(null); return; }
+    let active = true;
+    resolveImage(metadataUri, fallbackSprite, evo.currentState, isRevealed).then(img => {
+      if (active) setResolvedImage(img);
+    });
+    return () => { active = false; };
+  }, [metadataUri, fallbackSprite, evo.currentState, isRevealed]);
 
   return (
     <div

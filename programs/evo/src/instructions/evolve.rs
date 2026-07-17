@@ -25,15 +25,15 @@ pub fn evolve(ctx: Context<Evolve>) -> Result<()> {
         EvoError::CollectionMismatch
     );
 
-    // Only Evolution and Custom lifecycle types support evolving
+    // Only RevealAndEvolve and Custom lifecycle types support evolving
     require!(
-        collection.lifecycle_type == crate::state::LifecycleType::Evolution
+        collection.lifecycle_type == crate::state::LifecycleType::RevealAndEvolve
             || collection.lifecycle_type == crate::state::LifecycleType::Custom,
         EvoError::EvolutionNotEnabled
     );
 
     // Must be revealed (if collection requires reveal)
-    if collection.lifecycle_type == crate::state::LifecycleType::Evolution {
+    if collection.lifecycle_type == crate::state::LifecycleType::RevealAndEvolve {
         require!(collection.is_revealed, EvoError::NotRevealed);
     }
 

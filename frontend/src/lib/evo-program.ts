@@ -27,6 +27,11 @@ const DISC = {
   buy: Buffer.from([102, 6, 61, 18, 1, 218, 235, 234]),
   shatter: Buffer.from([158, 63, 226, 126, 18, 89, 130, 128]),
   transfer: Buffer.from([163, 52, 200, 231, 140, 3, 69, 186]),
+  updateMetadata: Buffer.from([170, 182, 43, 239, 97, 78, 225, 186]),
+  revealCollection: Buffer.from([181, 252, 135, 115, 216, 100, 60, 200]),
+  commitReveal: Buffer.from([30, 139, 34, 56, 94, 246, 114, 243]),
+  evolve: Buffer.from([139, 139, 160, 98, 252, 226, 106, 81]),
+  setVisualStage: Buffer.from([44, 218, 23, 167, 61, 241, 78, 244]),
 };
 
 // Account discriminators (first 8 bytes of sha256("account:<Name>"))
@@ -41,6 +46,13 @@ export type FeeDestination = 'Treasury' | 'Creator' | 'Burn' | 'Split';
 const FEE_DEST_MAP: Record<FeeDestination, number> = {
   Treasury: 0, Creator: 1, Burn: 2, Split: 3,
 };
+
+export type LifecycleType = 'Static' | 'Reveal' | 'CommitReveal' | 'RevealAndEvolve' | 'Custom';
+const LIFECYCLE_MAP: LifecycleType[] = ['Static', 'Reveal', 'CommitReveal', 'RevealAndEvolve', 'Custom'];
+const LIFECYCLE_REV: Record<number, LifecycleType> = Object.fromEntries(LIFECYCLE_MAP.map((v, i) => [i, v]));
+
+export type RandomnessPolicy = 'None' | 'Predetermined' | 'BatchReveal';
+const RANDOMNESS_MAP: RandomnessPolicy[] = ['None', 'Predetermined', 'BatchReveal'];
 
 export interface ProtocolConfig {
   treasury: PublicKey;
@@ -61,6 +73,13 @@ export interface CollectionConfig {
   mintPriceLamports: number;
   lockAmountLamports: number;
   bump: number;
+  metadataUri: string;
+  lifecycleType: LifecycleType;
+  maxStates: number;
+  revealAuthority: PublicKey;
+  isRevealed: boolean;
+  burnDestination: PublicKey;
+  artworkManifestHash: Uint8Array;
 }
 
 export interface FractureLine {
@@ -84,6 +103,12 @@ export interface EVOAccount {
   listPriceLamports: number;
   isShattered: boolean;
   bump: number;
+  // Lifecycle state
+  mintIndex: number;
+  currentState: number;
+  lastTransitionAt: number;
+  feedCount: number;
+  totalFedLamports: number;
   // Derived
   evoId?: number;
   pda?: PublicKey;
@@ -139,6 +164,15 @@ function readFeeDest(buf: Buffer, offset: number): [FeeDestination, number] {
   const idx = buf[offset];
   const map: FeeDestination[] = ['Treasury', 'Creator', 'Burn', 'Split'];
   return [map[idx], offset + 1];
+}
+
+function readLifecycle(buf: Buffer, offset: number): [LifecycleType, number] {
+  const idx = buf[offset];
+  return [LIFECYCLE_REV[idx] ?? 'Static', offset + 1];
+}
+
+function readBytes32(buf: Buffer, offset: number): [Uint8Array, number] {
+  return [new Uint8Array(buf.subarray(offset, offset + 32)), offset + 32];
 }
 
 function writeU16(val: number): Buffer {
@@ -197,11 +231,51 @@ export function parseCollectionConfig(data: Buffer): CollectionConfig | null {
   const [mintPriceLamports, o9] = readU64(data, off); off = o9;
   const [lockAmountLamports, o10] = readU64(data, off); off = o10;
   const [bump, o11] = [data[off], off + 1]; off = o11;
+
+  let metadataUri = '';
+  let lifecycleType: LifecycleType = 'Static';
+  let maxStates = 0;
+  let revealAuthority = PublicKey.default;
+  let isRevealed = false;
+  let burnDestination = PublicKey.default;
+  let artworkManifestHash: Uint8Array = new Uint8Array(32);
+
+  if (off < data.length) {
+    [metadataUri, off] = readString(data, off);
+  }
+  if (off + 1 <= data.length) {
+    [lifecycleType, off] = readLifecycle(data, off);
+  }
+  if (off + 2 <= data.length) {
+    [maxStates, off] = readU16(data, off);
+  }
+  if (off + 32 <= data.length) {
+    [revealAuthority, off] = readPubkey(data, off);
+  }
+  if (off + 32 <= data.length) {
+    off += 32; // skip reveal_entropy
+  }
+  if (off + 1 <= data.length) {
+    [isRevealed, off] = readBool(data, off);
+  }
+  // Skip evolve thresholds (4+8+8+8=28) + transition_policy_hash (32) + randomness_policy (1) + manifest_root (32) + reveal_commitment (32)
+  if (off + 28 + 32 + 1 + 32 + 32 <= data.length) {
+    off += 28 + 32 + 1 + 32 + 32;
+  }
+  if (off + 32 <= data.length) {
+    [burnDestination, off] = readPubkey(data, off);
+  }
+  if (off + 32 <= data.length) {
+    [artworkManifestHash, off] = readBytes32(data, off);
+  }
+
   return {
     name, creator, supplyCap, currentSupply,
     shatterFeeBps, shatterFeeDestination: shatterFeeDest,
     tradeRoyaltyBps, royaltyDestination: royaltyDest,
     mintPriceLamports, lockAmountLamports, bump,
+    metadataUri, lifecycleType, maxStates, revealAuthority,
+    isRevealed, burnDestination, artworkManifestHash,
   };
 }
 
@@ -230,9 +304,34 @@ export function parseEVOAccount(data: Buffer): EVOAccount | null {
   const [listPriceLamports, l2] = readU64(data, off); off = l2;
   const [isShattered, l3] = readBool(data, off); off = l3;
   const [bump, l4] = [data[off], off + 1]; off = l4;
+
+  // Lifecycle state
+  let mintIndex = 0;
+  let currentState = 0;
+  let lastTransitionAt = 0;
+  let feedCount = 0;
+  let totalFedLamports = 0;
+
+  if (off + 4 <= data.length) {
+    [mintIndex, off] = readU32(data, off);
+  }
+  if (off + 2 <= data.length) {
+    [currentState, off] = readU16(data, off);
+  }
+  if (off + 8 <= data.length) {
+    [lastTransitionAt, off] = readI64(data, off);
+  }
+  if (off + 4 <= data.length) {
+    [feedCount, off] = readU32(data, off);
+  }
+  if (off + 8 <= data.length) {
+    [totalFedLamports, off] = readU64(data, off);
+  }
+
   return {
     collection, owner, lockedLamports, forgedAt, facetCount, tradeCount,
     resonanceSeed, fractureLines, isListed, listPriceLamports, isShattered, bump,
+    mintIndex, currentState, lastTransitionAt, feedCount, totalFedLamports,
   };
 }
 
@@ -420,6 +519,82 @@ export function createTransferIx(
     keys: [
       { pubkey: evoPda, isSigner: false, isWritable: true },
       { pubkey: currentOwner, isSigner: true, isWritable: true },
+    ],
+    data,
+  });
+}
+
+export function createUpdateMetadataIx(
+  collectionPda: PublicKey,
+  creator: PublicKey,
+  metadataUri: string,
+): TransactionInstruction {
+  const data = Buffer.concat([
+    DISC.updateMetadata,
+    writeString(metadataUri),
+  ]);
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys: [
+      { pubkey: collectionPda, isSigner: false, isWritable: true },
+      { pubkey: creator, isSigner: true, isWritable: false },
+    ],
+    data,
+  });
+}
+
+export function createRevealCollectionIx(
+  collectionPda: PublicKey,
+  authority: PublicKey,
+  secret: Uint8Array,
+): TransactionInstruction {
+  const data = Buffer.concat([
+    DISC.revealCollection,
+    Buffer.from(secret),
+  ]);
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys: [
+      { pubkey: collectionPda, isSigner: false, isWritable: true },
+      { pubkey: authority, isSigner: true, isWritable: false },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data,
+  });
+}
+
+export function createEvolveIx(
+  evoPda: PublicKey,
+  collectionPda: PublicKey,
+): TransactionInstruction {
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys: [
+      { pubkey: evoPda, isSigner: false, isWritable: true },
+      { pubkey: collectionPda, isSigner: false, isWritable: false },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data: DISC.evolve,
+  });
+}
+
+export function createSetVisualStageIx(
+  evoPda: PublicKey,
+  collectionPda: PublicKey,
+  authority: PublicKey,
+  stage: number,
+): TransactionInstruction {
+  const data = Buffer.concat([
+    DISC.setVisualStage,
+    Buffer.from(new Uint16Array([stage]).buffer),
+  ]);
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys: [
+      { pubkey: evoPda, isSigner: false, isWritable: true },
+      { pubkey: collectionPda, isSigner: false, isWritable: false },
+      { pubkey: authority, isSigner: true, isWritable: false },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     ],
     data,
   });

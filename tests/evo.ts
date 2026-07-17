@@ -64,6 +64,7 @@ describe("EVO", () => {
     evolveLockedThreshold: new BN(0),
     transitionPolicyHash: Array(32).fill(0),
     burnDestination: PublicKey.default,
+    artworkManifestHash: Array(32).fill(0),
     ...overrides,
   });
 
@@ -494,7 +495,7 @@ describe("EVO", () => {
   // ============================================================
   // LIFECYCLE: reveal + evolve
   // ============================================================
-  describe("Lifecycle (Evolution collection)", () => {
+  describe("Lifecycle (RevealAndEvolve collection)", () => {
     const NAME = "evo1";
     let collectionPk: PublicKey;
     let evoPk: PublicKey;
@@ -507,7 +508,7 @@ describe("EVO", () => {
       collectionPk = collectionPda(NAME);
     });
 
-    it("creates an Evolution collection with reveal authority", async () => {
+    it("creates a RevealAndEvolve collection with reveal authority", async () => {
       await program.methods
         .createCollection(
           NAME,
@@ -520,7 +521,7 @@ describe("EVO", () => {
           LOCK_AMOUNT,
           "https://example.com/evo.json",
           defaultLifecycle({
-            lifecycleType: { evolution: {} },
+            lifecycleType: { revealAndEvolve: {} },
             maxStates: 3,
             revealAuthority: revealAuthority.publicKey,
             randomnessPolicy: { batchReveal: {} },
@@ -533,7 +534,7 @@ describe("EVO", () => {
         .rpc();
 
       const cfg = await program.account.collectionConfig.fetch(collectionPk);
-      assert.deepEqual(cfg.lifecycleType, { evolution: {} });
+      assert.deepEqual(cfg.lifecycleType, { revealAndEvolve: {} });
       assert.equal(cfg.maxStates, 3);
       assert.equal(cfg.revealAuthority.toBase58(), revealAuthority.publicKey.toBase58());
       assert.isFalse(cfg.isRevealed);
@@ -830,6 +831,285 @@ describe("EVO", () => {
         "owner received locked-fee + rent/surplus"
       );
       assert.equal(evoBalAfter, 0, "EVO account is closed after shatter");
+    });
+  });
+
+  // ============================================================
+  // LIFECYCLE: Reveal-only (Reveal collection)
+  // ============================================================
+  describe("Lifecycle (Reveal collection)", () => {
+    const NAME = "reveal1";
+    let collectionPk: PublicKey;
+    let evoPk: PublicKey;
+    let revealAuth: Keypair;
+    const EVO_ID = 0;
+
+    before(async () => {
+      revealAuth = Keypair.generate();
+      await airdrop(revealAuth, 1);
+      collectionPk = collectionPda(NAME);
+
+      await program.methods
+        .createCollection(
+          NAME,
+          100,
+          SHATTER_FEE_BPS,
+          { creator: {} },
+          ROYALTY_BPS,
+          { creator: {} },
+          MINT_PRICE,
+          LOCK_AMOUNT,
+          "https://example.com/reveal.json",
+          defaultLifecycle({
+            lifecycleType: { reveal: {} },
+            maxStates: 2,
+            revealAuthority: revealAuth.publicKey,
+          })
+        )
+        .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+        .signers([creator])
+        .rpc();
+
+      evoPk = evoPda(collectionPk, EVO_ID);
+      await program.methods
+        .forge(EVO_ID, Buffer.from(Array(32).fill(15)))
+        .accounts({
+          collectionConfig: collectionPk,
+          protocolConfig: protocolPda,
+          creator: creator.publicKey,
+          owner: buyer.publicKey,
+        })
+        .signers([buyer])
+        .rpc();
+    });
+
+    it("starts at stage 0 (pre-reveal)", async () => {
+      const evo = await program.account.evoAccount.fetch(evoPk);
+      assert.equal(evo.currentState, 0, "pre-reveal stage is 0");
+    });
+
+    it("rejects evolve on a Reveal collection (no evolution)", async () => {
+      try {
+        await program.methods
+          .evolve()
+          .accounts({ evo: evoPk, collection: collectionPk })
+          .rpc();
+        assert.fail("should not evolve on Reveal collection");
+      } catch (e) {
+        expect(e.message).to.match(/evolution not enabled|0x1c/i);
+      }
+    });
+
+    it("reveals the collection — stage 0 → 1", async () => {
+      const secret = Buffer.from(Array(32).fill(77));
+
+      await program.methods
+        .revealCollection(secret)
+        .accounts({ collection: collectionPk, authority: revealAuth.publicKey })
+        .signers([revealAuth])
+        .rpc();
+
+      const cfg = await program.account.collectionConfig.fetch(collectionPk);
+      assert.isTrue(cfg.isRevealed, "collection is revealed");
+    });
+
+    it("EVO is still at stage 0 (reveal is collection-level, not per-asset)", async () => {
+      const evo = await program.account.evoAccount.fetch(evoPk);
+      assert.equal(evo.currentState, 0, "EVO current_state unchanged by reveal");
+      // Marketplace reads is_revealed from collection + current_state from EVO
+      // to determine the visual stage: is_revealed ? 1 : 0 for Reveal lifecycle
+    });
+  });
+
+  // ============================================================
+  // LIFECYCLE: Visual stage override (Custom collection)
+  // ============================================================
+  describe("Lifecycle (Custom collection + set_visual_stage)", () => {
+    const NAME = "custom1";
+    let collectionPk: PublicKey;
+    let evoPk: PublicKey;
+    const EVO_ID = 0;
+    let stageAuthority: Keypair;
+
+    before(async () => {
+      stageAuthority = Keypair.generate();
+      await airdrop(stageAuthority, 1);
+      collectionPk = collectionPda(NAME);
+
+      await program.methods
+        .createCollection(
+          NAME,
+          100,
+          SHATTER_FEE_BPS,
+          { creator: {} },
+          ROYALTY_BPS,
+          { creator: {} },
+          MINT_PRICE,
+          LOCK_AMOUNT,
+          "https://example.com/custom.json",
+          defaultLifecycle({
+            lifecycleType: { custom: {} },
+            maxStates: 5,
+            revealAuthority: stageAuthority.publicKey,
+          })
+        )
+        .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+        .signers([creator])
+        .rpc();
+
+      evoPk = evoPda(collectionPk, EVO_ID);
+      await program.methods
+        .forge(EVO_ID, Buffer.from(Array(32).fill(25)))
+        .accounts({
+          collectionConfig: collectionPk,
+          protocolConfig: protocolPda,
+          creator: creator.publicKey,
+          owner: buyer.publicKey,
+        })
+        .signers([buyer])
+        .rpc();
+    });
+
+    it("starts at stage 0", async () => {
+      const evo = await program.account.evoAccount.fetch(evoPk);
+      assert.equal(evo.currentState, 0);
+    });
+
+    it("set_visual_stage to 3 succeeds (authority)", async () => {
+      await program.methods
+        .setVisualStage(3)
+        .accounts({
+          evo: evoPk,
+          collectionConfig: collectionPk,
+          authority: stageAuthority.publicKey,
+        })
+        .signers([stageAuthority])
+        .rpc();
+
+      const evo = await program.account.evoAccount.fetch(evoPk);
+      assert.equal(evo.currentState, 3, "stage set to 3");
+    });
+
+    it("rejects set_visual_stage by non-authority", async () => {
+      try {
+        await program.methods
+          .setVisualStage(2)
+          .accounts({
+            evo: evoPk,
+            collectionConfig: collectionPk,
+            authority: other.publicKey,
+          })
+          .signers([other])
+          .rpc();
+        assert.fail("non-authority should not set stage");
+      } catch (e) {
+        expect(e.message).to.match(/stage authority|0x2e/i);
+      }
+    });
+
+    it("rejects set_visual_stage exceeding max_states", async () => {
+      try {
+        await program.methods
+          .setVisualStage(5) // maxStates=5, valid range 0..4
+          .accounts({
+            evo: evoPk,
+            collectionConfig: collectionPk,
+            authority: stageAuthority.publicKey,
+          })
+          .signers([stageAuthority])
+          .rpc();
+        assert.fail("should reject stage >= maxStates");
+      } catch (e) {
+        expect(e.message).to.match(/invalid stage|0x2c/i);
+      }
+    });
+
+    it("rejects set_visual_stage on non-Custom collection", async () => {
+      // Use the RevealAndEvolve collection from earlier tests
+      const evo1CollectionPk = collectionPda("evo1");
+      const evo1Pk = evoPda(evo1CollectionPk, 0);
+      try {
+        await program.methods
+          .setVisualStage(1)
+          .accounts({
+            evo: evo1Pk,
+            collectionConfig: evo1CollectionPk,
+            authority: revealAuthority.publicKey,
+          })
+          .signers([revealAuthority])
+          .rpc();
+        assert.fail("should reject on RevealAndEvolve collection");
+      } catch (e) {
+        expect(e.message).to.match(/transition not allowed|0x2d/i);
+      }
+    });
+  });
+
+  // ============================================================
+  // LIFECYCLE: Static rejects transitions
+  // ============================================================
+  describe("Lifecycle (Static rejects transitions)", () => {
+    const NAME = "static2";
+    let collectionPk: PublicKey;
+    let evoPk: PublicKey;
+    const EVO_ID = 0;
+
+    before(async () => {
+      collectionPk = collectionPda(NAME);
+      await program.methods
+        .createCollection(
+          NAME,
+          10,
+          SHATTER_FEE_BPS,
+          { creator: {} },
+          ROYALTY_BPS,
+          { creator: {} },
+          MINT_PRICE,
+          LOCK_AMOUNT,
+          "https://example.com/static2.json",
+          defaultLifecycle()
+        )
+        .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+        .signers([creator])
+        .rpc();
+
+      evoPk = evoPda(collectionPk, EVO_ID);
+      await program.methods
+        .forge(EVO_ID, Buffer.from(Array(32).fill(35)))
+        .accounts({
+          collectionConfig: collectionPk,
+          protocolConfig: protocolPda,
+          creator: creator.publicKey,
+          owner: buyer.publicKey,
+        })
+        .signers([buyer])
+        .rpc();
+    });
+
+    it("rejects evolve on Static collection", async () => {
+      try {
+        await program.methods
+          .evolve()
+          .accounts({ evo: evoPk, collection: collectionPk })
+          .rpc();
+        assert.fail("should not evolve on Static collection");
+      } catch (e) {
+        expect(e.message).to.match(/evolution not enabled|0x1c/i);
+      }
+    });
+
+    it("rejects reveal on Static collection", async () => {
+      const fakeAuth = Keypair.generate();
+      try {
+        await program.methods
+          .revealCollection(Buffer.from(Array(32).fill(1)))
+          .accounts({ collection: collectionPk, authority: fakeAuth.publicKey })
+          .signers([fakeAuth])
+          .rpc();
+        assert.fail("should not reveal Static collection");
+      } catch (e) {
+        expect(e.message).to.match(/reveal authority|transition not allowed|0x1d|0x2d/i);
+      }
     });
   });
 });

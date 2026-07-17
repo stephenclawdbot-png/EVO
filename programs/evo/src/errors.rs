@@ -112,4 +112,16 @@ pub enum EvoError {
 
     #[msg("Commitment must be set before minting starts")]
     CommitmentAfterMintStarted,
+
+    #[msg("Invalid visual stage — exceeds max_states")]
+    InvalidStage,
+
+    #[msg("Stage transition not allowed for this lifecycle type")]
+    StageTransitionNotAllowed,
+
+    #[msg("Only the reveal authority can set the visual stage")]
+    NotStageAuthority,
+
+    #[msg("Static collections do not support stage transitions")]
+    StaticNoTransitions,
 }

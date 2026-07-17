@@ -1,0 +1,14 @@
+{
+  "schema": "evo-visual-manifest-v1",
+  "name": "Z Collection",
+  "description": "108 EVO creatures with SOL locked inside. The first stateful capital NFT on Solana.",
+  "lifecycle": "static",
+  "fallback_image": "/zenkos/abyssling.png",
+  "stages": [
+    {
+      "id": 0,
+      "name": "Static",
+      "image": "/zenkos/abyssling.png"
+    }
+  ]
+}
