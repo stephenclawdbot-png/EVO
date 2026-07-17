@@ -3,7 +3,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { Nav } from '@/components/Nav';
-import { LivingEvo } from '@/components/LivingEvo';
 import { CollectionDiscovery, readAllCollections, readAllEVOs, getCollectionPDA, lamportsToSol } from '@/lib/evo-program';
 import { CollectionData, collectionConfigToData } from '@/lib/evo-data';
 import Link from 'next/link';
@@ -124,9 +123,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* ─── One living EVO — the story ─── */}
-      <LivingEvo />
 
       {/* ─── How it works — five operations ─── */}
       <section className="border-b border-border bg-surface">
