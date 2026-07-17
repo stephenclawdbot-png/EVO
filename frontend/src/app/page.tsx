@@ -133,7 +133,7 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-4 py-16 lg:py-24">
           <div className="mb-12 text-center">
             <p className="text-[11px] uppercase tracking-[0.2em] text-dim">How it works</p>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-text-strong sm:text-3xl">
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-text-strong sm:text-2xl">
               Five operations. One object.
             </h2>
           </div>
@@ -208,10 +208,8 @@ export default function Home() {
 function OpCard({ icon: Icon, name, desc }: { icon: typeof IconHammer; name: string; desc: string }) {
   return (
     <div className="bg-surface p-5 transition-colors hover:bg-surface-2">
-      <span className="flex h-9 w-9 items-center justify-center rounded border border-border-strong text-accent">
-        <Icon className="h-4 w-4" />
-      </span>
-      <h3 className="mt-3 text-sm font-bold text-text-strong">{name}</h3>
+      <Icon className="h-4 w-4 text-muted" />
+      <h3 className="mt-3 text-sm font-semibold text-text-strong">{name}</h3>
       <p className="mt-1.5 text-xs leading-relaxed text-muted">{desc}</p>
     </div>
   );
