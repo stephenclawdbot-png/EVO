@@ -17,7 +17,7 @@ import {
   readProtocolConfig,
   getCollectionPDA,
 } from '@/lib/evo-program';
-import { resolveImage, fetchVisualManifest, resolveActiveImage, EvoVisualManifest } from '@/lib/evo-visuals';
+import { resolveImage, fetchVisualManifest, resolveActiveImage, EvoVisualManifest, getManifestVerification, ManifestVerification } from '@/lib/evo-visuals';
 import { IconCheck, IconAlertTriangle, IconExternalLink } from './Icons';
 
 interface EvoDetailProps {
@@ -44,6 +44,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
   const [isRevealed, setIsRevealed] = useState<boolean | undefined>(undefined);
   const [manifest, setManifest] = useState<EvoVisualManifest | null>(null);
   const [stageImages, setStageImages] = useState<{ name: string; image: string }[]>([]);
+  const [manifestVerification, setManifestVerification] = useState<ManifestVerification | null>(null);
 
   useEffect(() => {
     readCollectionConfig(connection, collectionName).then(cfg => {
@@ -56,12 +57,15 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
   }, [connection, collectionName]);
 
   useEffect(() => {
-    if (!metadataUri) { setManifest(null); setStageImages([]); return; }
+    if (!metadataUri) { setManifest(null); setStageImages([]); setManifestVerification(null); return; }
     let active = true;
     (async () => {
-      const m = await fetchVisualManifest(metadataUri);
+      const cfg = await readCollectionConfig(connection, collectionName);
+      const expectedHash = cfg?.artworkManifestHash;
+      const m = await fetchVisualManifest(metadataUri, expectedHash);
       if (!active) return;
       setManifest(m);
+      setManifestVerification(getManifestVerification(metadataUri));
       if (m && m.stages.length > 0) {
         const imgs = m.stages.map(s => ({
           name: s.name,
@@ -73,7 +77,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
       }
     })();
     return () => { active = false; };
-  }, [metadataUri, isRevealed, evo.id]);
+  }, [metadataUri, isRevealed, evo.id, connection, collectionName]);
 
   useEffect(() => {
     if (!metadataUri) { setResolvedImage(null); return; }
@@ -477,6 +481,50 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                 </a>
               ) : (
                 <p className="mt-1 font-mono text-[11px] text-dim">Loading...</p>
+              )}
+            </div>
+
+            <div className="rounded border border-border bg-surface px-3 py-2.5">
+              <p className="text-[10px] uppercase tracking-wide text-dim">Artwork Authenticity</p>
+              {(() => {
+                const v = manifestVerification;
+                if (!v) {
+                  return <p className="mt-1 text-[11px] text-dim">Checking...</p>;
+                }
+                if (v.status === 'verified') {
+                  return (
+                    <div className="mt-1 flex items-center gap-1.5 text-[11px] text-positive">
+                      <IconCheck className="h-3.5 w-3.5" />
+                      <span>Manifest verified on-chain</span>
+                    </div>
+                  );
+                }
+                if (v.status === 'mismatch') {
+                  return (
+                    <div className="mt-1 space-y-1">
+                      <div className="flex items-center gap-1.5 text-[11px] text-negative">
+                        <IconAlertTriangle className="h-3.5 w-3.5" />
+                        <span>Manifest hash mismatch!</span>
+                      </div>
+                      <p className="font-mono text-[9px] text-dim break-all">Expected: {v.expectedHash?.slice(0,16)}...</p>
+                      <p className="font-mono text-[9px] text-dim break-all">Actual: {v.actualHash?.slice(0,16)}...</p>
+                    </div>
+                  );
+                }
+                if (v.status === 'no-hash') {
+                  return (
+                    <div className="mt-1 flex items-center gap-1.5 text-[11px] text-dim">
+                      <IconAlertTriangle className="h-3.5 w-3.5" />
+                      <span>No hash committed by creator</span>
+                    </div>
+                  );
+                }
+                return <p className="mt-1 text-[11px] text-dim">Not checked</p>;
+              })()}
+              {manifest?.provenance?.items && manifest.provenance.items.length > 0 && (
+                <p className="mt-1 text-[10px] text-dim">
+                  Per-EVO provenance: {manifest.provenance.items.length} entries
+                </p>
               )}
             </div>
 

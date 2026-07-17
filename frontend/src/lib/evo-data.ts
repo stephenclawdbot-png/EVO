@@ -49,6 +49,7 @@ export interface CollectionData {
   lifecycleType: string;
   maxStates: number;
   isRevealed: boolean;
+  artworkManifestHash: Uint8Array;
 }
 
 // Map an on-chain EVOAccount to display EVOData
@@ -106,6 +107,7 @@ export function collectionConfigToData(cfg: CollectionConfig): CollectionData {
     lifecycleType: cfg.lifecycleType,
     maxStates: cfg.maxStates,
     isRevealed: cfg.isRevealed,
+    artworkManifestHash: cfg.artworkManifestHash,
   };
 }
 

@@ -19,6 +19,20 @@ export interface EvoVisualStage {
   image: string;
 }
 
+/** Per-EVO artwork provenance entry — binds EVO #id to an exact image file hash. */
+export interface EvoProvenanceEntry {
+  id: number;
+  hash: string; // SHA-256 hex of the image file
+}
+
+/** Optional provenance section in the manifest for per-EVO image verification. */
+export interface EvoProvenance {
+  /** Per-EVO image hashes (for collections with unique art per item). */
+  items?: EvoProvenanceEntry[];
+  /** Merkle root of all image hashes (compact alternative to items[]). */
+  merkle_root?: string;
+}
+
 export interface EvoVisualManifest {
   schema: 'evo-visual-manifest-v1';
   name: string;
@@ -31,10 +45,47 @@ export interface EvoVisualManifest {
   state?: {
     current_stage: number;
   };
+  /** Optional provenance for per-EVO image hash verification. */
+  provenance?: EvoProvenance;
+}
+
+// ─── Manifest Verification ──────────────────────────────────
+export type VerificationStatus = 'verified' | 'mismatch' | 'no-hash' | 'unchecked';
+
+export interface ManifestVerification {
+  status: VerificationStatus;
+  /** On-chain expected hash (hex), if committed. */
+  expectedHash?: string;
+  /** Actual hash of the fetched manifest (hex). */
+  actualHash?: string;
+}
+
+export interface ImageVerification {
+  status: VerificationStatus;
+  /** Expected hash from manifest provenance (hex). */
+  expectedHash?: string;
+  /** Actual hash of the fetched image (hex). */
+  actualHash?: string;
+}
+
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function isZeroHash(bytes: Uint8Array): boolean {
+  return bytes.every(b => b === 0);
+}
+
+async function sha256Hex(data: string | Uint8Array): Promise<string> {
+  const input = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+  const buf = input.buffer.slice(input.byteOffset, input.byteOffset + input.byteLength) as ArrayBuffer;
+  const digest = await crypto.subtle.digest('SHA-256', buf);
+  return bytesToHex(new Uint8Array(digest));
 }
 
 // ─── Cache ───────────────────────────────────────────────────
 const manifestCache = new Map<string, { manifest: EvoVisualManifest; ts: number }>();
+const verificationCache = new Map<string, ManifestVerification>();
 const CACHE_TTL_MS = 60_000; // 1 minute
 
 // ─── Validation ──────────────────────────────────────────────
@@ -67,12 +118,36 @@ function isValidManifest(raw: unknown): raw is EvoVisualManifest {
     const st = m.state as Record<string, unknown>;
     if (typeof st.current_stage !== 'number') return false;
   }
+  if (m.provenance !== undefined) {
+    if (!m.provenance || typeof m.provenance !== 'object') return false;
+    const p = m.provenance as Record<string, unknown>;
+    if (p.items !== undefined) {
+      if (!Array.isArray(p.items)) return false;
+      for (const item of p.items) {
+        if (!item || typeof item !== 'object') return false;
+        const it = item as Record<string, unknown>;
+        if (typeof it.id !== 'number') return false;
+        if (typeof it.hash !== 'string' || !it.hash) return false;
+      }
+    }
+    if (p.merkle_root !== undefined && typeof p.merkle_root !== 'string') return false;
+  }
   return true;
 }
 
 // ─── Fetch ───────────────────────────────────────────────────
+/**
+ * Fetch a collection manifest from metadata_uri.
+ *
+ * @param metadataUri - The collection's on-chain metadata_uri
+ * @param expectedHash - Optional on-chain artwork_manifest_hash (32 bytes).
+ *   If provided and non-zero, the fetched manifest is SHA-256 hashed and
+ *   compared. The result is stored and retrievable via getManifestVerification().
+ *   A zero hash (all zeros) means the creator didn't commit one → status 'no-hash'.
+ */
 export async function fetchVisualManifest(
   metadataUri: string,
+  expectedHash?: Uint8Array,
 ): Promise<EvoVisualManifest | null> {
   if (!metadataUri) return null;
 
@@ -85,12 +160,79 @@ export async function fetchVisualManifest(
   try {
     const res = await fetch(metadataUri, { cache: 'no-store' });
     if (!res.ok) return null;
-    const data = await res.json();
+    const rawText = await res.text();
+    const data = JSON.parse(rawText);
     if (!isValidManifest(data)) return null;
+
+    // Hash the raw response text and verify against on-chain hash
+    const actualHash = await sha256Hex(rawText);
+    let verification: ManifestVerification;
+
+    if (expectedHash && !isZeroHash(expectedHash)) {
+      const expectedHex = bytesToHex(expectedHash);
+      verification = {
+        status: actualHash === expectedHex ? 'verified' : 'mismatch',
+        expectedHash: expectedHex,
+        actualHash,
+      };
+    } else {
+      verification = {
+        status: expectedHash ? 'no-hash' : 'unchecked',
+        actualHash,
+      };
+    }
+
     manifestCache.set(metadataUri, { manifest: data, ts: Date.now() });
+    verificationCache.set(metadataUri, verification);
     return data;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Get the verification result from the last fetchVisualManifest call.
+ * Returns null if the manifest hasn't been fetched yet.
+ */
+export function getManifestVerification(metadataUri: string): ManifestVerification | null {
+  return verificationCache.get(metadataUri) ?? null;
+}
+
+/**
+ * Verify an individual EVO's image against the manifest's provenance section.
+ * Fetches the image, hashes it, and compares to provenance.items[evoId].hash.
+ *
+ * @param imageUrl - The resolved image URL to verify
+ * @param evoId - The EVO's mint index
+ * @param manifest - The visual manifest (must contain provenance.items)
+ */
+export async function verifyEvoImageHash(
+  imageUrl: string,
+  evoId: number,
+  manifest: EvoVisualManifest,
+): Promise<ImageVerification> {
+  const items = manifest.provenance?.items;
+  if (!items || items.length === 0) {
+    return { status: 'no-hash' };
+  }
+
+  const entry = items.find(it => it.id === evoId);
+  if (!entry) {
+    return { status: 'no-hash' };
+  }
+
+  try {
+    const res = await fetch(imageUrl, { cache: 'no-store' });
+    if (!res.ok) return { status: 'unchecked', expectedHash: entry.hash };
+    const buf = new Uint8Array(await res.arrayBuffer());
+    const actualHash = await sha256Hex(buf);
+    return {
+      status: actualHash === entry.hash ? 'verified' : 'mismatch',
+      expectedHash: entry.hash,
+      actualHash,
+    };
+  } catch {
+    return { status: 'unchecked', expectedHash: entry.hash };
   }
 }
 
@@ -207,7 +349,9 @@ export async function resolveImage(
 export function invalidateManifestCache(metadataUri?: string): void {
   if (metadataUri) {
     manifestCache.delete(metadataUri);
+    verificationCache.delete(metadataUri);
   } else {
     manifestCache.clear();
+    verificationCache.clear();
   }
 }

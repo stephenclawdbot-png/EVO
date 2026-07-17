@@ -5,6 +5,8 @@ import {
   resolveActiveImage,
   fetchVisualManifest,
   invalidateManifestCache,
+  getManifestVerification,
+  verifyEvoImageHash,
   EvoVisualManifest,
 } from '../evo-visuals';
 
@@ -67,6 +69,17 @@ const templateStageManifest: EvoVisualManifest = {
     { id: 2, name: 'Adult', image: '/default-adult.png' },
   ],
 };
+
+// ─── Test helpers ────────────────────────────────────────────
+function mockResponse(data: unknown, ok = true) {
+  const text = typeof data === 'string' ? data : JSON.stringify(data);
+  return {
+    ok,
+    text: () => Promise.resolve(text),
+    json: () => Promise.resolve(data),
+    arrayBuffer: () => Promise.resolve(new TextEncoder().encode(text).buffer),
+  } as any;
+}
 
 // ─── Tests ───────────────────────────────────────────────────
 
@@ -282,20 +295,14 @@ describe('fetchVisualManifest — invalid data', () => {
   });
 
   it('returns null for invalid JSON', async () => {
-    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ not_a_manifest: true }),
-    } as any);
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce(mockResponse('not json at all'));
     const result = await fetchVisualManifest('https://example.com/bad.json');
     expect(result).toBeNull();
     vi.restoreAllMocks();
   });
 
   it('returns null for wrong schema', async () => {
-    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ schema: 'something-else', stages: [] }),
-    } as any);
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce(mockResponse({ schema: 'something-else', stages: [] }));
     const result = await fetchVisualManifest('https://example.com/wrong.json');
     expect(result).toBeNull();
     vi.restoreAllMocks();
@@ -304,10 +311,7 @@ describe('fetchVisualManifest — invalid data', () => {
 
 describe('fetchVisualManifest — valid data', () => {
   it('parses a valid manifest', async () => {
-    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve(staticManifest),
-    } as any);
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce(mockResponse(staticManifest));
     const result = await fetchVisualManifest('https://example.com/valid.json');
     expect(result).not.toBeNull();
     expect(result?.lifecycle).toBe('static');
@@ -316,10 +320,7 @@ describe('fetchVisualManifest — valid data', () => {
   });
 
   it('parses a valid manifest with image_template', async () => {
-    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve(templateManifest),
-    } as any);
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce(mockResponse(templateManifest));
     const result = await fetchVisualManifest('https://example.com/template.json');
     expect(result).not.toBeNull();
     expect(result?.image_template).toBe('https://arweave.net/{id}.png');
@@ -328,10 +329,7 @@ describe('fetchVisualManifest — valid data', () => {
   });
 
   it('caches manifest results', async () => {
-    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(staticManifest),
-    } as any);
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(mockResponse(staticManifest));
 
     await fetchVisualManifest('https://example.com/cached.json');
     await fetchVisualManifest('https://example.com/cached.json');
@@ -341,10 +339,7 @@ describe('fetchVisualManifest — valid data', () => {
   });
 
   it('invalidates cache on demand', async () => {
-    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(staticManifest),
-    } as any);
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(mockResponse(staticManifest));
 
     await fetchVisualManifest('https://example.com/invalidate.json');
     invalidateManifestCache('https://example.com/invalidate.json');
@@ -438,5 +433,139 @@ describe('resolveActiveStage — on-chain protocol state', () => {
     const stage = resolveActiveStage(m);
     expect(stage).not.toBeNull();
     expect(stage!.id).toBe(1);
+  });
+});
+
+// ─── Manifest Hash Verification ──────────────────────────────
+describe('Manifest hash verification', () => {
+  async function sha256Hex(data: string): Promise<string> {
+    const buf = new TextEncoder().encode(data);
+    const digest = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  function hexToBytes(hex: string): Uint8Array {
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) {
+      bytes[i / 2] = parseInt(hex.slice(i, i + 2), 16);
+    }
+    return bytes;
+  }
+
+  it('status is unchecked when no expectedHash provided', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce(mockResponse(staticManifest));
+    await fetchVisualManifest('https://example.com/unchecked.json');
+    const v = getManifestVerification('https://example.com/unchecked.json');
+    expect(v).not.toBeNull();
+    expect(v?.status).toBe('unchecked');
+    expect(v?.actualHash).toBeDefined();
+    vi.restoreAllMocks();
+  });
+
+  it('status is no-hash when expectedHash is all zeros', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce(mockResponse(staticManifest));
+    const zeroHash = new Uint8Array(32);
+    await fetchVisualManifest('https://example.com/zerohash.json', zeroHash);
+    const v = getManifestVerification('https://example.com/zerohash.json');
+    expect(v?.status).toBe('no-hash');
+    vi.restoreAllMocks();
+  });
+
+  it('status is verified when hash matches', async () => {
+    const jsonText = JSON.stringify(staticManifest);
+    const hash = await sha256Hex(jsonText);
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce(mockResponse(staticManifest));
+    await fetchVisualManifest('https://example.com/verified.json', hexToBytes(hash));
+    const v = getManifestVerification('https://example.com/verified.json');
+    expect(v?.status).toBe('verified');
+    expect(v?.expectedHash).toBe(hash);
+    expect(v?.actualHash).toBe(hash);
+    vi.restoreAllMocks();
+  });
+
+  it('status is mismatch when hash differs', async () => {
+    const wrongHash = new Uint8Array(32);
+    wrongHash[0] = 0xff;
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce(mockResponse(staticManifest));
+    await fetchVisualManifest('https://example.com/mismatch.json', wrongHash);
+    const v = getManifestVerification('https://example.com/mismatch.json');
+    expect(v?.status).toBe('mismatch');
+    expect(v?.expectedHash).toBeDefined();
+    expect(v?.actualHash).toBeDefined();
+    expect(v?.expectedHash).not.toBe(v?.actualHash);
+    vi.restoreAllMocks();
+  });
+
+  it('getManifestVerification returns null for unfetched URI', () => {
+    const v = getManifestVerification('https://never-fetched.com/manifest.json');
+    expect(v).toBeNull();
+  });
+});
+
+// ─── Per-EVO Image Hash Verification ─────────────────────────
+describe('verifyEvoImageHash', () => {
+  async function sha256Hex(data: string): Promise<string> {
+    const buf = new TextEncoder().encode(data);
+    const digest = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  it('returns no-hash when manifest has no provenance', async () => {
+    const result = await verifyEvoImageHash('https://example.com/img0.png', 0, staticManifest);
+    expect(result.status).toBe('no-hash');
+  });
+
+  it('returns no-hash when EVO id not in provenance items', async () => {
+    const manifest: EvoVisualManifest = {
+      ...staticManifest,
+      provenance: { items: [{ id: 0, hash: 'abc' }] },
+    };
+    const result = await verifyEvoImageHash('https://example.com/img99.png', 99, manifest);
+    expect(result.status).toBe('no-hash');
+  });
+
+  it('returns verified when image hash matches provenance entry', async () => {
+    const imageText = 'fake-pixel-data-for-evo-0';
+    const imageHash = await sha256Hex(imageText);
+    const manifest: EvoVisualManifest = {
+      ...staticManifest,
+      provenance: { items: [{ id: 0, hash: imageHash }] },
+    };
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      arrayBuffer: () => Promise.resolve(new TextEncoder().encode(imageText).buffer),
+    } as any);
+    const result = await verifyEvoImageHash('https://example.com/img0.png', 0, manifest);
+    expect(result.status).toBe('verified');
+    expect(result.actualHash).toBe(imageHash);
+    vi.restoreAllMocks();
+  });
+
+  it('returns mismatch when image hash differs from provenance entry', async () => {
+    const imageText = 'different-pixel-data';
+    const actualHash = await sha256Hex(imageText);
+    const manifest: EvoVisualManifest = {
+      ...staticManifest,
+      provenance: { items: [{ id: 0, hash: '0000000000000000000000000000000000000000000000000000000000000000' }] },
+    };
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      arrayBuffer: () => Promise.resolve(new TextEncoder().encode(imageText).buffer),
+    } as any);
+    const result = await verifyEvoImageHash('https://example.com/img0.png', 0, manifest);
+    expect(result.status).toBe('mismatch');
+    expect(result.actualHash).toBe(actualHash);
+    vi.restoreAllMocks();
+  });
+
+  it('returns unchecked when fetch fails', async () => {
+    const manifest: EvoVisualManifest = {
+      ...staticManifest,
+      provenance: { items: [{ id: 0, hash: 'abc' }] },
+    };
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({ ok: false } as any);
+    const result = await verifyEvoImageHash('https://example.com/img0.png', 0, manifest);
+    expect(result.status).toBe('unchecked');
+    vi.restoreAllMocks();
   });
 });
