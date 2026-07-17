@@ -619,7 +619,7 @@ No protocol changes, no frontend changes, no team approval needed.
 | Frontend auto-discovery | ✅ Ready |
 | Generic card/detail components | ✅ Ready |
 | Artwork authenticity UI | ✅ Ready |
-| On-chain tests (57/57) | ✅ Passing |
+| On-chain tests (63 localnet + 34 devnet) | ✅ Passing |
 | Frontend tests (53/53) | ✅ Passing |
 | TypeScript clean | ✅ Clean |
 | Production build | ✅ Clean |
@@ -631,7 +631,7 @@ These are enhancements, not blockers. A creator can launch today without them:
 | Feature | Priority | Notes |
 |---------|----------|-------|
 | Collection creation UI (web form) | Medium | Currently script-only (`scripts/create-collection.ts`). A web form would make it easier for non-technical creators. |
-| Devnet end-to-end test | High | Should create a test collection on devnet to prove the full flow works with a real manifest. |
+| Devnet end-to-end test | ✅ Done | 34/34 tests passed on Solana devnet. See Section 12. |
 | Manifest documentation for creators | High | A guide showing creators how to format their manifest, compute hashes, and upload to Arweave. |
 | Per-EVO image verification UI | Low | Backend function exists (`verifyEvoImageHash`), but the UI doesn't call it yet for individual images. The manifest-level verification is already shown. |
 | Wallet recognition (SPL token wrapper) | Low | EVO uses custom PDAs, not SPL tokens. Standard wallets won't auto-display them. A wrapper or Proof of Ownership view could bridge this. |
@@ -647,3 +647,106 @@ using the exact same flow as any other creator, without writing new code.
 
 The remaining items are UX improvements and trust layers — not protocol or
 architecture gaps.
+
+---
+
+## 12. Devnet End-to-End Proof Test
+
+**Date:** 2026-07-20
+**Program:** `7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc`
+**Network:** Solana devnet (`https://api.devnet.solana.com`)
+**Collection:** `devproof2` (5 supply, RevealAndEvolve, 2 stages)
+**Result:** 34/34 PASS ✅
+
+### What Was Tested
+
+A complete proof collection was created on devnet with:
+- Custom name (`devproof2`)
+- 5 max supply
+- 2 evolution stages (Genesis + Evolved)
+- RevealAndEvolve lifecycle with commit-reveal
+- Real hosted manifest at GitHub raw URL
+- SHA-256 manifest hash committed on-chain (`89b0813f...`)
+- Per-EVO provenance hashes in manifest
+- Placeholder artwork (5 EVOs × 2 stages = 10 PNG images)
+
+### Complete Lifecycle Verified
+
+| Step | Test | Result | Tx Signature |
+|------|------|--------|-------------|
+| 1 | Initialize protocol | ✅ PASS | 4HN9Kgin...cTWY53 |
+| 2 | Create collection with manifest hash | ✅ PASS | 5GnE7wQM...cQPRMc |
+| 3 | Commit reveal secret (keccak256) | ✅ PASS | 3ntJcQDq...45ktSYL |
+| 4a | Forge EVO #0 | ✅ PASS | 5QMvP5PN...763tG8a |
+| 4b | Forge EVO #1 | ✅ PASS | 2jfbaGtE...wsSDQWE |
+| 5 | Verify ownership on-chain | ✅ PASS | (account fetch) |
+| 6 | Reveal collection with secret | ✅ PASS | 5kXmq8gs...836Sa3f2w |
+| 7a | Feed EVO #1 (0.001 SOL) | ✅ PASS | 47W7DtK8...TZeeijUg |
+| 7b | Evolve EVO #1 (state 0→1) | ✅ PASS | 4QaEx3u3...nL4L5V1Z |
+| 8a | List EVO #0 for sale | ✅ PASS | kDde7f2V...7UPyj4 |
+| 8b | Buy EVO #0 (trade) | ✅ PASS | 5PnxyYqK...NzZ94eK4 |
+| 9 | Shatter EVO #0 (SOL returned) | ✅ PASS | 3a2js9zN...e5w1ojpC |
+| 10a | Manifest hash verified on-chain | ✅ PASS | (SHA-256 compare) |
+| 10b | Tamper detection (hash mismatch) | ✅ PASS | (SHA-256 compare) |
+
+### Key Findings
+
+1. **Manifest hash verification works end-to-end.** The SHA-256 of the fetched
+   manifest matches the on-chain `artwork_manifest_hash` exactly. Tampering with
+   the manifest produces a different hash, confirming the integrity check works.
+
+2. **Commit-reveal lifecycle works.** The creator commits `keccak256(secret)`
+   before minting, then the reveal authority reveals with the raw secret. The
+   program verifies `keccak256(secret) == commitment` and derives entropy.
+
+3. **Evolution works after reveal.** Feeding the threshold amount and calling
+   `evolve()` advances `current_state` from 0 to 1. The program correctly
+   requires `is_revealed == true` before allowing evolution.
+
+4. **Trading works with royalties.** Listing → buying transfers ownership,
+   increments trade count, pays royalty to creator (5% = 0.0001 SOL), and
+   pays proceeds to seller (0.0019 SOL).
+
+5. **Shatter returns SOL and closes the account.** The owner receives locked
+   SOL minus the 5% shatter fee, plus rent reclamation. The EVO account is
+   confirmed null (closed) after shatter.
+
+6. **Protocol is idempotent.** Re-running the test detects existing protocol
+   config and collection accounts, skipping creation. This allows incremental
+   testing without resetting state.
+
+### Bug Found & Fixed During Testing
+
+**Bug:** The first test run used Node's `crypto.createHash("sha3-256")` (NIST
+SHA-3) for the commit-reveal hash, but the Solana program uses
+`solana_program::keccak::hashv` (Keccak-256). These are different algorithms
+despite similar names. The reveal failed with `CommitmentHashMismatch`.
+
+**Fix:** Changed to `js-sha3`'s `keccak_256()` function, matching the on-chain
+hash. Second run: all 34 tests passed.
+
+**Lesson:** Always use the same hash library as the on-chain program. NIST
+SHA-3 ≠ Keccak-256 despite both being "SHA-3" in different contexts.
+
+### Test Artifacts
+
+- **Test script:** `tests/devnet-proof.cjs`
+- **Results JSON:** `tests/devnet-proof-results.json`
+- **Manifest:** `tests/devnet-assets/manifest.json`
+- **Artwork:** `tests/devnet-assets/evo{0-4}_stage{0-1}.png` (10 images)
+- **Generator:** `tests/generate-test-assets.cjs`
+- **All committed to GitHub:** commit `1b14ea2`
+
+### What This Proves
+
+The devnet proof demonstrates that the EVO protocol is **not just theoretically
+generic — it works in practice on a live cluster.** An arbitrary creator can:
+
+1. Prepare artwork + manifest off-chain
+2. Compute the manifest SHA-256 hash
+3. Call `create_collection` with their parameters + hash
+4. Users forge, trade, feed, evolve, and shatter EVOs
+5. The manifest hash is cryptographically verified against the on-chain commitment
+6. Tampered manifests are detected
+
+No protocol changes, no frontend changes, no special access needed.
