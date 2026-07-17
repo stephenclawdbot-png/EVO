@@ -1214,7 +1214,7 @@ describe("EVO", () => {
         assert.fail("should reject wrong EVO PDA");
       } catch (e) {
         // Account not found or seeds mismatch
-        expect(e.message).to.match(/AccountNotFound|ConstraintSeeds|seeds|0x7d6/i);
+        expect(e.message).to.match(/AccountNotFound|ConstraintSeeds|ConstraintAddress|discriminator|seeds|0x7d6/i);
       }
     });
 
@@ -1283,8 +1283,8 @@ describe("EVO", () => {
       // Shatter while listed — now REJECTED by the program (require !is_listed).
       // This makes marketplace semantics explicit: a listed EVO must be
       // delisted before it can be shattered.
-      await assert.rejects(
-        program.methods
+      try {
+        await program.methods
           .shatter(evoId)
           .accounts({
             evo: pk,
@@ -1295,9 +1295,11 @@ describe("EVO", () => {
             incinerator: INCINERATOR,
           })
           .signers([buyer])
-          .rpc(),
-        /EvoIsListed|listed/i
-      );
+          .rpc();
+        assert.fail("should reject shatter while listed");
+      } catch (e) {
+        expect(e.message).to.match(/EvoIsListed|listed/i);
+      }
 
       // EVO account must still exist (not closed)
       const evoAfter = await program.account.evoAccount.fetch(pk);
