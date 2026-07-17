@@ -177,6 +177,38 @@ Wallets read `current_state` from the EVO account and resolve the image from the
 
 ---
 
+## Testing
+
+### Localnet CI (Passing — 11 consecutive green runs)
+
+Every push to `main` triggers `.github/workflows/test.yml` which:
+- Builds the Solana program with Anchor
+- Runs ~41 integration tests on a local validator (`anchor test --provider.cluster localnet`)
+- Runs 25 frontend vitest tests
+
+All tests pass: forge, feed, transfer, list, buy, shatter, commit-reveal, reveal, evolve, set_visual_stage, burn fee verification, lifecycle enforcement.
+
+### Devnet CI (Configured — requires funded keypair)
+
+`.github/workflows/devnet-test.yml` deploys and tests on devnet. The devnet faucet is rate-limited (2 SOL per 8 hours per IP), so a pre-funded keypair is needed.
+
+**To enable devnet testing:**
+
+1. Generate a keypair and fund it (wait 8h between airdrops):
+   ```bash
+   solana-keygen new -o ~/evo-devnet.json --no-bip39-passphrase --force
+   solana airdrop 2 --url devnet -k ~/evo-devnet.json   # repeat after 8h, need ~5 SOL
+   ```
+
+2. Add it as a GitHub secret:
+   ```bash
+   base64 ~/evo-devnet.json | gh secret set DEVNET_FUNDED_KEYPAIR
+   ```
+
+3. Push to `main` (or manually trigger the workflow). The workflow will use the funded keypair, deploy the program to devnet, and run the full test suite.
+
+---
+
 ## Quick Start
 
 ```bash
@@ -185,6 +217,9 @@ cd EVO
 
 # Build the program (requires Anchor + Solana CLI)
 anchor build
+
+# Run tests on localnet
+anchor test
 
 # Frontend
 cd frontend

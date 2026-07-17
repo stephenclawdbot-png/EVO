@@ -51,8 +51,9 @@ EVO is stateful capital — but it's also a collectible. Degens trade stories, a
 - [ ] Upload visual manifests to Arweave (production)
 
 ### Testing & Audit
-- [ ] 9+ consecutive green CI runs (in progress)
-- [ ] Devnet testing — deploy to devnet, run full transaction suite
+- [x] 11 consecutive green CI runs on localnet (automated via GitHub Actions)
+- [x] Devnet CI workflow configured (`.github/workflows/devnet-test.yml`)
+- [ ] Devnet testing — requires pre-funded keypair (faucet rate-limited; see README Testing section)
 - [ ] Independent security audit
 - [ ] Upgrade mainnet program with hardened binary (after audit)
 

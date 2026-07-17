@@ -9,6 +9,11 @@ on:
       - 'tests/**'
       - '.github/workflows/devnet-test.yml'
 
+# To use a pre-funded keypair (recommended), add a GitHub secret named
+# DEVNET_FUNDED_KEYPAIR containing the base64-encoded keypair JSON file.
+# Fund it by running: solana airdrop 2 --url devnet -k <keypair-path>
+# (wait 8h between airdrops due to rate limit, need ~5 SOL total)
+
 jobs:
   devnet-test:
     runs-on: ubuntu-latest
@@ -38,41 +43,74 @@ jobs:
         run: cargo install anchor-cli --version 0.31.0 --locked
 
       - name: Generate keypairs and align program id
+        env:
+          DEVNET_FUNDED_KEYPAIR: ${{ secrets.DEVNET_FUNDED_KEYPAIR }}
         run: |
           mkdir -p target/deploy ~/.config/solana
+          # Program keypair (always generated fresh)
           solana-keygen new -o target/deploy/evo-keypair.json --no-bip39-passphrase --silent --force
-          solana-keygen new -o ~/.config/solana/evo-deployer.json --no-bip39-passphrase --silent --force
+
+          # Deployer keypair: use funded secret if available, else generate new
+          if [ -n "$DEVNET_FUNDED_KEYPAIR" ]; then
+            echo "Using pre-funded keypair from secret"
+            echo "$DEVNET_FUNDED_KEYPAIR" | base64 -d > ~/.config/solana/evo-deployer.json
+          else
+            echo "No funded keypair secret — generating new (will need airdrop)"
+            solana-keygen new -o ~/.config/solana/evo-deployer.json --no-bip39-passphrase --silent --force
+          fi
+
           TEST_PID=$(solana-keygen pubkey target/deploy/evo-keypair.json)
           echo "TEST_PID=$TEST_PID"
           sed -i "s/7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc/$TEST_PID/g" programs/evo/src/lib.rs Anchor.toml
           grep -n "$TEST_PID" programs/evo/src/lib.rs Anchor.toml
 
       - name: Fund wallet on devnet
+        env:
+          DEVNET_FUNDED_KEYPAIR: ${{ secrets.DEVNET_FUNDED_KEYPAIR }}
         run: |
           solana config set --url devnet --keypair ~/.config/solana/evo-deployer.json
-          echo "Attempting airdrop 1..."
-          solana airdrop 2 || echo "Airdrop 1 failed (rate limit)"
-          sleep 15
-          echo "Attempting airdrop 2..."
-          solana airdrop 2 || echo "Airdrop 2 failed (rate limit)"
-          sleep 5
-          echo "Wallet balance:"
-          solana balance || true
-          # Check if we have enough SOL to proceed
-          BAL=$(solana balance 2>/dev/null | awk '{print $1}' || echo "0")
-          echo "Balance: $BAL SOL"
-          if [ "$BAL" = "0" ] || [ -z "$BAL" ]; then
-            echo "⚠️ No SOL — tests will likely fail. Consider retrying later."
+          echo "Deployer pubkey: $(solana-keygen pubkey ~/.config/solana/evo-deployer.json)"
+          echo "Current balance: $(solana balance || echo '0 SOL')"
+
+          if [ -n "$DEVNET_FUNDED_KEYPAIR" ]; then
+            echo "Using pre-funded keypair — skipping airdrop"
+          else
+            echo "Attempting airdrop 1 (2 SOL)..."
+            solana airdrop 2 2>&1 || echo "⚠️ Airdrop 1 failed"
+            sleep 15
+            echo "Attempting airdrop 2 (2 SOL)..."
+            solana airdrop 2 2>&1 || echo "⚠️ Airdrop 2 failed"
+            sleep 5
           fi
+
+          BALANCE=$(solana balance 2>/dev/null | awk '{print $1}' || echo "0")
+          echo "Wallet balance: $BALANCE SOL"
+
+          # Program rent is ~2.7 SOL, tests need ~1.5 SOL more
+          MIN_SOL=4.0
+          HAS_SOL=$(echo "$BALANCE >= $MIN_SOL" | bc -l 2>/dev/null || echo 0)
+          if [ "$HAS_SOL" != "1" ]; then
+            echo "❌ Insufficient SOL: $BALANCE SOL (need >= $MIN_SOL)"
+            echo "💡 To fix: create a funded keypair and add it as DEVNET_FUNDED_KEYPAIR secret"
+            echo "   solana-keygen new -o ~/evo-devnet.json --no-bip39-passphrase --force"
+            echo "   solana airdrop 2 --url devnet -k ~/evo-devnet.json  (repeat after 8h)"
+            echo "   base64 ~/evo-devnet.json | gh secret set DEVNET_FUNDED_KEYPAIR"
+            echo "::warning::Tests will fail without sufficient SOL"
+            exit 1
+          fi
+          echo "✅ Sufficient SOL for testing"
 
       - name: Build program
         run: anchor build
 
       - name: Run tests on devnet
-        run: anchor test --skip-build --skip-local-validator --provider.cluster devnet
-        continue-on-error: true
+        run: |
+          anchor test --skip-build --skip-local-validator --provider.cluster devnet 2>&1 | tee /tmp/test-output.log
+          echo "=== Test exit code: $? ==="
 
-      - name: Print test output
+      - name: Print test summary
         if: always()
         run: |
-          echo "=== Test run completed (check logs above for results) ==="
+          echo "=== Devnet test output ==="
+          cat /tmp/test-output.log 2>/dev/null || echo "No test output captured"
+          echo "=== End ==="
