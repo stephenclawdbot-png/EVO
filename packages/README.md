@@ -26,9 +26,15 @@ The z.fun frontend uses these same packages internally. When the Solana program 
 - [x] SDK types and account layout
 - [x] Binary deserialization
 - [x] PDA derivation
-- [x] EvoClient (findByOwner, getEvo, getCollectionEvos)
+- [x] EvoClient (findByOwner, getEvo, getCollectionEvos, getCollectionConfig)
 - [x] Display helpers (stage, age, SOL conversion)
 - [x] Canvas renderer (facets, glow, fracture lines, shattered state)
-- [ ] npm publish (after program deployment)
-- [ ] Real discriminators (after program deployment)
-- [ ] Real program ID (after mainnet deployment)
+- [x] Real program ID (devnet: 7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc)
+- [x] Real account discriminators (EVOAccount, CollectionConfig, ProtocolConfig)
+- [x] Real instruction discriminators (all 15 instructions)
+- [x] Write instruction builders (forge, feed, list, delist, buy, shatter, transfer, evolve, etc.)
+- [x] Wallet integration docs (Phantom, Solflare, Backpack)
+- [x] Marketplace integration docs (OpenSea, Magic Eden)
+- [x] Telegram bot integration docs (gmgn, fomo, bloom)
+- [ ] npm publish (after mainnet launch)
+- [ ] Mainnet program ID (after mainnet deployment)

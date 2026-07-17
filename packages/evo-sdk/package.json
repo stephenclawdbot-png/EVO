@@ -1,7 +1,7 @@
 {
   "name": "@evo/sdk",
-  "version": "0.1.0",
-  "description": "TypeScript SDK for reading EVO (Evolving Value Object) data from Solana",
+  "version": "0.2.0",
+  "description": "TypeScript SDK for reading and writing EVO (Evolving Value Object) data on Solana",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": ["dist"],
@@ -9,7 +9,7 @@
     "build": "tsc",
     "clean": "rimraf dist"
   },
-  "keywords": ["solana", "evo", "evolving-value-object", "pda", "sdk"],
+  "keywords": ["solana", "evo", "evolving-value-object", "pda", "sdk", "marketplace", "wallet", "trading"],
   "license": "MIT",
   "dependencies": {
     "@solana/web3.js": "^1.95.0"

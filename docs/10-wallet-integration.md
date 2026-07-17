@@ -135,14 +135,178 @@ function parseEVOAccount(account: Buffer) {
 }
 ```
 
-## SDK (Future)
+## SDK
 
 | Package | Purpose | Status |
 |---|---|---|
-| `@evo/sdk` | Read EVO accounts, find by owner, get value | Not yet published |
-| `@evo/renderer` | Canvas-based generative art (optional) | Not yet published |
+| `@evo/sdk` | Read + write EVO accounts, instruction builders, PDA derivation | v0.2.0 (source) |
+| `@evo/renderer` | Canvas-based generative art (optional) | Source only |
 
-Both will be MIT licensed, open source, on npm.
+Both are MIT licensed, open source. npm publish after mainnet launch.
+
+```bash
+npm install @evo/sdk @evo/renderer
+```
+
+### SDK Read API (wallet display)
+
+```typescript
+import { EvoClient } from '@evo/sdk';
+
+const client = new EvoClient(connection);
+
+// Get all EVOs owned by a wallet (raw accounts)
+const evos = await client.findByOwner(walletPublicKey);
+
+// Get all EVOs with display data (stage, age, SOL conversions)
+const displayEvos = await client.findDisplayByOwner(walletPublicKey);
+
+// Get a single EVO
+const evo = await client.getEvo(collectionName, evoId);
+
+// Get all EVOs in a collection
+const allInCollection = await client.getCollectionEvos(collectionName);
+
+// Get collection metadata
+const config = await client.getCollectionConfig(collectionName);
+```
+
+### SDK Write API (instruction builders)
+
+All write functions return `TransactionInstruction` objects. The wallet signs
+and sends the transaction. The SDK does not hold private keys.
+
+```typescript
+import {
+  createForgeIx,
+  createListIx,
+  createDelistIx,
+  createBuyIx,
+  createShatterIx,
+  createTransferIx,
+  createFeedIx,
+  createEvolveIx,
+  generateResonanceSeed,
+} from '@evo/sdk';
+
+// Forge (mint) a new EVO
+const forgeIx = createForgeIx(user, collectionPda, creator, evoId, generateResonanceSeed());
+
+// List for sale
+const listIx = createListIx(evoPda, owner, priceLamports);
+
+// Delist
+const delistIx = createDelistIx(evoPda, owner);
+
+// Buy a listed EVO
+const buyIx = createBuyIx(evoPda, collectionPda, seller, creator, buyer, treasury, feeDest);
+
+// Shatter (destroy to recover SOL)
+const shatterIx = createShatterIx(evoPda, collectionPda, owner, creator, treasury, evoId, feeDest);
+
+// Transfer to another wallet
+const transferIx = createTransferIx(evoPda, owner, newOwner);
+
+// Feed (add SOL)
+const feedIx = createFeedIx(evoPda, owner, lamports);
+
+// Evolve (permissionless — anyone can call)
+const evolveIx = createEvolveIx(evoPda, collectionPda);
+```
+
+## Wallet Display Integration
+
+### Phantom
+
+Phantom can display EVOs in the collectibles tab by scanning program accounts
+owned by the user's wallet:
+
+```typescript
+import { EvoClient } from '@evo/sdk';
+import { fetchVisualManifest, resolveActiveStage } from './evo-visuals';
+
+async function displayEVOsInPhantom(walletAddress: string) {
+  const client = new EvoClient(connection);
+  const evos = await client.findDisplayByOwner(walletAddress);
+
+  return evos.map(({ account, display }) => ({
+    name: `${display.collectionName} #${account.id}`,
+    description: `EVO — ${display.stage} — ${display.lockedSol} SOL locked`,
+    image: display.imageUrl, // resolved from on-chain stage + manifest
+    attributes: [
+      { trait_type: 'Stage', value: display.stage },
+      { trait_type: 'Locked SOL', value: display.lockedSol },
+      { trait_type: 'Listed', value: account.isListed ? `Yes (${display.listPriceSol} SOL)` : 'No' },
+      { trait_type: 'Shattered', value: account.isShattered ? 'Yes' : 'No' },
+    ],
+    // EVO-specific fields for wallet UI
+    external_url: `https://meowdot.fun/collection/${display.collectionName}/${account.id}`,
+  }));
+}
+```
+
+### Solflare
+
+Solflare uses the same `getProgramAccounts` approach. Since EVOs are not SPL
+tokens, Solflare needs to add an EVO-specific collector:
+
+```typescript
+// Solflare EVO collector
+const evoAccounts = await connection.getProgramAccounts(EVO_PROGRAM_ID, {
+  filters: [
+    { memcmp: { offset: 0, bytes: base58(EVO_ACCOUNT_DISCRIMINATOR) } },
+    { memcmp: { offset: 40, bytes: walletAddress } }, // owner field
+  ],
+});
+```
+
+### Backpack
+
+Backpack supports custom collectible renderers via xNFT. EVOs can be displayed
+using the `@evo/renderer` package for generative art, or by fetching the manifest
+image URL for static-image collections.
+
+```typescript
+import { EvoRenderer } from '@evo/renderer';
+
+// For generative collections, render on canvas:
+const canvas = EvoRenderer.render(evoAccount.resonanceSeed, {
+  stage: evoAccount.currentState,
+  width: 256,
+  height: 256,
+});
+
+// For static-image collections, use the manifest:
+const manifest = await fetchVisualManifest(config.metadataUri);
+const stage = resolveActiveStage(manifest, evoAccount.currentState, config.isRevealed);
+const imageUrl = stage.image;
+```
+
+### What wallets should display
+
+| Field | Source | Display |
+|---|---|---|
+| Name | Collection name + EVO ID | "Genesis #0" |
+| Stage | `EVOAccount.current_state` | "Juvenile", "Adult", etc. |
+| Locked SOL | `EVOAccount.locked_lamports` | "0.10 SOL locked" |
+| Listed price | `EVOAccount.list_price_lamports` (if `is_listed`) | "Listed: 2.50 SOL" |
+| Shattered | `EVOAccount.is_shattered` | Show greyed out / "Shattered" |
+| Image | Manifest `stages[current_state].image` | Resolved from on-chain stage |
+| Owner | `EVOAccount.owner` | Verify matches wallet |
+
+### Actions wallets can expose
+
+| Action | Instruction | Signer |
+|---|---|---|
+| Send | `transfer` | Owner |
+| List for sale | `list` | Owner |
+| Delist | `delist` | Owner |
+| Feed (add SOL) | `feed` | Owner |
+| Shatter (recover SOL) | `shatter` | Owner |
+| Evolve | `evolve` | Anyone (permissionless) |
+
+Wallets should **not** expose `forge` or `create_collection` — these are app-level
+actions better suited to the frontend.
 
 ## Safety Guarantees
 

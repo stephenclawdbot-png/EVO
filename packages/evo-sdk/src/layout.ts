@@ -13,13 +13,16 @@ const BOOL_LEN = 1;
 const I64_LEN = 8;
 
 // EVO account discriminator (first 8 bytes of sha256("account:EVOAccount"))
-// Will be set to the actual value after program deployment.
 export const EVO_ACCOUNT_DISCRIMINATOR = Buffer.from([
-  0xe4, 0x45, 0x23, 0x71, 0x69, 0x32, 0x4e, 0x65,
+  172, 52, 230, 55, 100, 187, 196, 167,
 ]);
 
 export const COLLECTION_CONFIG_DISCRIMINATOR = Buffer.from([
-  0xc3, 0x74, 0x56, 0x7e, 0x4a, 0x8d, 0x69, 0x37,
+  223, 110, 152, 160, 174, 157, 106, 255,
+]);
+
+export const PROTOCOL_CONFIG_DISCRIMINATOR = Buffer.from([
+  207, 91, 250, 28, 152, 179, 215, 209,
 ]);
 
 function readPubkey(buf: Buffer, offset: number): string {

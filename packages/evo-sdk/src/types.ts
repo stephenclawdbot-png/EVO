@@ -55,3 +55,30 @@ export interface EvoDisplayData {
   totalValueSol: number;
   listPriceSol: number | null;
 }
+
+// ─── Instruction-related types (for write operations) ───
+
+/** Fee destination enum — where protocol fees go */
+export type FeeDestination = 'Treasury' | 'Creator' | 'Burn' | 'Split';
+
+/** Collection lifecycle type */
+export type LifecycleType = 'Static' | 'Reveal' | 'CommitReveal' | 'RevealAndEvolve' | 'Custom';
+
+/** Randomness policy for reveal */
+export type RandomnessPolicy = 'None' | 'Predetermined' | 'BatchReveal';
+
+/** Lifecycle parameters for createCollection */
+export interface LifecycleParams {
+  lifecycleType: LifecycleType;
+  maxStates: number;
+  revealAuthority: string;
+  randomnessPolicy: RandomnessPolicy;
+  manifestRoot: Uint8Array;
+  evolveTradeThreshold: number;
+  evolveFeedThreshold: number;
+  evolveHoldSeconds: number;
+  evolveLockedThresholdLamports: number;
+  transitionPolicyHash: Uint8Array;
+  burnDestination: string;
+  artworkManifestHash: Uint8Array;
+}
