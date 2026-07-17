@@ -720,6 +720,26 @@ describe("EVO", () => {
       const evo = await program.account.evoAccount.fetch(evoPk);
       assert.equal(evo.currentState, 2, "advanced to state 2");
     });
+
+    it("rejects evolve at max state (maxStates=3, state 2 is final)", async () => {
+      // Feed enough to satisfy the threshold, but should still be blocked
+      await program.methods
+        .feed(FEED_THRESHOLD)
+        .accounts({ evo: evoPk, feeder: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
+      try {
+        await program.methods
+          .evolve()
+          .accounts({ evo: evoPk, collection: collectionPk })
+          .rpc();
+        assert.fail("should not evolve past max state");
+      } catch (e) {
+        expect(e.message).to.match(/already at max state|0x1b/i);
+      }
+      const evo = await program.account.evoAccount.fetch(evoPk);
+      assert.equal(evo.currentState, 2, "still at state 2");
+    });
   });
 
   // ============================================================

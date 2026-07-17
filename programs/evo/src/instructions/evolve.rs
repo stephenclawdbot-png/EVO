@@ -40,7 +40,9 @@ pub fn evolve(ctx: Context<Evolve>) -> Result<()> {
     // Can't go past max
     let max_states = collection.max_states;
     require!(max_states > 0, EvoError::EvolutionNotEnabled);
-    require!(evo.current_state < max_states, EvoError::AlreadyAtMaxState);
+    // max_states counts total states (0..max_states-1), so we can advance
+    // only while current_state < max_states - 1 (max_states > 0 checked above).
+    require!(evo.current_state < max_states - 1, EvoError::AlreadyAtMaxState);
 
     // The next state is current_state + 1
     let next_state = evo.current_state
