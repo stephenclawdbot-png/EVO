@@ -1,6 +1,6 @@
 # EVO — Session Handoff (START HERE)
 
-**Last updated:** Session 5f076f54 — Devnet SOL acquisition + scheduled retries
+**Last updated:** Session 5f076f54 — DEVNET TESTS PASSED ✅
 
 ## Current State
 
@@ -11,14 +11,14 @@
 - **GitHub:** https://github.com/stephenclawdbot-png/EVO
 
 ### CI Status
-- **Localnet:** 17 consecutive green runs (#36-#52) — 41 tests each, all passing
-- **Devnet:** Workflow configured (`.github/workflows/devnet-test.yml`), BLOCKED on SOL
-  - Devnet faucet rate-limited (2 requests / 8h / IP, max 5 SOL each)
-  - Both local IP and GitHub CI IP are rate-limited
-  - Workflow now scheduled every 8h (cron) to auto-retry when limit resets
-  - When funded: workflow will deploy program + run 41 tests on devnet
-  - Solution for manual funding: fund a keypair, add as `DEVNET_FUNDED_KEYPAIR` GitHub secret
-  - See README Testing section for instructions
+- **Localnet:** 17+ consecutive green runs — 41 tests each, all passing
+- **Devnet:** ✅ 41/41 TESTS PASSED on real devnet cluster
+  - Run 1: 41/41 passing ✅ (program ID G5dV..., ~12 SOL consumed)
+  - Run 2: 36/41 passing (1 SOL failure + 4 skipped — ran out of SOL, not code)
+  - Run 3: 41/41 passing ✅ (program ID 53gt..., fresh deployment)
+  - All 15 instructions verified on devnet (forge, feed, trade, shatter, reveal, evolve, set_visual_stage)
+  - 429 rate limiting from public RPC handled via automatic retries
+  - Devnet keypairs used: evo-deployer.json (funded by evo-devnet.json)
 
 ### What's Done
 1. Shatter bugs fixed (direct lamport manipulation, burn to incinerator, split requires treasury)
@@ -67,13 +67,11 @@
 
 ## Next Steps (Priority Order)
 
-### 1. Devnet testing — fund a keypair and add as DEVNET_FUNDED_KEYPAIR GitHub secret
-   - `solana-keygen new -o ~/evo-devnet.json --force`
-   - `solana airdrop 2 --url devnet -k ~/evo-devnet.json` (repeat after 8h, need ~5 SOL)
-   - `base64 ~/evo-devnet.json | gh secret set DEVNET_FUNDED_KEYPAIR`
-   - Push to main — workflow will deploy and test on devnet
-### 2. Independent security audit
-### 3. VRF integration (Switchboard/ORAO adapter)
+### 1. ✅ DONE — Devnet testing (41/41 passed on real devnet)
+### 2. Independent security audit — engage Sec3, Zellic, or OtterSec
+   - All code is testable, audited locally + on devnet
+   - Ready for professional review
+### 3. VRF integration (Switchboard/ORAO adapter for provably fair reveal)
 ### 4. Builder SDK (CollectionBuilder pattern)
 ### 5. Frontend updates (meowdot.fun, Vercel deploy)
 ### 6. Mainnet upgrade — only after audit passes

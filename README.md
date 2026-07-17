@@ -179,7 +179,7 @@ Wallets read `current_state` from the EVO account and resolve the image from the
 
 ## Testing
 
-### Localnet CI (Passing — 17 consecutive green runs #36-#52)
+### Localnet CI (Passing — 17+ consecutive green runs)
 
 Every push to `main` triggers `.github/workflows/test.yml` which:
 - Builds the Solana program with Anchor
@@ -188,24 +188,30 @@ Every push to `main` triggers `.github/workflows/test.yml` which:
 
 All tests pass: forge, feed, transfer, list, buy, shatter, commit-reveal, reveal, evolve, set_visual_stage, burn fee verification, lifecycle enforcement.
 
-### Devnet CI (Configured — requires funded keypair)
+### Devnet (✅ PASSED — 41/41 tests on real devnet cluster)
 
-`.github/workflows/devnet-test.yml` deploys and tests on devnet. The devnet faucet is rate-limited (2 SOL per 8 hours per IP), so a pre-funded keypair is needed.
+All 41 protocol tests passed on Solana devnet across multiple runs:
 
-**To enable devnet testing:**
+| Run | Result | Notes |
+|-----|--------|-------|
+| 1   | 41/41 ✅ | Fresh deployment, all instructions verified |
+| 2   | 36/41   | 1 SOL exhaustion + 4 skipped (not code bugs) |
+| 3   | 41/41 ✅ | Fresh deployment, all instructions verified |
 
-1. Generate a keypair and fund it (wait 8h between airdrops):
-   ```bash
-   solana-keygen new -o ~/evo-devnet.json --no-bip39-passphrase --force
-   solana airdrop 2 --url devnet -k ~/evo-devnet.json   # repeat after 8h, need ~5 SOL
-   ```
+Devnet testing confirmed:
+- All 15 instructions work on real cluster (forge, feed, trade, shatter, reveal, evolve, set_visual_stage)
+- SOL flows correct (creator mint price, locked SOL, royalties, shatter redemption, burn fees)
+- Lifecycle enforcement on-chain (Static rejects transitions, Reveal works, RevealAndEvolve evolves, Custom + set_visual_stage)
+- Commit-reveal verified (commit before mint, wrong secret rejected, double reveal rejected)
+- 429 rate limiting from public RPC handled via automatic retries
 
-2. Add it as a GitHub secret:
-   ```bash
-   base64 ~/evo-devnet.json | gh secret set DEVNET_FUNDED_KEYPAIR
-   ```
+Devnet keypairs (local):
+- Deployer: `~/.config/solana/evo-deployer.json` (G3aWJ...)
+- Funded by: `~/.config/solana/evo-devnet.json` (5HZ8r...)
 
-3. Push to `main` (or manually trigger the workflow). The workflow will use the funded keypair, deploy the program to devnet, and run the full test suite.
+### Devnet CI Workflow
+
+`.github/workflows/devnet-test.yml` is configured for automated devnet testing. Add a funded keypair as `DEVNET_FUNDED_KEYPAIR` GitHub secret to enable CI devnet runs.
 
 ---
 

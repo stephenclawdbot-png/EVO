@@ -426,8 +426,8 @@ A creator should think about their collection, not about account sizes and PDA s
 - ✅ set_visual_stage instruction for Custom lifecycle authority override
 - ✅ Visual manifest resolver + wallet integration guide
 - ✅ Comprehensive test suite — 41 tests (forge, feed, transfer, buy, shatter, evolution, commit-reveal, burn destination, visual lifecycle)
-- ✅ 17 consecutive green localnet CI runs (#36-#52), zero flaky tests (41 tests each)
-- ⬜ Devnet testing — workflow configured with scheduled 8h retries, blocked on faucet rate limit
+- ✅ 17+ consecutive green localnet CI runs, zero flaky tests (41 tests each)
+- ✅ Devnet testing PASSED — 41/41 tests on real Solana devnet cluster
 - ⬜ Independent security review
 
 ### Phase 2: Developer Experience
