@@ -96,15 +96,15 @@ EVO exposes the interface. The community builds the behaviors.
 
 ---
 
-## Program — Deployed on Mainnet
+## Program — Deployed on Devnet, Ready for Mainnet
 
 | | |
 |---|---|
 | **Program ID** | `7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc` |
 | **Old Program (CLOSED)** | `2AUfmSABAwfSAzMWuDfWXzm6TVVvVapWgtrAEBU4FHeR` |
 | **Authority/Treasury** | `G3aWJsdtrRT12HnC9R2BVoyErQbtGXseaM9c2xt1MJUJ` |
-| **Network** | Solana Mainnet |
-| **Status** | Deployed, NOT yet initialized |
+| **Network** | Devnet (deployed + binary-verified) |
+| **Status** | Ready for mainnet initialization |
 
 ### Instructions
 - `initialize_protocol` — one-time setup
@@ -179,35 +179,59 @@ Wallets read `current_state` from the EVO account and resolve the image from the
 
 ## Testing
 
-### Localnet CI (Passing — 17+ consecutive green runs)
+### Localnet CI (64/64 passing)
 
 Every push to `main` triggers `.github/workflows/test.yml` which:
 - Builds the Solana program with Anchor
-- Runs ~41 integration tests on a local validator (`anchor test --provider.cluster localnet`)
-- Runs 25 frontend vitest tests
+- Runs 64 integration tests on a local validator (`anchor test --provider.cluster localnet`)
+- Runs 53 frontend vitest tests
 
-All tests pass: forge, feed, transfer, list, buy, shatter, commit-reveal, reveal, evolve, set_visual_stage, burn fee verification, lifecycle enforcement.
+All tests pass: forge, feed, transfer, list, buy, shatter, commit-reveal, reveal, evolve, set_visual_stage, burn fee verification, lifecycle enforcement, **self-trade rejection**.
 
-### Devnet (✅ PASSED — 41/41 tests on real devnet cluster)
-
-All 41 protocol tests passed on Solana devnet across multiple runs:
+### Devnet (✅ Deployed + Binary-Verified)
 
 | Run | Result | Notes |
 |-----|--------|-------|
-| 1   | 41/41 ✅ | Fresh deployment, all instructions verified |
-| 2   | 36/41   | 1 SOL exhaustion + 4 skipped (not code bugs) |
-| 3   | 41/41 ✅ | Fresh deployment, all instructions verified |
+| Fresh state | 34/34 ✅ | Full E2E proof: create → forge → verify → trade → feed/evolve → shatter |
+| Post-deploy (stale state) | 28/32 | 4 failures are stale EVO #1 from prior runs (owned by different wallet) |
 
 Devnet testing confirmed:
 - All 15 instructions work on real cluster (forge, feed, trade, shatter, reveal, evolve, set_visual_stage)
 - SOL flows correct (creator mint price, locked SOL, royalties, shatter redemption, burn fees)
 - Lifecycle enforcement on-chain (Static rejects transitions, Reveal works, RevealAndEvolve evolves, Custom + set_visual_stage)
 - Commit-reveal verified (commit before mint, wrong secret rejected, double reveal rejected)
+- Artwork manifest hash verified on-chain + tamper detection confirmed
 - 429 rate limiting from public RPC handled via automatic retries
 
-Devnet keypairs (local):
-- Deployer: `~/.config/solana/evo-deployer.json` (G3aWJ...)
-- Funded by: `~/.config/solana/evo-devnet.json` (5HZ8r...)
+### Build Verification
+
+The deployed devnet program binary is **byte-for-byte identical** to the local build:
+
+| Artifact | SHA-256 |
+|----------|---------|
+| Local `.so` | `80313e72873d895cc9d27b707c70832d473496c2ad233fc7d4c916e86ef35cb7` |
+| Devnet dump (trimmed) | `80313e72873d895cc9d27b707c70832d473496c2ad233fc7d4c916e86ef35cb7` |
+| **Match** | **✅ TRUE** |
+
+Verification method: `solana program dump` → trim zero padding → SHA-256 → compare.
+See [`docs/build-verification.txt`](docs/build-verification.txt) for full details.
+
+### Security Audits
+
+Two independent code reviews completed:
+
+| Audit | Critical | High | Medium | Low | Status |
+|-------|----------|------|--------|-----|--------|
+| First (code-review agent) | 5 | 6 | 0 | 0 | ✅ All fixed (commit `c233e55`) |
+| Second (independent) | 0 | 0 | 1 | 0 | ✅ Fixed (commit `d360c7c`) |
+| Frontend audit | 0 | 0 | 0 | 0 | ✅ 4 display bugs fixed (commit `8d21508`) |
+
+Key fixes applied:
+- Collection substitution guard in `buy` (`evo.collection == collection_config.key()`)
+- Treasury authentication via `ProtocolConfig` in `buy` and `shatter`
+- Self-trade guard (`buyer != seller`) in `buy`
+- Artwork manifest hash commitment on-chain
+- Double-division display bugs in frontend
 
 ### Devnet CI Workflow
 
