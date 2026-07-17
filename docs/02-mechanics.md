@@ -190,4 +190,35 @@ All fees are **set at collection creation and locked forever.** Creators cannot 
 
 ---
 
+## Visual Lifecycle
+
+Every EVO collection declares a visual lifecycle type at creation. Each individual EVO stores its own `current_stage` on-chain. The program enforces valid transitions — marketplaces only read and render.
+
+### Lifecycle Types
+
+| Type | Behavior | Transition Instruction |
+|---|---|---|
+| `Static` | Art is final at forge. No transitions. | None (rejected) |
+| `Reveal` | Pre-reveal → revealed (one transition) | `reveal_collection` |
+| `CommitReveal` | Like Reveal but with pre-committed secret | `reveal_collection` |
+| `RevealAndEvolve` | Reveal then per-asset evolution | `reveal_collection` then `evolve` |
+| `Custom` | Authority sets any valid stage | `set_visual_stage` |
+
+### Evolution Triggers (RevealAndEvolve)
+
+For `RevealAndEvolve` collections, `evolve()` is permissionless — anyone can call it, but the EVO only advances if ALL enabled thresholds are met:
+
+| Trigger | Field | Example |
+|---|---|---|
+| Trade count | `evolve_trade_threshold` | 10 trades per stage |
+| Feed amount | `evolve_feed_threshold` | 0.1 SOL fed per stage |
+| Holding duration | `evolve_hold_seconds` | 30 days per stage |
+| Locked value | `evolve_locked_threshold` | Reserve reaches 1 SOL |
+
+### Artwork Resolution
+
+The collection's `metadata_uri` points to an off-chain **visual manifest** (JSON) that maps each stage to an image URL. Wallets read `current_stage` from the EVO account and resolve the image from the manifest. See the [Wallet Integration Guide](10-wallet-integration.md) for the full resolution flow.
+
+---
+
 *Part of the [EVO documentation](../README.md)*
