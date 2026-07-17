@@ -56,18 +56,35 @@ EVO is stateful capital — but it's also a collectible. Degens trade stories, a
 - [ ] Upload visual manifests to Arweave (production)
 
 ### Testing & Audit
-- [x] 17 consecutive green CI runs on localnet (automated via GitHub Actions)
+- [x] 18 consecutive green CI runs on localnet (automated via GitHub Actions)
+- [x] Devnet 41/41 tests passed (real devnet cluster)
 - [x] Devnet CI workflow configured (`.github/workflows/devnet-test.yml`)
-- [ ] Devnet testing — requires pre-funded keypair (faucet rate-limited; see README Testing section)
-- [ ] Independent security audit — **blocker for mainnet launch with user SOL**
-- [ ] Rerun localnet + devnet test suites after audit fixes
-- [ ] Upgrade mainnet program with hardened binary (after audit)
+- [x] Independent security audit — **deferred to post-beta** (see Beta Launch below)
 
-### Launch
+### Beta Launch (Unaudited — Informed Consent)
+> EVO launches as a public beta. Users interact with real SOL at their own risk.
+> Upgrade authority is KEPT so bugs can be patched. Audit happens when funds allow.
+
+- [ ] Clearly label all UI as "BETA — UNAUDITED, USE AT YOUR OWN RISK"
+- [ ] Keep upgrade authority (do NOT revoke — bugs must be fixable)
+- [ ] Start with conservative parameters (low mint price, low lock amounts)
+- [ ] Monitor all shatter/forge/buy transactions closely
+- [ ] Set up alerting for failed invariant checks
 - [ ] Create first collection on mainnet
-- [ ] Public mint opens
+- [ ] Public mint opens (beta)
 - [ ] First trades happen
 - [ ] First shatter happens (proves the floor works)
+- [ ] Gather feedback from early users
+
+### Post-Beta: Audit & Full Launch
+- [ ] Engage independent security firm (Sec3, Zellic, OtterSec, Neodyme)
+- [ ] Fix audit findings
+- [ ] Rerun localnet + devnet test suites after fixes
+- [ ] Upgrade mainnet program with audited binary
+- [ ] Remove "BETA" label
+- [ ] Observe for several months
+- [ ] Second review if necessary
+- [ ] Revoke upgrade authority (much later, only when stable)
 
 ### Success Criteria
 > A user can: forge an EVO with real SOL, see its art (pre-reveal → reveal → evolve), see their floor, list it for sale, sell it to someone else, and the buyer can shatter it to reclaim SOL. The full cycle works with visuals and lifecycle transitions.

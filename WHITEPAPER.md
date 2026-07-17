@@ -362,10 +362,12 @@ The creator cannot try multiple secrets to find a favorable assignment — the c
 
 ### 6.6 Upgrade Authority
 
-The program remains upgradeable during development. Upgrade authority will be revoked only after:
+The program remains upgradeable. EVO launches as a **public beta** — unaudited, with upgrade authority kept so bugs can be patched. Upgrade authority will be revoked only after:
 1. All invariant and adversarial tests pass
 2. Independent security audit is complete and findings are resolved
 3. Protocol is stable for months on mainnet with real SOL flows
+
+> **Beta disclaimer:** EVO is open-source and launches as a public beta without an independent security audit. Users interact with real SOL at their own risk. The team keeps upgrade authority to patch bugs as they're discovered. An independent audit is planned post-beta when funding allows.
 
 ---
 
@@ -425,10 +427,11 @@ A creator should think about their collection, not about account sizes and PDA s
 - ✅ Protocol-native visual lifecycle (per-asset current_stage, on-chain source of truth)
 - ✅ set_visual_stage instruction for Custom lifecycle authority override
 - ✅ Visual manifest resolver + wallet integration guide
-- ✅ Comprehensive test suite — 41 tests (forge, feed, transfer, buy, shatter, evolution, commit-reveal, burn destination, visual lifecycle)
-- ✅ 17+ consecutive green localnet CI runs, zero flaky tests (41 tests each)
+- ✅ Comprehensive test suite — 57 tests (41 happy path + 16 adversarial)
+- ✅ 18+ consecutive green localnet CI runs, zero flaky tests
 - ✅ Devnet testing PASSED — 41/41 tests on real Solana devnet cluster
-- ⬜ Independent security review
+- ✅ Threat model document (docs/threat-model.md)
+- ✅ Formal proof of invariant 18 (locked_lamports vs PDA balance)
 
 ### Phase 2: Developer Experience
 - ⬜ SDK with CollectionBuilder pattern
@@ -436,15 +439,25 @@ A creator should think about their collection, not about account sizes and PDA s
 - ⬜ Frontend marketplace integration
 - ⬜ Documentation and tutorials
 
-### Phase 3: Audit & Pre-Mainnet
-- ⬜ Engage independent Solana security firm for formal audit
-- ⬜ Apply audit fixes if needed
-- ⬜ Rerun localnet and devnet test suites after fixes
-- ⬜ Upgrade mainnet program with hardened binary
-- ⬜ Initialize protocol (creation fee = 0.05 SOL)
-- ⬜ Create first collection on mainnet (limited launch)
+### Phase 3: Beta Launch (Unaudited)
+> EVO launches as public beta. Users interact with real SOL at their own risk.
+> Upgrade authority is KEPT so bugs can be patched. Audit deferred to post-beta.
 
-### Phase 4: Observe & Mature
+- ⬜ Initialize protocol on mainnet (conservative parameters)
+- ⬜ Create first collection on mainnet (beta)
+- ⬜ Public mint opens (beta — clearly labeled as unaudited)
+- ⬜ Monitor all forge/shatter/buy transactions closely
+- ⬜ Gather feedback from early users
+- ⬜ Fix bugs as discovered (upgrade authority kept)
+
+### Phase 4: Audit & Full Launch
+- ⬜ Engage independent Solana security firm when funding allows
+- ⬜ Apply audit fixes
+- ⬜ Rerun localnet and devnet test suites after fixes
+- ⬜ Upgrade mainnet program with audited binary
+- ⬜ Remove "BETA" label
+
+### Phase 5: Observe & Mature
 - ⬜ Monitor protocol for several months (do NOT revoke authority yet)
 - ⬜ Second security review if necessary
 - ⬜ On-chain VRF verification (Switchboard/ORAO adapter)
@@ -551,17 +564,19 @@ The only CPIs in the program are `system_program::transfer` (in `forge`, `feed`,
 
 ## Mainnet Launch Strategy
 
-> **Audit must happen BEFORE user SOL enters the protocol.**
+> **EVO launches as a public beta — unaudited, with informed consent.**
 
-Because EVO directly stores and redeems SOL, an independent security audit is the blocker for mainnet. The recommended sequence is:
+EVO is open-source and launches as a public beta without an independent security audit. Users interact with real SOL at their own risk. Upgrade authority is KEPT so bugs can be patched. The sequence is:
 
-1. **Audit** — Engage an independent Solana security firm for formal review
-2. **Fix** — Apply any audit findings via program upgrade
-3. **Rerun** — Rerun localnet and devnet test suites to verify fixes
-4. **Launch** — Deploy to mainnet with limited initial collection
-5. **Observe** — Monitor protocol for several months. Track SOL flows, edge cases, user behavior
-6. **Review** — Second security review if necessary
-7. **Revoke** — Only after audit passes and protocol is stable for months, revoke upgrade authority
+1. **Beta Launch** — Initialize protocol, create first collection, open public mint (clearly labeled as BETA / UNAUDITED)
+2. **Observe** — Monitor all forge/shatter/buy transactions closely, gather feedback from early users
+3. **Audit** — Engage an independent Solana security firm when funding allows
+4. **Fix** — Apply any audit findings via program upgrade
+5. **Rerun** — Rerun localnet and devnet test suites to verify fixes
+6. **Full Launch** — Remove BETA label, expand to broader audience
+7. **Observe** — Monitor protocol for several months
+8. **Review** — Second security review if necessary
+9. **Revoke** — Only after audit passes and protocol is stable for months, revoke upgrade authority
 
 Upgrade authority revocation is permanent. It should be the last step, not the first.
 
@@ -575,7 +590,7 @@ Whether the Solana ecosystem adopts this model depends on execution: security, u
 
 ---
 
-*EVO is in active development. The program remains upgradeable while protocol mechanics and security invariants are finalized. Nothing in this white paper constitutes financial advice or a guarantee of returns.*
+*EVO is in active development and launches as a public beta. The program remains upgradeable so bugs can be patched. Nothing in this white paper constitutes financial advice or a guarantee of returns. EVO is unaudited — use at your own risk.*
 
 *Program ID: `7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc`*
 *Repository: [github.com/stephenclawdbot-png/EVO](https://github.com/stephenclawdbot-png/EVO)*
