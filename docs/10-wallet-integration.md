@@ -254,6 +254,56 @@ const imageUrl = stage.image;
 - GitHub: https://github.com/stephenclawdbot-png/EVO
 - Program ID: `7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc`
 
+## Rust Integration Example
+
+For Solana programs that want to read EVO state via CPI or direct account parsing:
+
+```rust
+use solana_program::{account_info::AccountInfo, pubkey::Pubkey};
+
+const EVO_PROGRAM_ID: Pubkey = solana_program::pubkey!("7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc");
+
+/// Check if an account is an EVO owned by a specific wallet
+pub fn is_evo_owner(account: &AccountInfo, owner: &Pubkey) -> bool {
+    if account.owner != &EVO_PROGRAM_ID {
+        return false;
+    }
+    let data = account.try_borrow_data().ok()?;
+    if data.len() < 72 {
+        return false;
+    }
+    let acct_owner = Pubkey::try_from(&data[40..72]).ok()?;
+    acct_owner == *owner
+}
+
+/// Read the current visual stage from an EVO account
+pub fn get_current_stage(account: &AccountInfo) -> Option<u16> {
+    let data = account.try_borrow_data().ok()?;
+    // current_state is at a variable offset (after fracture_lines)
+    // Use the frontend parser or Anchor deserialization for precise offsets
+    // This is a simplified check — production code should use full deserialization
+    if data.len() >= 1055 {
+        // Fixed offset for current_state in accounts without fracture lines
+        Some(u16::from_le_bytes([data[1051], data[1052]]))
+    } else {
+        None
+    }
+}
+
+/// Read redeemable value (locked SOL minus shatter fee)
+pub fn get_redeemable_value(account: &AccountInfo) -> Option<u64> {
+    let data = account.try_borrow_data().ok()?;
+    if data.len() < 80 {
+        return None;
+    }
+    let locked_lamports = u64::from_le_bytes(data[72..80].try_into().ok()?);
+    let actual_lamports = account.lamports();
+    Some(actual_lamports.min(locked_lamports))
+}
+```
+
+For full account deserialization, use the Anchor IDL or the TypeScript parsers in `frontend/src/lib/evo-program.ts`.
+
 ---
 
 *Part of the [EVO documentation](../README.md)*
