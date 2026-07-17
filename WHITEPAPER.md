@@ -509,6 +509,44 @@ These invariants define the safety guarantees the EVO protocol must always uphol
 - **shatter:** Sets `locked_lamports = 0` before moving lamports out, closes account to owner ✓
 - **transfer, list, delist, buy, evolve, set_visual_stage:** Do not touch EVO PDA lamports or `locked_lamports` ✓
 
+#### Formal proof of invariant 18
+
+The invariant is a **lower bound**: `PDA_balance >= rent_minimum + locked_lamports`.
+
+**Credit path (lamports entering the EVO PDA):**
+
+The EVO PDA is owned by the EVO program. Only two EVO instructions credit lamports to it:
+
+1. `forge` — Anchor's `init` pays `rent_minimum` from the `owner` signer; the instruction body then transfers `lock_amount` from `owner` to the PDA via System Program CPI. Immediately after, `locked_lamports` is set to `lock_amount`. Net: `PDA_balance = rent_minimum + lock_amount`, `locked_lamports = lock_amount`. Equality holds. `verify_reserve_invariant` runs afterward and would revert on violation.
+2. `feed` — Transfers `additional_lamports` from `feeder` to the PDA via System Program CPI, then `locked_lamports += additional_lamports` with checked add. Net: both `PDA_balance` and `locked_lamports` increase by the same delta. `verify_reserve_invariant` runs afterward.
+
+Any other credit to the PDA must come from an **external System Program transfer** addressed to the PDA's public key. Such a transfer is not an EVO program instruction and does not update `locked_lamports`, but it can only **increase** the balance. Since the invariant is a lower bound (`>=`), adding lamports without updating the field preserves the invariant — it merely creates surplus lamports that the owner receives on shatter via `close = owner`.
+
+**Debit path (lamports leaving the EVO PDA):**
+
+Because the PDA is program-owned, only the EVO program can debit it. The only instruction that does so is `shatter`, which:
+
+1. Calls `verify_reserve_invariant` **before** any mutation (would revert if balance < rent + locked).
+2. Sets `is_shattered = true` and `locked_lamports = 0` **before** any lamport movement (anti-reentrancy).
+3. Moves the fee out of the PDA via `transfer_lamports` (direct lamport manipulation, since System Program transfer cannot debit a program-owned account).
+4. `close = owner` drains the remainder (reserve − fee + rent + any surplus) to the owner and zeroes the account.
+
+After `shatter`, the account is closed: `PDA_balance = 0` and `locked_lamports = 0`. Both sides are zero — consistent.
+
+**Instructions that mark `evo` as `mut` but do not move lamports:**
+
+`transfer`, `list`, `delist`, `buy`, `evolve`, `set_visual_stage`, and `commit_reveal` mark the EVO account `mut` so Anchor can re-serialize data fields (e.g. `owner`, `is_listed`, `current_state`). Anchor re-serialization writes data, never lamports. No System Program CPI in these instructions targets the EVO PDA. Therefore `PDA_balance` and `locked_lamports` are both unchanged.
+
+**Rent refunds:**
+
+Solana credits rent-exempt accounts periodically from the runtime, not from any program instruction. Rent-exempt accounts (which all EVO PDAs are, by `init`) do not lose lamports to rent. There is no rent-debit path that could reduce `PDA_balance` below `rent_minimum + locked_lamports`.
+
+**CPI surface:**
+
+The only CPIs in the program are `system_program::transfer` (in `forge`, `feed`, `buy`, `create_collection`, and `route_fee`) and direct `transfer_lamports` (in `shatter`). None of these debit the EVO PDA except `shatter`, which is analyzed above. `route_fee` debits the `buyer` signer, never the EVO PDA.
+
+**Conclusion:** For every EVO program instruction, the lower-bound invariant `PDA_balance >= rent_minimum + locked_lamports` is preserved. External deposits can only strengthen it. The only debit path is `shatter`, which zeroes both sides atomically. ∎
+
 ---
 
 ## Mainnet Launch Strategy

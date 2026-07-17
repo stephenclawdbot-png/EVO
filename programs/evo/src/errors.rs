@@ -122,6 +122,9 @@ pub enum EvoError {
     #[msg("Only the reveal authority can set the visual stage")]
     NotStageAuthority,
 
+    #[msg("EVO is currently listed for sale — delist before shattering")]
+    EvoIsListed,
+
     #[msg("Static collections do not support stage transitions")]
     StaticNoTransitions,
 }

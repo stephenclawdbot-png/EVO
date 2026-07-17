@@ -13,6 +13,7 @@ pub struct Shatter<'info> {
         bump = evo.bump,
         constraint = evo.owner == owner.key() @ EvoError::NotEvoOwner,
         constraint = !evo.is_shattered @ EvoError::EvoShattered,
+        constraint = !evo.is_listed @ EvoError::EvoIsListed,
         close = owner,
     )]
     pub evo: Account<'info, EVOAccount>,

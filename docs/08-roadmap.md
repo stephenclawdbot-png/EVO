@@ -31,8 +31,11 @@ EVO is stateful capital — but it's also a collectible. Degens trade stories, a
 - [x] Reserve invariant enforced (account balance backs locked_lamports + rent)
 - [x] Checked math throughout (MathOverflow error)
 - [x] Evolve boundary fixed (off-by-one: current_state < max_states - 1)
-- [x] 17 protocol invariants documented (value, lifecycle, authority, commit-reveal, balance consistency)
+- [x] 18 protocol invariants documented (value, lifecycle, authority, commit-reveal, balance consistency)
+- [x] Formal proof of invariant 18 (locked_lamports vs PDA balance) in WHITEPAPER.md
 - [x] Adversarial test suite (substituted accounts, wrong PDA seeds, stale listings, malformed params, boundary inputs)
+- [x] Shatter-while-listed guard (`require!(!evo.is_listed)`) — marketplace semantics
+- [x] Threat model document (docs/threat-model.md) — 16 threats + mitigations, 6 remaining risks
 
 ### Frontend (In Progress)
 - [x] Wallet adapter (Phantom, Solflare, Backpack)

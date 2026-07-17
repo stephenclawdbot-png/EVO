@@ -1254,45 +1254,54 @@ describe("EVO", () => {
         .rpc();
     });
 
-    // --- Shatter while listed (documents current behavior) ---
-    it("shatters while listed — listing is voided by close (no fund loss)", async () => {
-      // List the EVO
+    // --- Shatter while listed — now REJECTED by the protocol ---
+    it("rejects shatter while listed (require !is_listed)", async () => {
+      // Forge a fresh EVO for this test
+      const evoId = 5;
+      const pk = evoPda(collectionPk, evoId);
       await program.methods
-        .list(SOL(0.01))
-        .accounts({ evo: evoPk, seller: buyer.publicKey })
-        .signers([buyer])
-        .rpc();
-
-      const evoBefore = await program.account.evoAccount.fetch(evoPk);
-      assert.isTrue(evoBefore.isListed, "EVO is listed");
-
-      // Shatter while listed — currently ALLOWED by the program.
-      // This is safe: the owner signed, the account closes, and
-      // no buyer can simultaneously buy (same PDA = sequential).
-      const ownerBefore = await lamportsOf(buyer.publicKey);
-      const locked = evoBefore.lockedLamports.toNumber();
-      const fee = Math.floor((locked * SHATTER_FEE_BPS) / 10000);
-
-      await program.methods
-        .shatter(EVO_ID)
+        .forge(evoId, Buffer.from(Array(32).fill(55)))
         .accounts({
-          evo: evoPk,
           collectionConfig: collectionPk,
-          owner: buyer.publicKey,
+          protocolConfig: protocolPda,
           creator: creator.publicKey,
-          treasury: treasury.publicKey,
-          incinerator: INCINERATOR,
+          owner: buyer.publicKey,
         })
         .signers([buyer])
         .rpc();
 
-      // EVO account should be closed (0 lamports)
-      const evoBalance = await lamportsOf(evoPk);
-      assert.equal(evoBalance, 0, "EVO account closed");
+      // List the EVO
+      await program.methods
+        .list(SOL(0.01))
+        .accounts({ evo: pk, seller: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
 
-      // Owner should have received locked - fee + rent refund
-      const ownerAfter = await lamportsOf(buyer.publicKey);
-      assert.isAbove(ownerAfter, ownerBefore, "owner received funds from shatter");
+      const evoBefore = await program.account.evoAccount.fetch(pk);
+      assert.isTrue(evoBefore.isListed, "EVO is listed");
+
+      // Shatter while listed — now REJECTED by the program (require !is_listed).
+      // This makes marketplace semantics explicit: a listed EVO must be
+      // delisted before it can be shattered.
+      await assert.rejects(
+        program.methods
+          .shatter(evoId)
+          .accounts({
+            evo: pk,
+            collectionConfig: collectionPk,
+            owner: buyer.publicKey,
+            creator: creator.publicKey,
+            treasury: treasury.publicKey,
+            incinerator: INCINERATOR,
+          })
+          .signers([buyer])
+          .rpc(),
+        /EvoIsListed|listed/i
+      );
+
+      // EVO account must still exist (not closed)
+      const evoAfter = await program.account.evoAccount.fetch(pk);
+      assert.isTrue(evoAfter.isListed, "EVO still listed");
     });
 
     // --- Buy stale listing after transfer ---
