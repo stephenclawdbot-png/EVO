@@ -307,7 +307,12 @@ A creator should think about their collection, not about account sizes and PDA s
 - ✅ Configurable lifecycle system (Static, CommitReveal, Evolution, Custom)
 - ✅ Configurable randomness (None, Predetermined, BatchReveal)
 - ✅ Permissionless evolution with modular triggers
-- ⬜ Comprehensive test suite (forge, feed, transfer, buy, shatter, evolution)
+- ✅ Commit-reveal for provably fair reveal (keccak256 commitment before minting)
+- ✅ Configurable burn destination for test verification
+- ✅ Evolve boundary fixed (off-by-one: max_states = total states, not transitions)
+- ✅ Comprehensive test suite — 30 tests (forge, feed, transfer, buy, shatter, evolution, commit-reveal, burn destination)
+- ✅ 9+ consecutive green CI runs, zero flaky tests
+- ⬜ Devnet testing with real RPC
 - ⬜ Independent security review
 
 ### Phase 2: Developer Experience
