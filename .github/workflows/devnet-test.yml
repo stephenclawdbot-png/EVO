@@ -2,6 +2,9 @@ name: devnet-test
 
 on:
   workflow_dispatch:
+  schedule:
+    # Run every 8 hours to retry when faucet rate limit resets
+    - cron: '0 0,8,16 * * *'
   push:
     branches: [main]
     paths:
@@ -77,10 +80,10 @@ jobs:
             echo "Using pre-funded keypair — skipping airdrop/mining"
           else
             # CI runner has a different IP — try airdrops
-            # Devnet faucet allows 2 SOL per request, rate-limited per IP
-            for i in 1 2 3; do
-              echo "=== Airdrop attempt $i (2 SOL) ==="
-              solana airdrop 2 2>&1 && echo "✅ Airdrop $i succeeded" || echo "⚠️ Airdrop $i failed"
+            # Devnet faucet allows 2 requests per 8h, max 5 SOL each
+            for i in 1 2; do
+              echo "=== Airdrop attempt $i (5 SOL) ==="
+              solana airdrop 5 2>&1 && echo "✅ Airdrop $i succeeded" || echo "⚠️ Airdrop $i failed"
               sleep 10
               BALANCE=$(solana balance 2>/dev/null | awk '{print $1}' || echo "0")
               echo "Balance after airdrop $i: $BALANCE SOL"
