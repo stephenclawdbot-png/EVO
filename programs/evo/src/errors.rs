@@ -14,6 +14,12 @@ pub enum EvoError {
     #[msg("Collection has reached supply cap")]
     SupplyCapReached,
 
+    #[msg("Supply cap exceeds protocol ceiling of 20,000")]
+    SupplyCapTooHigh,
+
+    #[msg("Supply cap must be at least 1")]
+    SupplyCapTooLow,
+
     #[msg("EVO already exists with this ID")]
     EvoAlreadyExists,
 

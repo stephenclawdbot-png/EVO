@@ -18,5 +18,10 @@ pub const MAX_METADATA_URI_LEN: usize = 200;
 pub const MAX_FRACTURE_LINES: usize = 20;
 pub const MAX_RESONANCE_SEED_LEN: usize = 32;
 
+/// Protocol-enforced maximum supply per collection.
+/// Creators choose any fixed cap in 1..=20_000; this is the ceiling.
+/// The number of collections is unlimited (permissionless).
+pub const MAX_SUPPLY_CEILING: u32 = 20_000;
+
 /// Solana incinerator — lamports sent here are permanently destroyed
 pub const INCINERATOR: Pubkey = pubkey!("1nc1nerator11111111111111111111111111111111");

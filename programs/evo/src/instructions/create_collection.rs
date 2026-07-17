@@ -50,6 +50,8 @@ pub fn create_collection(
     require!(protocol_is_initialized(&ctx.accounts.protocol_config), EvoError::ProtocolNotInitialized);
     require!(name.len() <= MAX_COLLECTION_NAME_LEN, EvoError::CollectionNameTooLong);
     require!(name.len() > 0, EvoError::CollectionNameTooLong);
+    require!(supply_cap >= 1, EvoError::SupplyCapTooLow);
+    require!(supply_cap <= MAX_SUPPLY_CEILING, EvoError::SupplyCapTooHigh);
     require!(shatter_fee_bps <= MAX_SHATTER_FEE_BPS, EvoError::ShatterFeeTooHigh);
     require!(trade_royalty_bps <= MAX_ROYALTY_BPS, EvoError::RoyaltyTooHigh);
     require!(lock_amount_lamports > 0, EvoError::InsufficientLamports);
