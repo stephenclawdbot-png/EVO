@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { ThemeToggle } from './ThemeToggle';
-import { IconZMark, IconHammer, IconCollection, IconPortfolio } from './Icons';
+import { IconEvoMark, IconHammer, IconCollection, IconPortfolio } from './Icons';
 
 interface TickerStat { label: string; value: string; tone?: 'pos' | 'neg' | 'neutral' }
 
@@ -19,7 +19,7 @@ export function Nav({ onRefresh, ticker = [] }: NavProps) {
       <div className="flex h-11 items-center justify-between px-3">
         <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center gap-2">
-            <IconZMark className="h-6 w-6 text-accent" />
+            <IconEvoMark className="h-6 w-6 text-accent" />
             <span className="text-sm font-semibold tracking-tight text-text-strong">EVO</span>
             <span className="hidden text-[10px] uppercase tracking-[0.15em] text-dim md:inline">Terminal</span>
           </Link>

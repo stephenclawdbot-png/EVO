@@ -108,7 +108,7 @@ EVO exposes the interface. The community builds the behaviors.
 
 ### Instructions
 - `initialize_protocol` — one-time setup
-- `create_collection` — creator sets supply, mint_price, lock_amount, fees, metadata_uri, lifecycle, randomness, burn_destination
+- `create_collection` — creator sets supply (1–20,000), mint_price, lock_amount, fees, metadata_uri, lifecycle, randomness, burn_destination. Permissionless and unlimited — anyone can create collections. Supply cap is immutable after creation.
 - `commit_reveal` — creator commits hash(secret) before minting for provably fair reveal
 - `forge` — mint EVO (pays mint_price to creator, locks SOL inside)
 - `feed` — add SOL to existing EVO (increases floor, tracked for evolution)

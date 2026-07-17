@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, Suspense } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Nav } from '@/components/Nav';
 import { Transaction } from '@solana/web3.js';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   readCollectionConfig,
   getCollectionPDA,
@@ -17,9 +18,17 @@ import {
 import { CollectionData, collectionConfigToData } from '@/lib/evo-data';
 import { IconCheck, IconAlertTriangle, IconExternalLink } from '@/components/Icons';
 
-const COLLECTION_NAME = 'Z';
-
 export default function AdminPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-bg" />}>
+      <AdminContent />
+    </Suspense>
+  );
+}
+
+function AdminContent() {
+  const searchParams = useSearchParams();
+  const COLLECTION_NAME = searchParams.get('collection') || '';
   const { connection } = useConnection();
   const wallet = useWallet();
   const [collection, setCollection] = useState<CollectionData | null>(null);
@@ -33,6 +42,7 @@ export default function AdminPage() {
   const [customEvoId, setCustomEvoId] = useState('');
 
   const fetchCollection = useCallback(async () => {
+    if (!COLLECTION_NAME) { setLoading(false); return; }
     setLoading(true);
     try {
       const cfg = await readCollectionConfig(connection, COLLECTION_NAME);
@@ -42,7 +52,7 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
-  }, [connection]);
+  }, [connection, COLLECTION_NAME]);
 
   useEffect(() => { fetchCollection(); }, [fetchCollection]);
 
@@ -150,7 +160,14 @@ export default function AdminPage() {
         <h1 className="text-xl font-bold tracking-tight text-text-strong">Collection Admin</h1>
         <p className="mt-1 text-xs text-muted">Protocol-level visual lifecycle controls. All actions are on-chain.</p>
 
-        {loading ? (
+        {!COLLECTION_NAME ? (
+          <div className="mt-10 text-center">
+            <p className="text-xs text-muted">Specify a collection via the URL: <code className="text-accent">/admin?collection=NAME</code></p>
+            <Link href="/" className="mt-4 inline-flex items-center gap-2 text-xs text-accent hover:underline">
+              All collections
+            </Link>
+          </div>
+        ) : loading ? (
           <div className="mt-10 flex justify-center">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-accent" />
           </div>

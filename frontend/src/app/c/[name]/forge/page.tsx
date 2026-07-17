@@ -13,7 +13,7 @@ import {
   createForgeIx,
   generateResonanceSeed,
 } from '@/lib/evo-program';
-import { CollectionData, CREATURES, collectionConfigToData } from '@/lib/evo-data';
+import { CollectionData, collectionConfigToData } from '@/lib/evo-data';
 import { resolveImage } from '@/lib/evo-visuals';
 import { IconCheck, IconAlertTriangle, IconExternalLink, IconArrowRight } from '@/components/Icons';
 
@@ -30,10 +30,7 @@ export default function CollectionForgePage() {
   const [error, setError] = useState<string | null>(null);
   const [resolvedImage, setResolvedImage] = useState<string | null>(null);
 
-  // Only Z collection has creature previews
-  const creatures = collectionName === 'Z' ? CREATURES : undefined;
   const remaining = collection ? collection.supplyCap - currentSupply : 0;
-  const creature = creatures ? creatures[currentSupply % creatures.length] : null;
 
   const fetchCollection = useCallback(async () => {
     setLoading(true);
@@ -53,14 +50,14 @@ export default function CollectionForgePage() {
   useEffect(() => { fetchCollection(); }, [fetchCollection]);
 
   useEffect(() => {
-    const fallback = creature?.stages.baby || '/zenkos/abyssling_baby.png';
     if (!collection?.metadataUri) { setResolvedImage(null); return; }
     let active = true;
-    resolveImage(collection.metadataUri, fallback, 0, collection.isRevealed).then(img => {
+    const evoId = currentSupply;
+    resolveImage(collection.metadataUri, '/placeholder.png', 0, collection.isRevealed, evoId).then(img => {
       if (active) setResolvedImage(img);
     });
     return () => { active = false; };
-  }, [collection?.metadataUri, creature?.stages.baby, collection?.isRevealed]);
+  }, [collection?.metadataUri, collection?.isRevealed, currentSupply]);
 
   const handleForge = async () => {
     if (!wallet.connected || !wallet.publicKey || !collection) { setError('Connect your wallet first'); return; }
@@ -117,27 +114,19 @@ export default function CollectionForgePage() {
           </div>
         ) : collection ? (
           <>
-            {/* Preview */}
-            {creature && (
-              <div className="mt-5 flex flex-col items-center">
-                <div className="relative flex h-40 w-40 items-center justify-center overflow-hidden rounded border border-border bg-surface">
-                  <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 45%, rgba(129,140,248,0.12), transparent 65%)` }} />
-                  <img src={resolvedImage || creature.stages.baby} alt={creature.displayName} className="relative z-[1] pixelated" style={{ transform: 'scale(2)' }} />
-                </div>
-                <p className="mt-3 text-sm font-semibold">{creature.displayName}</p>
-                <p className="font-mono text-[11px] text-dim">{collectionName} #{currentSupply} - {creature.element} - {creature.rarity}</p>
-              </div>
-            )}
-            {!creature && (
-              <div className="mt-5 flex flex-col items-center">
-                <div className="relative flex h-40 w-40 items-center justify-center overflow-hidden rounded border border-border bg-surface">
-                  <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 45%, rgba(129,140,248,0.12), transparent 65%)` }} />
+            {/* Preview — generic, uses manifest-resolved image */}
+            <div className="mt-5 flex flex-col items-center">
+              <div className="relative flex h-40 w-40 items-center justify-center overflow-hidden rounded border border-border bg-surface">
+                <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 45%, rgba(129,140,248,0.12), transparent 65%)` }} />
+                {resolvedImage ? (
+                  <img src={resolvedImage} alt={`${collectionName} #${currentSupply}`} className="relative z-[1] pixelated" style={{ transform: 'scale(2)' }} />
+                ) : (
                   <span className="relative z-[1] font-mono text-2xl font-bold text-accent">#{currentSupply}</span>
-                </div>
-                <p className="mt-3 text-sm font-semibold">{collectionName} #{currentSupply}</p>
-                <p className="font-mono text-[11px] text-dim">Next to forge</p>
+                )}
               </div>
-            )}
+              <p className="mt-3 text-sm font-semibold">{collectionName} #{currentSupply}</p>
+              <p className="font-mono text-[11px] text-dim">Next to forge</p>
+            </div>
 
             {/* Cost breakdown */}
             <div className="mt-5 overflow-hidden rounded border border-border">

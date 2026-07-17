@@ -1707,5 +1707,163 @@ describe("EVO", () => {
         expect(e.message).to.match(/CollectionNameTooLong|name is too long|0x2/i);
       }
     });
+
+    // ============================================================
+    // SUPPLY CAP BOUNDARY TESTS (max 20,000 per collection)
+    // ============================================================
+    it("rejects supply_cap = 0 (too low)", async () => {
+      try {
+        await program.methods
+          .createCollection(
+            "zerocap",
+            0,
+            SHATTER_FEE_BPS,
+            { creator: {} },
+            ROYALTY_BPS,
+            { creator: {} },
+            MINT_PRICE,
+            LOCK_AMOUNT,
+            "https://example.com/zerocap.json",
+            defaultLifecycle()
+          )
+          .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+          .signers([creator])
+          .rpc();
+        assert.fail("should reject supply_cap = 0");
+      } catch (e) {
+        expect(e.message).to.match(/SupplyCapTooLow|0x2[0-9a-f]/i);
+      }
+    });
+
+    it("rejects supply_cap = 20,001 (exceeds ceiling)", async () => {
+      try {
+        await program.methods
+          .createCollection(
+            "overcap",
+            20001,
+            SHATTER_FEE_BPS,
+            { creator: {} },
+            ROYALTY_BPS,
+            { creator: {} },
+            MINT_PRICE,
+            LOCK_AMOUNT,
+            "https://example.com/overcap.json",
+            defaultLifecycle()
+          )
+          .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+          .signers([creator])
+          .rpc();
+        assert.fail("should reject supply_cap = 20001");
+      } catch (e) {
+        expect(e.message).to.match(/SupplyCapTooHigh|0x2[0-9a-f]/i);
+      }
+    });
+
+    it("rejects supply_cap = 100,000 (exceeds ceiling)", async () => {
+      try {
+        await program.methods
+          .createCollection(
+            "wayover",
+            100000,
+            SHATTER_FEE_BPS,
+            { creator: {} },
+            ROYALTY_BPS,
+            { creator: {} },
+            MINT_PRICE,
+            LOCK_AMOUNT,
+            "https://example.com/wayover.json",
+            defaultLifecycle()
+          )
+          .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+          .signers([creator])
+          .rpc();
+        assert.fail("should reject supply_cap = 100000");
+      } catch (e) {
+        expect(e.message).to.match(/SupplyCapTooHigh|0x2[0-9a-f]/i);
+      }
+    });
+
+    it("accepts supply_cap = 1 (minimum)", async () => {
+      const name = "mincap1";
+      await program.methods
+        .createCollection(
+          name,
+          1,
+          SHATTER_FEE_BPS,
+          { creator: {} },
+          ROYALTY_BPS,
+          { creator: {} },
+          MINT_PRICE,
+          LOCK_AMOUNT,
+          "https://example.com/mincap1.json",
+          defaultLifecycle()
+        )
+        .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+        .signers([creator])
+        .rpc();
+
+      const cfg = await program.account.collectionConfig.fetch(collectionPda(name));
+      assert.equal(cfg.supplyCap, 1);
+    });
+
+    it("accepts supply_cap = 20,000 (ceiling)", async () => {
+      const name = "maxcap20k";
+      await program.methods
+        .createCollection(
+          name,
+          20000,
+          SHATTER_FEE_BPS,
+          { creator: {} },
+          ROYALTY_BPS,
+          { creator: {} },
+          MINT_PRICE,
+          LOCK_AMOUNT,
+          "https://example.com/maxcap20k.json",
+          defaultLifecycle()
+        )
+        .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+        .signers([creator])
+        .rpc();
+
+      const cfg = await program.account.collectionConfig.fetch(collectionPda(name));
+      assert.equal(cfg.supplyCap, 20000);
+    });
+
+    it("forge succeeds at supply 0→1 for cap=1, then rejects forge 1→2", async () => {
+      // mincap1 collection has cap=1, already forged 0 EVOs
+      const collPk = collectionPda("mincap1");
+      const evo0 = evoPda(collPk, 0);
+      await program.methods
+        .forge(0, Buffer.from(Array(32).fill(9)))
+        .accounts({
+          collectionConfig: collPk,
+          protocolConfig: protocolPda,
+          creator: creator.publicKey,
+          owner: buyer.publicKey,
+        })
+        .signers([buyer])
+        .rpc();
+
+      const cfg = await program.account.collectionConfig.fetch(collPk);
+      assert.equal(cfg.currentSupply, 1);
+
+      // Forge #1 should fail — cap reached
+      const evo1 = evoPda(collPk, 1);
+      try {
+        await program.methods
+          .forge(1, Buffer.from(Array(32).fill(9)))
+          .accounts({
+            collectionConfig: collPk,
+            protocolConfig: protocolPda,
+            creator: creator.publicKey,
+            owner: buyer.publicKey,
+          })
+          .signers([buyer])
+          .rpc();
+        assert.fail("should reject forge at supply cap");
+      } catch (e) {
+        expect(e.message).to.match(/SupplyCapReached|0xf/i);
+      }
+    });
   });
 });

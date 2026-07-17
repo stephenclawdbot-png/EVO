@@ -12,9 +12,9 @@ import {
   lamportsToSol,
   EVOAccount,
 } from '@/lib/evo-program';
-import { evoAccountToData, EVOData, CREATURES, collectionConfigToData, CollectionData } from '@/lib/evo-data';
-import { ZCard } from '@/components/ZCard';
-import { ZDetail } from '@/components/ZDetail';
+import { evoAccountToData, EVOData, collectionConfigToData, CollectionData } from '@/lib/evo-data';
+import { EvoCard } from '@/components/EvoCard';
+import { EvoDetail } from '@/components/EvoDetail';
 import { IconArrowRight, IconPortfolio } from '@/components/Icons';
 
 interface CollectionGroup {
@@ -63,11 +63,10 @@ export default function PortfolioPage() {
           collectionData = collectionConfigToData(match.config);
         }
 
-        // Only Z has creature data for now
-        const creatures = collectionName === 'Z' ? CREATURES : undefined;
+        // Resolve EVO display data (generic, no per-collection creature data)
         const display: EVOData[] = [];
         for (const evo of evos) {
-          const d = evoAccountToData(evo, creatures, collectionName);
+          const d = evoAccountToData(evo, collectionName);
           if (d) display.push(d);
         }
         display.sort((a, b) => a.id - b.id);
@@ -130,7 +129,7 @@ export default function PortfolioPage() {
   }, [groups]);
 
   if (selectedEvo) {
-    return <ZDetail evo={selectedEvo} onBack={() => setSelectedEvo(null)} onRefresh={fetchData} />;
+    return <EvoDetail evo={selectedEvo} onBack={() => setSelectedEvo(null)} onRefresh={fetchData} />;
   }
 
   const ticker = wallet.publicKey ? [
@@ -211,7 +210,7 @@ export default function PortfolioPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                   {group.evos.map(evo => (
-                    <ZCard
+                    <EvoCard
                       key={`${group.name}-${evo.id}`}
                       evo={evo}
                       onClick={() => setSelectedEvo(evo)}

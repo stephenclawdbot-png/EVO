@@ -395,7 +395,7 @@ EVO is designed to be enjoyable to build on. The target developer experience:
 ```rust
 CollectionBuilder::new()
     .name("Z")
-    .supply(10_000)
+    .supply(10_000)          // 1–20,000, immutable after creation
     .randomness(BatchReveal)
     .lifecycle(Evolving)
     .evolve_on_trade(10)
@@ -418,6 +418,8 @@ A creator should think about their collection, not about account sizes and PDA s
 - ✅ Shatter bugs fixed (direct lamport manipulation)
 - ✅ Reserve invariant enforced
 - ✅ Checked math throughout
+- ✅ Protocol-enforced max supply ceiling (20,000 per collection, immutable after creation)
+- ✅ Permissionless collection creation (unlimited collections, no authority gate)
 - ✅ Configurable lifecycle system (Static, Reveal, CommitReveal, RevealAndEvolve, Custom)
 - ✅ Configurable randomness (None, Predetermined, BatchReveal)
 - ✅ Permissionless evolution with modular triggers
@@ -442,10 +444,13 @@ A creator should think about their collection, not about account sizes and PDA s
 ### Phase 3: Beta Launch (Unaudited)
 > EVO launches as public beta. Users interact with real SOL at their own risk.
 > Upgrade authority is KEPT so bugs can be patched. Audit deferred to post-beta.
+> Permissionless from day one — anyone can create collections, unlimited.
 
 - ⬜ Initialize protocol on mainnet (conservative parameters)
-- ⬜ Create first collection on mainnet (beta)
+- ⬜ Create first collection on mainnet (beta) — Z collection, 108 EVOs
 - ⬜ Public mint opens (beta — clearly labeled as unaudited)
+- ⬜ Collection-first frontend (discover collections → open collection → forge/trade)
+- ⬜ Portfolio page (your EVOs across all collections)
 - ⬜ Monitor all forge/shatter/buy transactions closely
 - ⬜ Gather feedback from early users
 - ⬜ Fix bugs as discovered (upgrade authority kept)
@@ -505,24 +510,34 @@ These invariants define the safety guarantees the EVO protocol must always uphol
 
 14. **Buy uses checked math.** The buy instruction uses `checked_sub` for `price - royalty`. If royalty exceeds price (impossible with valid config, but defense-in-depth), the transaction fails with `MathOverflow` rather than wrapping around.
 
+### Supply Invariants
+
+15. **Supply cap is 1–20,000.** `create_collection` rejects `supply_cap < 1` (`SupplyCapTooLow`) and `supply_cap > 20,000` (`SupplyCapTooHigh`). The ceiling is `MAX_SUPPLY_CEILING = 20_000`.
+
+16. **Supply cap is immutable after creation.** No instruction modifies `supply_cap` on an existing collection. The creator's chosen cap is permanent.
+
+17. **Forge respects supply cap.** `forge` checks `current_supply < supply_cap` and rejects with `SupplyCapReached` if the cap is met. No EVO can be minted past the collection's fixed cap.
+
+18. **Collections are permissionless and unlimited.** `create_collection` has no authority gate. Anyone can create collections. The number of collections is not capped by the protocol.
+
 ### Commit-Reveal Invariants
 
-15. **Commit must precede reveal.** `reveal_collection` requires a prior `commit_reveal` with a matching hash. No reveal is possible without a committed secret.
+19. **Commit must precede reveal.** `reveal_collection` requires a prior `commit_reveal` with a matching hash. No reveal is possible without a committed secret.
 
-16. **Double commit is rejected.** Once a commit hash is submitted, no further commits are accepted.
+20. **Double commit is rejected.** Once a commit hash is submitted, no further commits are accepted.
 
-17. **Reveal uses keccak256 verification.** The revealed secret is hashed with keccak256 and compared to the committed hash. Mismatched secrets are rejected.
+21. **Reveal uses keccak256 verification.** The revealed secret is hashed with keccak256 and compared to the committed hash. Mismatched secrets are rejected.
 
 ### Balance Consistency Invariant
 
-18. **locked_lamports field matches PDA balance.** The `locked_lamports` accounting field is always backed by actual lamports in the EVO PDA. Specifically, `evo.lamports() >= rent_minimum + evo.locked_lamports` must hold after every instruction. This is verified by `verify_reserve_invariant` after forge, feed, and shatter. No instruction can modify the EVO PDA's lamport balance without correspondingly updating `locked_lamports`:
+22. **locked_lamports field matches PDA balance.** The `locked_lamports` accounting field is always backed by actual lamports in the EVO PDA. Specifically, `evo.lamports() >= rent_minimum + evo.locked_lamports` must hold after every instruction. This is verified by `verify_reserve_invariant` after forge, feed, and shatter. No instruction can modify the EVO PDA's lamport balance without correspondingly updating `locked_lamports`:
 
 - **forge:** Transfers `lock_amount` to EVO PDA, sets `locked_lamports = lock_amount` ✓
 - **feed:** Transfers feed amount to EVO PDA, increments `locked_lamports` by feed amount ✓
 - **shatter:** Sets `locked_lamports = 0` before moving lamports out, closes account to owner ✓
 - **transfer, list, delist, buy, evolve, set_visual_stage:** Do not touch EVO PDA lamports or `locked_lamports` ✓
 
-#### Justification of invariant 18 (code inspection + documented reasoning + tests)
+#### Justification of invariant 22 (code inspection + documented reasoning + tests)
 
 The invariant is a **lower bound**: `PDA_balance >= rent_minimum + locked_lamports`.
 

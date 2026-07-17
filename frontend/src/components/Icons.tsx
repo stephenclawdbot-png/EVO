@@ -141,8 +141,8 @@ export const IconLayers = ({ className }: IconProps) => (
   </svg>
 );
 
-// Custom Z brand mark — hexagonal badge with a stylized Z.
-export const IconZMark = ({ className }: IconProps) => (
+// EVO brand mark — hexagonal badge.
+export const IconEvoMark = ({ className }: IconProps) => (
   <svg className={className ?? 'h-8 w-8'} viewBox="0 0 32 32" fill="none">
     <path d="M16 2 28 9v14L16 30 4 23V9L16 2Z" fill="currentColor" opacity="0.12" />
     <path d="M16 2 28 9v14L16 30 4 23V9L16 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />

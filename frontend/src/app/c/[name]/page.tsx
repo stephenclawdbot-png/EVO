@@ -3,11 +3,10 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { useParams } from 'next/navigation';
-import { ZCard } from '@/components/ZCard';
-import { ZDetail } from '@/components/ZDetail';
+import { EvoCard } from '@/components/EvoCard';
+import { EvoDetail } from '@/components/EvoDetail';
 import { Nav } from '@/components/Nav';
-import { EVOData, CollectionData, CREATURES, evoAccountToData, collectionConfigToData } from '@/lib/evo-data';
-import { Rarity, RARITY_COLORS } from '@/lib/creatures';
+import { EVOData, CollectionData, evoAccountToData, collectionConfigToData } from '@/lib/evo-data';
 import {
   readCollectionConfig,
   readAllEVOs,
@@ -23,7 +22,6 @@ export default function CollectionPage() {
   const collectionName = decodeURIComponent(params.name);
   const { connection } = useConnection();
   const [selectedEvo, setSelectedEvo] = useState<EVOData | null>(null);
-  const [filterRarity, setFilterRarity] = useState<Rarity | 'all'>('all');
   const [filterListed, setFilterListed] = useState(false);
   const [sortBy, setSortBy] = useState<SortKey>('newest');
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,9 +30,6 @@ export default function CollectionPage() {
   const [collection, setCollection] = useState<CollectionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-
-  // Only Z collection has the CREATURES array for now
-  const creatures = collectionName === 'Z' ? CREATURES : undefined;
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -47,7 +42,7 @@ export default function CollectionPage() {
       const onChainEvos = await readAllEVOs(connection, collectionPda, cfg.supplyCap);
       const display: EVOData[] = [];
       for (const evo of onChainEvos) {
-        const d = evoAccountToData(evo, creatures, collectionName);
+        const d = evoAccountToData(evo, collectionName);
         if (d) display.push(d);
       }
       setEvos(display);
@@ -56,18 +51,17 @@ export default function CollectionPage() {
     } finally {
       setLoading(false);
     }
-  }, [connection, collectionName, creatures]);
+  }, [connection, collectionName]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const filteredEvos = useMemo(() => {
     let list = evos.filter(evo => !evo.isShattered);
-    if (filterRarity !== 'all') list = list.filter(evo => evo.creature.rarity === filterRarity);
     if (filterListed) list = list.filter(evo => evo.isListed);
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       list = list.filter(evo =>
-        evo.creature.displayName.toLowerCase().includes(q) ||
+        evo.name.toLowerCase().includes(q) ||
         String(evo.id) === q.trim()
       );
     }
@@ -81,7 +75,7 @@ export default function CollectionPage() {
       case 'price-high': list = list.filter(e => e.isListed).sort((a, b) => (b.listPrice || 0) - (a.listPrice || 0)); break;
     }
     return list;
-  }, [evos, filterRarity, filterListed, sortBy, searchQuery]);
+  }, [evos, filterListed, sortBy, searchQuery]);
 
   const stats = useMemo(() => {
     const active = evos.filter(e => !e.isShattered);
@@ -114,7 +108,7 @@ export default function CollectionPage() {
   }, [fetchData]);
 
   if (selectedEvo) {
-    return <ZDetail evo={selectedEvo} onBack={() => setSelectedEvo(null)} onRefresh={fetchData} />;
+    return <EvoDetail evo={selectedEvo} onBack={() => setSelectedEvo(null)} onRefresh={fetchData} />;
   }
 
   if (notFound && !loading) {
@@ -179,14 +173,6 @@ export default function CollectionPage() {
               />
             </div>
 
-            {creatures && (
-              <select value={filterRarity} onChange={(e) => setFilterRarity(e.target.value as Rarity | 'all')}
-                className="rounded border border-border-strong bg-surface px-2 py-1 text-[11px] text-text focus:border-accent focus:outline-none">
-                <option value="all">All rarities</option>
-                {(Object.keys(RARITY_COLORS) as Rarity[]).map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            )}
-
             <button onClick={() => setFilterListed(!filterListed)}
               className={`rounded border px-2 py-1 text-[11px] font-medium transition-colors ${
                 filterListed ? 'border-positive/40 bg-positive-soft text-positive' : 'border-border-strong bg-surface text-muted hover:text-text'
@@ -228,7 +214,7 @@ export default function CollectionPage() {
           <>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
               {filteredEvos.map(evo => (
-                <ZCard key={evo.id} evo={evo} onClick={() => setSelectedEvo(evo)} isFloor={evo.id === floorEvoId} metadataUri={collection?.metadataUri} isRevealed={collection?.isRevealed} />
+                <EvoCard key={evo.id} evo={evo} onClick={() => setSelectedEvo(evo)} isFloor={evo.id === floorEvoId} metadataUri={collection?.metadataUri} isRevealed={collection?.isRevealed} />
               ))}
             </div>
             {filteredEvos.length === 0 && (

@@ -1,4 +1,6 @@
-// Create the Z collection on mainnet
+// Create a collection on-chain — generic script for any creator.
+// Usage: npx tsx scripts/create-collection.ts
+// Edit the constants below for your collection.
 // Run: npx tsx scripts/create-collection.ts
 
 import {
@@ -18,7 +20,7 @@ import {
   createCreateCollectionIx,
 } from '../src/lib/evo-program';
 
-const COLLECTION_NAME = 'Z';
+const COLLECTION_NAME = 'MyCollection';  // CHANGE THIS to your collection name
 const SUPPLY_CAP = 108;
 const SHATTER_FEE_BPS = 500;      // 5%
 const TRADE_ROYALTY_BPS = 500;    // 5%
