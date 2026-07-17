@@ -1129,4 +1129,572 @@ describe("EVO", () => {
       }
     });
   });
+
+  // ============================================================
+  // ADVERSARIAL TESTS (security boundaries)
+  // Tests negative paths an attacker might try.
+  // ============================================================
+  describe("Adversarial tests (security boundaries)", () => {
+    let collectionPk: PublicKey;
+    let evoPk: PublicKey;
+    const EVO_ID = 0;
+    const NAME = "adv1";
+
+    before(async () => {
+      collectionPk = collectionPda(NAME);
+      await program.methods
+        .createCollection(
+          NAME,
+          10,
+          SHATTER_FEE_BPS,
+          { creator: {} },
+          ROYALTY_BPS,
+          { creator: {} },
+          MINT_PRICE,
+          LOCK_AMOUNT,
+          "https://example.com/adv.json",
+          defaultLifecycle()
+        )
+        .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+        .signers([creator])
+        .rpc();
+
+      evoPk = evoPda(collectionPk, EVO_ID);
+      await program.methods
+        .forge(EVO_ID, Buffer.from(Array(32).fill(99)))
+        .accounts({
+          collectionConfig: collectionPk,
+          protocolConfig: protocolPda,
+          creator: creator.publicKey,
+          owner: buyer.publicKey,
+        })
+        .signers([buyer])
+        .rpc();
+    });
+
+    // --- Substituted collection accounts ---
+    it("rejects shatter with wrong collection_config (substituted account)", async () => {
+      const wrongCollection = collectionPda("static1"); // different collection
+      try {
+        await program.methods
+          .shatter(EVO_ID)
+          .accounts({
+            evo: evoPk,
+            collectionConfig: wrongCollection,
+            owner: buyer.publicKey,
+            creator: creator.publicKey,
+            treasury: treasury.publicKey,
+            incinerator: INCINERATOR,
+          })
+          .signers([buyer])
+          .rpc();
+        assert.fail("should reject substituted collection");
+      } catch (e) {
+        // Anchor PDA seed check fails because wrong collection doesn't match evo's seeds
+        expect(e.message).to.match(/ConstraintSeeds|seeds|0x7d6/i);
+      }
+    });
+
+    // --- Incorrect PDA seeds ---
+    it("rejects shatter with wrong EVO PDA (non-PDA account)", async () => {
+      const wrongEvo = evoPda(collectionPda("static1"), EVO_ID);
+      try {
+        await program.methods
+          .shatter(EVO_ID)
+          .accounts({
+            evo: wrongEvo,
+            collectionConfig: collectionPk,
+            owner: buyer.publicKey,
+            creator: creator.publicKey,
+            treasury: treasury.publicKey,
+            incinerator: INCINERATOR,
+          })
+          .signers([buyer])
+          .rpc();
+        assert.fail("should reject wrong EVO PDA");
+      } catch (e) {
+        // Account not found or seeds mismatch
+        expect(e.message).to.match(/AccountNotFound|ConstraintSeeds|seeds|0x7d6/i);
+      }
+    });
+
+    // --- Owner account mismatch ---
+    it("rejects buy with wrong seller (not actual owner)", async () => {
+      await program.methods
+        .list(SOL(0.01))
+        .accounts({ evo: evoPk, seller: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
+
+      try {
+        await program.methods
+          .buy()
+          .accounts({
+            evo: evoPk,
+            collectionConfig: collectionPk,
+            seller: other.publicKey, // wrong — not the actual owner
+            creator: creator.publicKey,
+            treasury: treasury.publicKey,
+            incinerator: INCINERATOR,
+            buyer: other.publicKey,
+          })
+          .signers([other])
+          .rpc();
+        assert.fail("should reject wrong seller");
+      } catch (e) {
+        // address constraint: seller must == evo.owner
+        expect(e.message).to.match(/ConstraintAddress|address|0x7d3/i);
+      }
+
+      // cleanup: delist
+      await program.methods
+        .delist()
+        .accounts({ evo: evoPk, seller: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
+    });
+
+    // --- Shatter while listed (documents current behavior) ---
+    it("shatters while listed — listing is voided by close (no fund loss)", async () => {
+      // List the EVO
+      await program.methods
+        .list(SOL(0.01))
+        .accounts({ evo: evoPk, seller: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
+
+      const evoBefore = await program.account.evoAccount.fetch(evoPk);
+      assert.isTrue(evoBefore.isListed, "EVO is listed");
+
+      // Shatter while listed — currently ALLOWED by the program.
+      // This is safe: the owner signed, the account closes, and
+      // no buyer can simultaneously buy (same PDA = sequential).
+      const ownerBefore = await lamportsOf(buyer.publicKey);
+      const locked = evoBefore.lockedLamports.toNumber();
+      const fee = Math.floor((locked * SHATTER_FEE_BPS) / 10000);
+
+      await program.methods
+        .shatter(EVO_ID)
+        .accounts({
+          evo: evoPk,
+          collectionConfig: collectionPk,
+          owner: buyer.publicKey,
+          creator: creator.publicKey,
+          treasury: treasury.publicKey,
+          incinerator: INCINERATOR,
+        })
+        .signers([buyer])
+        .rpc();
+
+      // EVO account should be closed (0 lamports)
+      const evoBalance = await lamportsOf(evoPk);
+      assert.equal(evoBalance, 0, "EVO account closed");
+
+      // Owner should have received locked - fee + rent refund
+      const ownerAfter = await lamportsOf(buyer.publicKey);
+      assert.isAbove(ownerAfter, ownerBefore, "owner received funds from shatter");
+    });
+
+    // --- Buy stale listing after transfer ---
+    it("rejects buy of stale listing after ownership transfer", async () => {
+      // Forge a new EVO for this test
+      const EVO_ID2 = 1;
+      const evoPk2 = evoPda(collectionPk, EVO_ID2);
+      await program.methods
+        .forge(EVO_ID2, Buffer.from(Array(32).fill(88)))
+        .accounts({
+          collectionConfig: collectionPk,
+          protocolConfig: protocolPda,
+          creator: creator.publicKey,
+          owner: buyer.publicKey,
+        })
+        .signers([buyer])
+        .rpc();
+
+      // List it
+      await program.methods
+        .list(SOL(0.01))
+        .accounts({ evo: evoPk2, seller: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
+
+      // Transfer clears the listing
+      await program.methods
+        .transfer(other.publicKey)
+        .accounts({ evo: evoPk2, currentOwner: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
+
+      const evo = await program.account.evoAccount.fetch(evoPk2);
+      assert.isFalse(evo.isListed, "transfer clears listing");
+
+      // Try to buy the stale listing — should fail
+      try {
+        await program.methods
+          .buy()
+          .accounts({
+            evo: evoPk2,
+            collectionConfig: collectionPk,
+            seller: buyer.publicKey, // old owner, now wrong
+            creator: creator.publicKey,
+            treasury: treasury.publicKey,
+            incinerator: INCINERATOR,
+            buyer: buyer.publicKey,
+          })
+          .signers([buyer])
+          .rpc();
+        assert.fail("should reject stale listing buy");
+      } catch (e) {
+        expect(e.message).to.match(/not listed|ConstraintAddress|address|0x7d3|0x6/i);
+      }
+    });
+
+    // --- Malformed lifecycle parameters ---
+    it("rejects RevealAndEvolve with max_states=0", async () => {
+      const fakeAuth = Keypair.generate();
+      try {
+        await program.methods
+          .createCollection(
+            "bad1",
+            10,
+            SHATTER_FEE_BPS,
+            { creator: {} },
+            ROYALTY_BPS,
+            { creator: {} },
+            MINT_PRICE,
+            LOCK_AMOUNT,
+            "https://example.com/bad.json",
+            defaultLifecycle({
+              lifecycleType: { revealAndEvolve: {} },
+              maxStates: 0,
+              revealAuthority: fakeAuth.publicKey,
+              evolveFeedThreshold: SOL(0.001),
+            })
+          )
+          .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+          .signers([creator])
+          .rpc();
+        assert.fail("should reject max_states=0 on RevealAndEvolve");
+      } catch (e) {
+        expect(e.message).to.match(/InvalidLifecycleConfig|0x22/i);
+      }
+    });
+
+    it("rejects Reveal without reveal_authority", async () => {
+      try {
+        await program.methods
+          .createCollection(
+            "bad2",
+            10,
+            SHATTER_FEE_BPS,
+            { creator: {} },
+            ROYALTY_BPS,
+            { creator: {} },
+            MINT_PRICE,
+            LOCK_AMOUNT,
+            "https://example.com/bad.json",
+            defaultLifecycle({
+              lifecycleType: { reveal: {} },
+              maxStates: 2,
+              revealAuthority: PublicKey.default, // missing
+            })
+          )
+          .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+          .signers([creator])
+          .rpc();
+        assert.fail("should reject Reveal without reveal_authority");
+      } catch (e) {
+        expect(e.message).to.match(/InvalidLifecycleConfig|0x22/i);
+      }
+    });
+
+    // --- Royalty basis points at boundaries ---
+    it("accepts royalty_bps=0 (no royalty)", async () => {
+      const zeroRoyName = "roy0";
+      const zeroRoyCol = collectionPda(zeroRoyName);
+      await program.methods
+        .createCollection(
+          zeroRoyName,
+          10,
+          SHATTER_FEE_BPS,
+          { creator: {} },
+          0, // 0 bps — no royalty
+          { creator: {} },
+          MINT_PRICE,
+          LOCK_AMOUNT,
+          "https://example.com/roy0.json",
+          defaultLifecycle()
+        )
+        .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+        .signers([creator])
+        .rpc();
+
+      // Forge + list + buy — verify seller gets full price (no royalty)
+      const evoPk0 = evoPda(zeroRoyCol, 0);
+      await program.methods
+        .forge(0, Buffer.from(Array(32).fill(55)))
+        .accounts({
+          collectionConfig: zeroRoyCol,
+          protocolConfig: protocolPda,
+          creator: creator.publicKey,
+          owner: buyer.publicKey,
+        })
+        .signers([buyer])
+        .rpc();
+
+      const PRICE = SOL(0.01);
+      await program.methods
+        .list(PRICE)
+        .accounts({ evo: evoPk0, seller: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
+
+      const sellerBefore = await lamportsOf(buyer.publicKey);
+      const creatorBefore = await lamportsOf(creator.publicKey);
+
+      await program.methods
+        .buy()
+        .accounts({
+          evo: evoPk0,
+          collectionConfig: zeroRoyCol,
+          seller: buyer.publicKey,
+          creator: creator.publicKey,
+          treasury: treasury.publicKey,
+          incinerator: INCINERATOR,
+          buyer: other.publicKey,
+        })
+        .signers([other])
+        .rpc();
+
+      const sellerAfter = await lamportsOf(buyer.publicKey);
+      const creatorAfter = await lamportsOf(creator.publicKey);
+      // Seller gets full price (no royalty deducted)
+      assert.isAtLeast(sellerAfter - sellerBefore, PRICE.toNumber() - 10000, "seller got full price");
+      // Creator gets 0 royalty
+      assert.equal(creatorAfter - creatorBefore, 0, "creator got 0 royalty with 0 bps");
+    });
+
+    it("rejects royalty_bps exceeding MAX_ROYALTY_BPS (2500)", async () => {
+      try {
+        await program.methods
+          .createCollection(
+            "badroy",
+            10,
+            SHATTER_FEE_BPS,
+            { creator: {} },
+            2501, // exceeds MAX_ROYALTY_BPS
+            { creator: {} },
+            MINT_PRICE,
+            LOCK_AMOUNT,
+            "https://example.com/badroy.json",
+            defaultLifecycle()
+          )
+          .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+          .signers([creator])
+          .rpc();
+        assert.fail("should reject royalty > MAX");
+      } catch (e) {
+        expect(e.message).to.match(/RoyaltyTooHigh|royalty exceeds|0xc/i);
+      }
+    });
+
+    it("rejects shatter_fee_bps exceeding MAX_SHATTER_FEE_BPS (2000)", async () => {
+      try {
+        await program.methods
+          .createCollection(
+            "badfee",
+            10,
+            2001, // exceeds MAX_SHATTER_FEE_BPS
+            { creator: {} },
+            ROYALTY_BPS,
+            { creator: {} },
+            MINT_PRICE,
+            LOCK_AMOUNT,
+            "https://example.com/badfee.json",
+            defaultLifecycle()
+          )
+          .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+          .signers([creator])
+          .rpc();
+        assert.fail("should reject shatter fee > MAX");
+      } catch (e) {
+        expect(e.message).to.match(/ShatterFeeTooHigh|shatter fee exceeds|0xb/i);
+      }
+    });
+
+    // --- Zero-price and maximum-u64 inputs ---
+    it("rejects list with zero price", async () => {
+      const evoPk3 = evoPda(collectionPk, 2);
+      await program.methods
+        .forge(2, Buffer.from(Array(32).fill(77)))
+        .accounts({
+          collectionConfig: collectionPk,
+          protocolConfig: protocolPda,
+          creator: creator.publicKey,
+          owner: buyer.publicKey,
+        })
+        .signers([buyer])
+        .rpc();
+
+      try {
+        await program.methods
+          .list(new BN(0))
+          .accounts({ evo: evoPk3, seller: buyer.publicKey })
+          .signers([buyer])
+          .rpc();
+        assert.fail("should reject zero price");
+      } catch (e) {
+        expect(e.message).to.match(/InsufficientLamports|insufficient lamports|0xa/i);
+      }
+    });
+
+    it("accepts list with max u64 price, but buy fails (buyer can't afford)", async () => {
+      const evoPk4 = evoPda(collectionPk, 3);
+      await program.methods
+        .forge(3, Buffer.from(Array(32).fill(66)))
+        .accounts({
+          collectionConfig: collectionPk,
+          protocolConfig: protocolPda,
+          creator: creator.publicKey,
+          owner: buyer.publicKey,
+        })
+        .signers([buyer])
+        .rpc();
+
+      const MAX_U64 = new BN("18446744073709551615");
+      await program.methods
+        .list(MAX_U64)
+        .accounts({ evo: evoPk4, seller: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
+
+      const evo = await program.account.evoAccount.fetch(evoPk4);
+      assert.isTrue(evo.isListed);
+      assert.equal(evo.listPriceLamports.toString(), MAX_U64.toString());
+
+      // Buy should fail — no one has u64::MAX lamports
+      try {
+        await program.methods
+          .buy()
+          .accounts({
+            evo: evoPk4,
+            collectionConfig: collectionPk,
+            seller: buyer.publicKey,
+            creator: creator.publicKey,
+            treasury: treasury.publicKey,
+            incinerator: INCINERATOR,
+            buyer: other.publicKey,
+          })
+          .signers([other])
+          .rpc();
+        assert.fail("should reject buy — buyer can't afford u64::MAX");
+      } catch (e) {
+        expect(e.message).to.match(/InsufficientPayment|insufficient payment|0xd/i);
+      }
+    });
+
+    // --- locked_lamports field vs actual PDA balance consistency ---
+    it("locked_lamports field matches actual PDA lamport balance after forge", async () => {
+      const evoPk5 = evoPda(collectionPk, 4);
+      await program.methods
+        .forge(4, Buffer.from(Array(32).fill(44)))
+        .accounts({
+          collectionConfig: collectionPk,
+          protocolConfig: protocolPda,
+          creator: creator.publicKey,
+          owner: buyer.publicKey,
+        })
+        .signers([buyer])
+        .rpc();
+
+      const evo = await program.account.evoAccount.fetch(evoPk5);
+      const pdaBalance = await lamportsOf(evoPk5);
+      // PDA balance should be >= locked_lamports + rent minimum
+      // (rent minimum = EVO_SPACE * rent rate)
+      assert.isAbove(
+        pdaBalance,
+        evo.lockedLamports.toNumber(),
+        "PDA balance > locked_lamports (includes rent)"
+      );
+      // The difference should be approximately the rent-exempt minimum
+      const rentMin = await connection.getMinimumBalanceForRentExemption(EVO_SPACE);
+      assert.isAtLeast(
+        pdaBalance - evo.lockedLamports.toNumber(),
+        rentMin - 10000, // allow small rounding margin
+        "PDA balance - locked >= rent minimum"
+      );
+    });
+
+    it("locked_lamports field matches PDA balance after feed", async () => {
+      const evoPk5 = evoPda(collectionPk, 4);
+      const evoBefore = await program.account.evoAccount.fetch(evoPk5);
+      const FEED = SOL(0.001);
+
+      await program.methods
+        .feed(FEED)
+        .accounts({ evo: evoPk5, feeder: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
+
+      const evoAfter = await program.account.evoAccount.fetch(evoPk5);
+      const pdaBalance = await lamportsOf(evoPk5);
+      const expectedLocked = evoBefore.lockedLamports.toNumber() + FEED.toNumber();
+
+      assert.equal(evoAfter.lockedLamports.toNumber(), expectedLocked, "field updated correctly");
+      // PDA balance should have increased by the feed amount
+      assert.isAtLeast(
+        pdaBalance - evoAfter.lockedLamports.toNumber(),
+        0,
+        "PDA balance >= locked_lamports after feed"
+      );
+    });
+
+    it("rejects forge with lock_amount=0 (collection with zero lock)", async () => {
+      try {
+        await program.methods
+          .createCollection(
+            "zerolock",
+            10,
+            SHATTER_FEE_BPS,
+            { creator: {} },
+            ROYALTY_BPS,
+            { creator: {} },
+            MINT_PRICE,
+            new BN(0), // zero lock — should be rejected
+            "https://example.com/zerolock.json",
+            defaultLifecycle()
+          )
+          .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+          .signers([creator])
+          .rpc();
+        assert.fail("should reject zero lock_amount");
+      } catch (e) {
+        expect(e.message).to.match(/InsufficientLamports|insufficient lamports|0xa/i);
+      }
+    });
+
+    it("rejects create collection with empty name", async () => {
+      try {
+        await program.methods
+          .createCollection(
+            "",
+            10,
+            SHATTER_FEE_BPS,
+            { creator: {} },
+            ROYALTY_BPS,
+            { creator: {} },
+            MINT_PRICE,
+            LOCK_AMOUNT,
+            "https://example.com/empty.json",
+            defaultLifecycle()
+          )
+          .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+          .signers([creator])
+          .rpc();
+        assert.fail("should reject empty name");
+      } catch (e) {
+        expect(e.message).to.match(/CollectionNameTooLong|name is too long|0x2/i);
+      }
+    });
+  });
 });

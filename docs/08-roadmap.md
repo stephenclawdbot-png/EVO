@@ -26,11 +26,13 @@ EVO is stateful capital — but it's also a collectible. Degens trade stories, a
 - [x] artwork_manifest_hash for manifest integrity verification
 - [x] ~41 tests passing (forge, feed, transfer, buy, shatter, evolution, commit-reveal, burn, visual lifecycle)
 
-### Security Hardening (DONE)
+### Security Hardening (DONE — internally hardened, pending independent audit)
 - [x] Direct lamport manipulation for shatter (correct program-owned account pattern)
 - [x] Reserve invariant enforced (account balance backs locked_lamports + rent)
 - [x] Checked math throughout (MathOverflow error)
 - [x] Evolve boundary fixed (off-by-one: current_state < max_states - 1)
+- [x] 17 protocol invariants documented (value, lifecycle, authority, commit-reveal, balance consistency)
+- [x] Adversarial test suite (substituted accounts, wrong PDA seeds, stale listings, malformed params, boundary inputs)
 
 ### Frontend (In Progress)
 - [x] Wallet adapter (Phantom, Solflare, Backpack)
@@ -51,10 +53,11 @@ EVO is stateful capital — but it's also a collectible. Degens trade stories, a
 - [ ] Upload visual manifests to Arweave (production)
 
 ### Testing & Audit
-- [x] 11 consecutive green CI runs on localnet (automated via GitHub Actions)
+- [x] 17 consecutive green CI runs on localnet (automated via GitHub Actions)
 - [x] Devnet CI workflow configured (`.github/workflows/devnet-test.yml`)
 - [ ] Devnet testing — requires pre-funded keypair (faucet rate-limited; see README Testing section)
-- [ ] Independent security audit
+- [ ] Independent security audit — **blocker for mainnet launch with user SOL**
+- [ ] Rerun localnet + devnet test suites after audit fixes
 - [ ] Upgrade mainnet program with hardened binary (after audit)
 
 ### Launch

@@ -363,9 +363,9 @@ The creator cannot try multiple secrets to find a favorable assignment — the c
 ### 6.6 Upgrade Authority
 
 The program remains upgradeable during development. Upgrade authority will be revoked only after:
-1. All invariant tests pass
-2. Independent security review is complete
-3. Protocol design is finalized
+1. All invariant and adversarial tests pass
+2. Independent security audit is complete and findings are resolved
+3. Protocol is stable for months on mainnet with real SOL flows
 
 ---
 
@@ -436,19 +436,19 @@ A creator should think about their collection, not about account sizes and PDA s
 - ⬜ Frontend marketplace integration
 - ⬜ Documentation and tutorials
 
-### Phase 3: Launch
-- ⬜ Upgrade mainnet program with hardened binary
-- ⬜ Initialize protocol (creation fee = 0.05 SOL)
-- ⬜ Create Z collection on mainnet
-- ⬜ Deploy frontend to Vercel
-- ⬜ Public launch with "hello world" collection tutorial
-- ⬜ Observe protocol for several months (do NOT revoke authority yet)
-
-### Phase 4: Maturity
-- ⬜ On-chain VRF verification (Switchboard/ORAO adapter)
-- ⬜ Multisig upgrade authority
+### Phase 3: Audit & Pre-Mainnet
 - ⬜ Engage independent Solana security firm for formal audit
 - ⬜ Apply audit fixes if needed
+- ⬜ Rerun localnet and devnet test suites after fixes
+- ⬜ Upgrade mainnet program with hardened binary
+- ⬜ Initialize protocol (creation fee = 0.05 SOL)
+- ⬜ Create first collection on mainnet (limited launch)
+
+### Phase 4: Observe & Mature
+- ⬜ Monitor protocol for several months (do NOT revoke authority yet)
+- ⬜ Second security review if necessary
+- ⬜ On-chain VRF verification (Switchboard/ORAO adapter)
+- ⬜ Multisig upgrade authority
 - ⬜ Revoke upgrade authority only after audit passes and protocol is stable for months
 - ⬜ Ecosystem grants for third-party collections
 
@@ -500,19 +500,30 @@ These invariants define the safety guarantees the EVO protocol must always uphol
 
 17. **Reveal uses keccak256 verification.** The revealed secret is hashed with keccak256 and compared to the committed hash. Mismatched secrets are rejected.
 
+### Balance Consistency Invariant
+
+18. **locked_lamports field matches PDA balance.** The `locked_lamports` accounting field is always backed by actual lamports in the EVO PDA. Specifically, `evo.lamports() >= rent_minimum + evo.locked_lamports` must hold after every instruction. This is verified by `verify_reserve_invariant` after forge, feed, and shatter. No instruction can modify the EVO PDA's lamport balance without correspondingly updating `locked_lamports`:
+
+- **forge:** Transfers `lock_amount` to EVO PDA, sets `locked_lamports = lock_amount` ✓
+- **feed:** Transfers feed amount to EVO PDA, increments `locked_lamports` by feed amount ✓
+- **shatter:** Sets `locked_lamports = 0` before moving lamports out, closes account to owner ✓
+- **transfer, list, delist, buy, evolve, set_visual_stage:** Do not touch EVO PDA lamports or `locked_lamports` ✓
+
 ---
 
 ## Mainnet Launch Strategy
 
-> **Do NOT revoke upgrade authority immediately after launch.**
+> **Audit must happen BEFORE user SOL enters the protocol.**
 
-Crypto history is full of protocols that wished they had more time before becoming immutable. The recommended sequence is:
+Because EVO directly stores and redeems SOL, an independent security audit is the blocker for mainnet. The recommended sequence is:
 
-1. **Launch** — Deploy, initialize, create first collection
-2. **Observe** — Monitor protocol for several months. Track SOL flows, edge cases, user behavior
-3. **Audit** — Engage an independent Solana security firm for formal review
-4. **Fix** — Apply any audit findings via program upgrade
-5. **Revoke** — Only after audit passes and protocol is stable for months, revoke upgrade authority
+1. **Audit** — Engage an independent Solana security firm for formal review
+2. **Fix** — Apply any audit findings via program upgrade
+3. **Rerun** — Rerun localnet and devnet test suites to verify fixes
+4. **Launch** — Deploy to mainnet with limited initial collection
+5. **Observe** — Monitor protocol for several months. Track SOL flows, edge cases, user behavior
+6. **Review** — Second security review if necessary
+7. **Revoke** — Only after audit passes and protocol is stable for months, revoke upgrade authority
 
 Upgrade authority revocation is permanent. It should be the last step, not the first.
 
