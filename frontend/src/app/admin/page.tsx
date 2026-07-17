@@ -150,21 +150,29 @@ function AdminContent() {
       <Nav ticker={ticker} />
 
       <div className="border-b border-border">
-        <Link href="/" className="mx-auto flex max-w-2xl items-center gap-1.5 px-3 py-2 text-xs text-muted transition-colors hover:text-text">
+        <Link href="/my" className="mx-auto flex max-w-2xl items-center gap-1.5 px-3 py-2 text-xs text-muted transition-colors hover:text-text">
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg>
-          Gallery
+          My Collections
         </Link>
       </div>
 
       <div className="mx-auto max-w-2xl px-3 py-6 lg:px-4">
-        <h1 className="text-xl font-bold tracking-tight text-text-strong">Collection Admin</h1>
-        <p className="mt-1 text-xs text-muted">Protocol-level visual lifecycle controls. All actions are on-chain.</p>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-text-strong">Manage Collection</h1>
+            <p className="mt-1 text-xs text-muted">On-chain settings & lifecycle for <span className="text-text">{COLLECTION_NAME}</span>.</p>
+          </div>
+          <Link href={`/c/${encodeURIComponent(COLLECTION_NAME)}`}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded border border-border-strong bg-surface px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:border-accent hover:text-text-strong">
+            View <IconExternalLink className="h-3 w-3" />
+          </Link>
+        </div>
 
         {!COLLECTION_NAME ? (
           <div className="mt-10 text-center">
-            <p className="text-xs text-muted">Specify a collection via the URL: <code className="text-accent">/admin?collection=NAME</code></p>
-            <Link href="/" className="mt-4 inline-flex items-center gap-2 text-xs text-accent hover:underline">
-              All collections
+            <p className="text-xs text-muted">No collection selected. Open one from <Link href="/my" className="text-accent hover:underline">My Collections</Link>.</p>
+            <Link href="/my" className="mt-4 inline-flex items-center gap-2 text-xs text-accent hover:underline">
+              My Collections
             </Link>
           </div>
         ) : loading ? (
@@ -184,6 +192,31 @@ function AdminContent() {
           </div>
         ) : (
           <>
+            {/* Collection overview */}
+            <div className="mt-5 rounded-lg border border-border bg-surface p-4">
+              <p className="text-[10px] uppercase tracking-wide text-dim">Collection Overview</p>
+              <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-3">
+                <Overview label="Supply" value={`${collection.currentSupply}/${collection.supplyCap}`} />
+                <Overview label="Mint Price" value={`${collection.mintPriceSol} SOL`} />
+                <Overview label="Locked / EVO" value={`${collection.lockAmountSol} SOL`} />
+                <Overview label="Shatter Fee" value={`${collection.shatterFeeBps / 100}% → ${collection.shatterFeeDestination}`} />
+                <Overview label="Trade Royalty" value={`${collection.tradeRoyaltyBps / 100}% → ${collection.royaltyDestination}`} />
+                <Overview label="Creator" value={`${collection.creator.slice(0, 6)}…${collection.creator.slice(-4)}`} />
+              </div>
+              {collection.metadataUri && (
+                <div className="mt-3 border-t border-border pt-2.5 text-[11px] text-dim break-all">
+                  <span className="font-semibold text-muted">Metadata URI:</span>{' '}
+                  <a href={collection.metadataUri} target="_blank" rel="noreferrer" className="text-accent hover:underline">{collection.metadataUri}</a>
+                </div>
+              )}
+              {collection.artworkManifestHash && collection.artworkManifestHash.some(b => b !== 0) && (
+                <div className="mt-1.5 text-[11px] text-dim break-all">
+                  <span className="font-semibold text-muted">Artwork Manifest:</span>{' '}
+                  <span className="font-mono">{Buffer.from(collection.artworkManifestHash).toString('hex').slice(0, 16)}…</span>
+                </div>
+              )}
+            </div>
+
             <div className="mt-5 rounded border border-border bg-surface p-4">
               <p className="text-[10px] uppercase tracking-wide text-dim">On-Chain Lifecycle</p>
               <div className="mt-2 space-y-2">
@@ -293,6 +326,15 @@ function AdminContent() {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function Overview({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-wide text-dim">{label}</p>
+      <p className="mt-0.5 font-mono text-xs font-medium text-text">{value}</p>
     </div>
   );
 }

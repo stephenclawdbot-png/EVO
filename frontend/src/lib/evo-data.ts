@@ -50,6 +50,8 @@ export interface CollectionData {
   maxStates: number;
   isRevealed: boolean;
   artworkManifestHash: Uint8Array;
+  shatterFeeDestination: string;
+  royaltyDestination: string;
 }
 
 // Map an on-chain EVOAccount to display EVOData
@@ -121,6 +123,8 @@ export function collectionConfigToData(cfg: CollectionConfig): CollectionData {
     maxStates: cfg.maxStates,
     isRevealed: cfg.isRevealed,
     artworkManifestHash: cfg.artworkManifestHash,
+    shatterFeeDestination: cfg.shatterFeeDestination,
+    royaltyDestination: cfg.royaltyDestination,
   };
 }
 

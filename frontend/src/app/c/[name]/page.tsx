@@ -162,6 +162,11 @@ export default function CollectionPage() {
               <IconHammer className="h-3.5 w-3.5" /> Forge
             </Link>
 
+            <Link href={`/admin?collection=${encodeURIComponent(collectionName)}`} className="inline-flex items-center gap-1.5 rounded border border-border-strong bg-surface px-3 py-1 text-xs font-semibold text-text transition-colors hover:border-accent hover:text-text-strong">
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+              Manage
+            </Link>
+
             <div className="relative">
               <IconSearch className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-dim" />
               <input

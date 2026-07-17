@@ -174,13 +174,12 @@ export default function Home() {
             </div>
             <h3 className="text-sm font-semibold">No collections yet</h3>
             <p className="mx-auto mt-1 max-w-xs text-xs text-muted">
-              EVO is permissionless. Anyone can create a collection by calling
-              <code className="font-mono text-accent"> create_collection</code> on-chain.
+              EVO is permissionless. Create the first collection from the website — no SDK required.
             </p>
-            <a href="https://github.com/stephenclawdbot-png/EVO" target="_blank" rel="noopener noreferrer"
-              className="mt-5 inline-flex items-center gap-2 rounded border border-border-strong px-5 py-2 text-sm font-semibold text-text transition-colors hover:bg-surface-2">
-              Protocol docs <IconArrowRight className="h-3.5 w-3.5" />
-            </a>
+            <Link href="/create"
+              className="mt-5 inline-flex items-center gap-2 rounded border border-accent bg-accent px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-accent-hover">
+              <IconHammer className="h-4 w-4" /> Create Collection
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

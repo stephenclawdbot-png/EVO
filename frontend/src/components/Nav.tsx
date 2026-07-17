@@ -1,8 +1,11 @@
 'use client';
 
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { ThemeToggle } from './ThemeToggle';
+import { readAllCollections } from '@/lib/evo-program';
 import { IconEvoMark, IconHammer, IconCollection, IconPortfolio } from './Icons';
 
 interface TickerStat { label: string; value: string; tone?: 'pos' | 'neg' | 'neutral' }
@@ -13,6 +16,24 @@ interface NavProps {
 }
 
 export function Nav({ onRefresh, ticker = [] }: NavProps) {
+  const { connection } = useConnection();
+  const wallet = useWallet();
+  const [hasCollections, setHasCollections] = useState(false);
+
+  const checkCollections = useCallback(async () => {
+    if (!wallet.publicKey) { setHasCollections(false); return; }
+    try {
+      const all = await readAllCollections(connection);
+      setHasCollections(all.some(d => d.config.creator.equals(wallet.publicKey!)));
+    } catch {
+      setHasCollections(false);
+    }
+  }, [connection, wallet.publicKey]);
+
+  useEffect(() => { checkCollections(); }, [checkCollections]);
+
+  const connected = wallet.connected && !!wallet.publicKey;
+
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-bg">
       {/* Main bar */}
@@ -23,28 +44,47 @@ export function Nav({ onRefresh, ticker = [] }: NavProps) {
             <span className="text-sm font-semibold tracking-tight text-text-strong">EVO</span>
             <span className="hidden text-[10px] uppercase tracking-[0.15em] text-dim md:inline">Terminal</span>
           </Link>
-          <Link
-            href="/portfolio"
-            className="hidden h-7 items-center gap-1.5 rounded border border-border-strong bg-surface px-3 text-xs font-semibold text-text transition-colors hover:border-accent hover:text-text-strong sm:inline-flex"
-          >
-            <IconPortfolio className="h-3.5 w-3.5" />
-            Portfolio
-          </Link>
+          {connected && (
+            <Link
+              href="/portfolio"
+              className="hidden h-7 items-center gap-1.5 rounded border border-border-strong bg-surface px-3 text-xs font-semibold text-text transition-colors hover:border-accent hover:text-text-strong sm:inline-flex"
+            >
+              <IconPortfolio className="h-3.5 w-3.5" />
+              Portfolio
+            </Link>
+          )}
+          {connected && hasCollections && (
+            <Link
+              href="/my"
+              className="hidden h-7 items-center gap-1.5 rounded border border-border-strong bg-surface px-3 text-xs font-semibold text-text transition-colors hover:border-accent hover:text-text-strong sm:inline-flex"
+            >
+              <IconCollection className="h-3.5 w-3.5" />
+              My Collections
+            </Link>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/portfolio"
-            className="inline-flex h-7 items-center gap-1.5 rounded border border-border-strong bg-surface px-3 text-xs font-semibold text-text transition-colors hover:border-accent hover:text-text-strong sm:hidden"
-          >
-            <IconPortfolio className="h-3.5 w-3.5" />
-          </Link>
-          <Link
-            href="/admin"
-            className="inline-flex h-7 items-center rounded border border-border-strong bg-surface px-3 text-xs font-semibold text-text transition-colors hover:border-accent hover:text-text-strong"
-          >
-            Admin
-          </Link>
+          {connected && (
+            <>
+              {hasCollections && (
+                <Link
+                  href="/my"
+                  className="inline-flex h-7 items-center gap-1.5 rounded border border-border-strong bg-surface px-3 text-xs font-semibold text-text transition-colors hover:border-accent hover:text-text-strong sm:hidden"
+                >
+                  <IconCollection className="h-3.5 w-3.5" />
+                </Link>
+              )}
+              <Link
+                href="/create"
+                className="inline-flex h-7 items-center gap-1.5 rounded border border-accent bg-accent px-3 text-xs font-bold text-white transition-colors hover:bg-accent-hover"
+              >
+                <IconHammer className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Create Collection</span>
+                <span className="sm:hidden">Create</span>
+              </Link>
+            </>
+          )}
           {onRefresh && (
             <button
               onClick={onRefresh}

@@ -674,6 +674,27 @@ export async function readProtocolConfig(conn: Connection): Promise<ProtocolConf
   return parseProtocolConfig(acc.data);
 }
 
+export function createInitializeProtocolIx(
+  payer: PublicKey,
+  treasury: PublicKey,
+  creationFeeLamports: number,
+): TransactionInstruction {
+  const data = Buffer.concat([
+    DISC.initializeProtocol,
+    writePubkey(treasury),
+    writeU64(creationFeeLamports),
+  ]);
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys: [
+      { pubkey: PROTOCOL_PDA, isSigner: false, isWritable: true },
+      { pubkey: payer, isSigner: true, isWritable: true },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data,
+  });
+}
+
 export async function readCollectionConfig(conn: Connection, name: string): Promise<CollectionConfig | null> {
   const [pda] = getCollectionPDA(name);
   const acc = await conn.getAccountInfo(pda);
