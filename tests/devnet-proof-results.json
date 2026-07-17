@@ -1,0 +1,255 @@
+[
+  {
+    "step": "Fund buyer + reveal authority",
+    "expected": "true",
+    "actual": "true",
+    "pass": true,
+    "txSig": "qvAw8V61majG1v5wNzHoFW4mMqJCJP7KKuTDCk3v48Ff86ELxSmEa9NwjBuGvisy1KoGps9aPHQX3hWPSkgPgVr",
+    "buyerBalance": "0.050000",
+    "revealAuthBalance": "0.010000"
+  },
+  {
+    "step": "Initialize protocol",
+    "expected": "already exists",
+    "actual": "already exists",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "Create collection - name",
+    "expected": "devproof2",
+    "actual": "devproof2",
+    "pass": true,
+    "txSig": "5GnE7wQMqnSxEEyPHSBwEwbQVoRWb4QgvCaCD5ee1TyLi3MFBMEDnFwBu1g1dQvoRoapv2zgwRXdsyafAcQPRMc"
+  },
+  {
+    "step": "Create collection - supply cap",
+    "expected": "5",
+    "actual": "5",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "Create collection - creator",
+    "expected": "G3aWJsdtrRT12HnC9R2BVoyErQbtGXseaM9c2xt1MJUJ",
+    "actual": "G3aWJsdtrRT12HnC9R2BVoyErQbtGXseaM9c2xt1MJUJ",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "Create collection - lifecycle type",
+    "expected": "revealAndEvolve",
+    "actual": "revealAndEvolve",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "Create collection - max states",
+    "expected": "2",
+    "actual": "2",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "Create collection - manifest hash",
+    "expected": "89b0813f32fdfa62e59c03ba76b13a2a00821115baf1c0b2361389d76f6e00c1",
+    "actual": "89b0813f32fdfa62e59c03ba76b13a2a00821115baf1c0b2361389d76f6e00c1",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "Create collection - metadata URI",
+    "expected": "https://raw.githubusercontent.com/stephenclawdbot-png/EVO/main/tests/devnet-assets/manifest.json",
+    "actual": "https://raw.githubusercontent.com/stephenclawdbot-png/EVO/main/tests/devnet-assets/manifest.json",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "Commit reveal - commitment stored",
+    "expected": "ef245ae6333b836ac00e136bfdd8d45330fa927be42dc08949fa5589019f8ec3",
+    "actual": "ef245ae6333b836ac00e136bfdd8d45330fa927be42dc08949fa5589019f8ec3",
+    "pass": true,
+    "txSig": "3ntJcQDqvyFDhtENvfHZJEKxNQmxTiZnNhavFmn1mswDKfSSM7ctVoSBbBZVvdnHr5v5nSQkRBXwY93pp45ktSYL"
+  },
+  {
+    "step": "Forge EVO #0",
+    "expected": "success",
+    "actual": "success",
+    "pass": true,
+    "txSig": "5QMvP5PNcVszxnyfjaQdB3NyaS9VwHYSAwMnfshaVpnc2Yz9ARa6uPguXUacvw1P3EwNBJExtyP96sW6Q763tG8a"
+  },
+  {
+    "step": "Forge EVO #1",
+    "expected": "success",
+    "actual": "success",
+    "pass": true,
+    "txSig": "2jfbaGtESwrtB4Bb44dwToMMK24vNgNmXciJG7ywCxmc46oDxaxczR81ynp7v6ihYYcaPdrYbZeURAHXhwsSDQWE"
+  },
+  {
+    "step": "EVO #0 owner",
+    "expected": "2q3PxvozimqbmgRyQVQwnhAFXPWDFyXYKsYzk3afLsPW",
+    "actual": "2q3PxvozimqbmgRyQVQwnhAFXPWDFyXYKsYzk3afLsPW",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "EVO #0 locked lamports",
+    "expected": "1000000",
+    "actual": "1000000",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "EVO #0 current state",
+    "expected": "0",
+    "actual": "0",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "EVO #0 is shattered",
+    "expected": "false",
+    "actual": "false",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "EVO #1 owner",
+    "expected": "2q3PxvozimqbmgRyQVQwnhAFXPWDFyXYKsYzk3afLsPW",
+    "actual": "2q3PxvozimqbmgRyQVQwnhAFXPWDFyXYKsYzk3afLsPW",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "EVO #1 locked lamports",
+    "expected": "1000000",
+    "actual": "1000000",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "EVO #1 current state",
+    "expected": "0",
+    "actual": "0",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "Reveal collection - is revealed",
+    "expected": "true",
+    "actual": "true",
+    "pass": true,
+    "txSig": "5kXmq8gsAZSNvJPY58nHLJ65E6Vnp1B1KTP7cQPvpbrUkSNE7ajV7BWrfcAeUfJ5jpWtG4q3Yo5MxFx836Sa3f2w"
+  },
+  {
+    "step": "Reveal collection - entropy matches keccak256(secret)",
+    "expected": "ef245ae6333b836ac00e136bfdd8d45330fa927be42dc08949fa5589019f8ec3",
+    "actual": "ef245ae6333b836ac00e136bfdd8d45330fa927be42dc08949fa5589019f8ec3",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "Feed EVO #1 - feed count",
+    "expected": "1",
+    "actual": "1",
+    "pass": true,
+    "txSig": "47W7DtK8bg9nmbtCPvJT5afyQepr6KCTf4xSLBhhXujSMcysYTCARFcg6SU9wDHFbjGqwAsi2yAUdVyBTZeeijUg"
+  },
+  {
+    "step": "Feed EVO #1 - total fed",
+    "expected": "1000000",
+    "actual": "1000000",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "Evolve EVO #1 - state advanced",
+    "expected": "1",
+    "actual": "1",
+    "pass": true,
+    "txSig": "4QaEx3u3tuUHNZCUMDSh92NrT3EH9f2YnPXXyiLPuJvqfB2rDKgFEgRQ6yt22JCC15FuaVVkeFcw1KFYnL4L5V1Z"
+  },
+  {
+    "step": "List EVO #0 - is listed",
+    "expected": "true",
+    "actual": "true",
+    "pass": true,
+    "txSig": "kDde7f2V3VaRtYJGrAi2rsAUd5r5vmN4gmu2UmBD7sYTDuCj8o9uMNRwu1NHFdXVufQwp3aELRihqfchg7UPyj4"
+  },
+  {
+    "step": "List EVO #0 - price",
+    "expected": "2000000",
+    "actual": "2000000",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "Buy EVO #0 - new owner (deployer)",
+    "expected": "G3aWJsdtrRT12HnC9R2BVoyErQbtGXseaM9c2xt1MJUJ",
+    "actual": "G3aWJsdtrRT12HnC9R2BVoyErQbtGXseaM9c2xt1MJUJ",
+    "pass": true,
+    "txSig": "5PnxyYqKJhAFH9WfverbrYnKJfc7a9X7ztZ4cJHgvW17ZnVpJ5CmKqLRdEyPbC5h56n8rNnBMxQX87YcNzZ94eK4"
+  },
+  {
+    "step": "Buy EVO #0 - not listed",
+    "expected": "false",
+    "actual": "false",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "Buy EVO #0 - trade count",
+    "expected": "1",
+    "actual": "1",
+    "pass": true,
+    "txSig": null
+  },
+  {
+    "step": "Buy EVO #0 - seller received proceeds",
+    "expected": "true",
+    "actual": "true",
+    "pass": true,
+    "txSig": null,
+    "sellerReceived": "0.001900",
+    "expectedMin": "0.001900",
+    "royalty": "0.000100 SOL to creator"
+  },
+  {
+    "step": "Shatter EVO #0 - SOL returned to owner",
+    "expected": "true",
+    "actual": "true",
+    "pass": true,
+    "txSig": "3a2js9zNmNWDXMYC2xJKzuE5Q3bLs5CZYdJ6mNbpQrWfzCBsAtBPJ4FD2CwJQzszN9EA6Z2evMydUMQie5w1ojpC",
+    "received": "0.009605",
+    "expectedMin": "0.000950",
+    "fee": "0.000050",
+    "note": "includes rent + locked refund - fee"
+  },
+  {
+    "step": "Shatter EVO #0 - account closed",
+    "expected": "null",
+    "actual": "null",
+    "pass": true,
+    "txSig": null,
+    "note": "closed (null)"
+  },
+  {
+    "step": "Manifest hash - on-chain vs fetched",
+    "expected": "89b0813f32fdfa62e59c03ba76b13a2a00821115baf1c0b2361389d76f6e00c1",
+    "actual": "89b0813f32fdfa62e59c03ba76b13a2a00821115baf1c0b2361389d76f6e00c1",
+    "pass": true,
+    "txSig": null,
+    "onChain": "89b0813f32fdfa62e59c03ba76b13a2a00821115baf1c0b2361389d76f6e00c1",
+    "fetched": "89b0813f32fdfa62e59c03ba76b13a2a00821115baf1c0b2361389d76f6e00c1",
+    "match": true
+  },
+  {
+    "step": "Manifest tamper detection - tampered hash != on-chain",
+    "expected": "true",
+    "actual": "true",
+    "pass": true,
+    "txSig": null,
+    "tamperedHash": "66881af882ac46c8ee8d68db88f720bdc54e5c38281e73370013a4022045964b",
+    "onChainHash": "89b0813f32fdfa62e59c03ba76b13a2a00821115baf1c0b2361389d76f6e00c1"
+  }
+]
