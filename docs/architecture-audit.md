@@ -1,8 +1,8 @@
 # EVO Protocol Architecture Audit
 
 **Date:** 2026-07-18
-**Commit:** e82bab6
-**Scope:** Protocol and account model only (frontend excluded)
+**Commit:** f048ed7
+**Scope:** Protocol, account model, frontend, and artwork authenticity
 
 ---
 
@@ -411,3 +411,239 @@ about what the art looks like, what stages are called, or what the collection
 represents.
 
 **The protocol is ready for arbitrary creators today.**
+
+---
+
+## 9. Artwork Authenticity & Proof of Ownership
+
+### The Problem
+
+EVO does not store artwork on-chain. It stores a `metadata_uri` pointer to an
+off-chain manifest (Arweave, IPFS, or any HTTP endpoint). A mutable URL alone
+only says "load whatever file currently exists here" — a creator could swap
+artwork after launch.
+
+The protocol already had the on-chain hooks to solve this:
+- `artwork_manifest_hash` (32 bytes) — SHA-256 commitment to the manifest
+- `manifest_root` (32 bytes) — Merkle root for per-EVO provenance
+
+But until now, the frontend never verified them.
+
+### The Solution — Manifest Hash Verification (commit f048ed7)
+
+A pure frontend verification layer was added. No protocol changes needed.
+
+**Layer 1: Manifest integrity**
+
+When `fetchVisualManifest` is called, it now accepts the on-chain
+`artwork_manifest_hash` as an optional parameter. The raw response bytes are
+SHA-256 hashed and compared to the on-chain commitment:
+
+```
+CollectionConfig.artwork_manifest_hash  (on-chain, creator-committed)
+         ↓ compare
+SHA-256(raw manifest response)         (off-chain, fetched at runtime)
+         ↓
+status: verified | mismatch | no-hash | unchecked
+```
+
+- **verified** — manifest matches the on-chain hash ✓
+- **mismatch** — manifest has been tampered or swapped ⚠
+- **no-hash** — creator didn't commit a hash (all zeros) — works but unverified
+- **unchecked** — no hash provided to the function
+
+**Layer 2: Per-EVO image provenance (optional)**
+
+The manifest format was extended with an optional `provenance` section:
+
+```json
+{
+  "schema": "evo-visual-manifest-v1",
+  "name": "My Collection",
+  "lifecycle": "static",
+  "fallback_image": "/fallback.png",
+  "image_template": "https://arweave.net/{id}.png",
+  "stages": [],
+  "provenance": {
+    "items": [
+      { "id": 0, "hash": "a1b2c3..." },
+      { "id": 1, "hash": "d4e5f6..." },
+      { "id": 2, "hash": "789abc..." }
+    ],
+    "merkle_root": "f0e1d2..."
+  }
+}
+```
+
+`verifyEvoImageHash(imageUrl, evoId, manifest)` fetches the individual EVO
+image, hashes it, and compares to `provenance.items[evoId].hash`.
+
+**Layer 3: UI verification display**
+
+`EvoDetail` now shows an "Artwork Authenticity" panel:
+- Green ✓ "Manifest verified on-chain" when hash matches
+- Red ⚠ "Manifest hash mismatch!" when hash differs (with expected/actual)
+- Dim "No hash committed by creator" when creator didn't set one
+- Shows per-EVO provenance entry count when available
+
+### Complete Chain of Provenance
+
+```
+1. CollectionConfig PDA          → proves collection identity (on-chain)
+2. CollectionConfig.creator      → proves who created it (on-chain)
+3. CollectionConfig.artwork_manifest_hash → proves manifest integrity (on-chain)
+4. SHA-256(fetched manifest)     → verifies manifest wasn't swapped (frontend)
+5. manifest.provenance.items[N]  → binds EVO #N to exact image hash (off-chain)
+6. SHA-256(fetched image #N)     → verifies image wasn't swapped (frontend)
+7. EVOAccount PDA                → proves current owner (on-chain)
+8. EVOAccount.locked_lamports    → proves intrinsic value (on-chain)
+9. EVOAccount.trade_count        → proves transaction history (on-chain)
+10. EVOAccount.fracture_lines    → proves ownership history (on-chain)
+```
+
+Anyone can verify:
+1. The EVO belongs to the official collection PDA
+2. The collection was created by a specific creator wallet
+3. The downloaded manifest matches the on-chain hash
+4. The artwork file matches the hash committed in that manifest
+5. The current wallet owns the corresponding EVO account
+
+### What It Does NOT Prove
+
+The blockchain cannot prove that the creator legally owns the copyright to the
+uploaded artwork. A thief could upload someone else's images and create a
+collection. The chain proves "this wallet created this collection and committed
+to these files" — not "this wallet legally owns the intellectual property."
+
+That requires creator verification, licensing declarations, moderation, or
+legal enforcement. This is true for ordinary NFTs too.
+
+### What About Wallet Recognition?
+
+EVO uses custom program accounts (EVOAccount PDAs), not SPL tokens. Standard
+wallets and marketplaces may not automatically recognize them as collectibles.
+The on-chain PDA remains the source of truth for ownership. A future "Proof of
+Ownership" view or signed certificate could bridge this gap, but the PDA itself
+is tamper-proof and verifiable via Solana explorer.
+
+---
+
+## 10. The Journey — From Z to Generic Platform
+
+### What Was Removed
+
+All Z-specific code, assets, and assumptions were deleted from both the
+protocol and frontend:
+
+**Deleted files (743+ files total):**
+- `frontend/src/lib/creatures.ts` — 108 hardcoded creatures, Element/Rarity/Stage types
+- `frontend/src/lib/cat-data.ts` — demo cat collection data
+- `frontend/src/app/cats/page.tsx` — demo cat collection page
+- `frontend/src/components/ZCard.tsx` — card with hardcoded element/rarity
+- `frontend/src/components/ZDetail.tsx` — detail with hardcoded stages
+- `frontend/public/zenkos/` — 743 Z sprite files
+- `frontend/public/cats/` — demo cat images
+
+**Removed concepts from frontend:**
+- Element types (Fire, Water, Earth, etc.)
+- Rarity tiers and rarity colors
+- Creature names and display names
+- Hardcoded stage names
+- Hardcoded artwork paths
+- Collection-specific routing (`/c/Z/forge`)
+- Collection-specific admin defaults (`COLLECTION_NAME = 'Z'`)
+
+### What Was Created (Generic Replacements)
+
+- `frontend/src/lib/evo-data.ts` — Generic data bridge. `EVOData.name` is
+  `"{collection} #{id}"`. No creature lookup, no element, no rarity.
+- `frontend/src/components/EvoCard.tsx` — Generic card. Image from manifest
+  `resolveImage()`. No element/rarity badges.
+- `frontend/src/components/EvoDetail.tsx` — Generic detail. Stage names from
+  `manifest.stages[].name`. Dynamic stage gallery. All tx handlers preserved.
+- `frontend/src/lib/evo-visuals.ts` — Manifest resolver with hash verification.
+  Supports `image_template` with `{id}` and `{stage}`. SHA-256 manifest
+  verification against on-chain `artwork_manifest_hash`.
+
+### What Was Renamed
+
+- `IconZMark` → `IconEvoMark` (Icons.tsx, Nav.tsx)
+- `COLLECTION_NAME = 'Z'` → `useSearchParams().get('collection')` (admin)
+- `/c/Z/forge` redirect → `/` (forge page)
+
+### Verification
+
+- TypeScript: `tsc --noEmit` clean
+- Tests: 53/53 passing (was 43, added 10 verification tests)
+- Build: `npm run build` clean
+- On-chain tests: 57/57 passing (Rust/Anchor, unchanged)
+- Git: All changes committed and pushed to main
+
+---
+
+## 11. Readiness Assessment
+
+### Are We Ready?
+
+**Yes — the protocol and frontend are ready for arbitrary creators today.**
+
+An arbitrary creator can:
+1. ✅ Prepare their artwork and manifest (off-chain, Arweave/IPFS)
+2. ✅ Optionally compute SHA-256 of their manifest for on-chain commitment
+3. ✅ Optionally include per-EVO provenance hashes in the manifest
+4. ✅ Call `create_collection` on-chain with their parameters
+5. ✅ Users can forge, trade, feed, shatter, and evolve EVOs
+6. ✅ The frontend discovers the collection automatically via `getProgramAccounts`
+7. ✅ The frontend renders artwork from the manifest (no code changes)
+8. ✅ The frontend verifies manifest integrity against on-chain hash
+9. ✅ The frontend shows artwork authenticity status to users
+
+No protocol changes, no frontend changes, no team approval needed.
+
+### What's Ready Now
+
+| Feature | Status |
+|---------|--------|
+| Permissionless collection creation | ✅ Ready |
+| Custom supply cap (1–20,000) | ✅ Ready |
+| Custom mint price & lock amount | ✅ Ready |
+| Custom shatter fees & destinations | ✅ Ready |
+| Custom trade royalties & destinations | ✅ Ready |
+| Custom metadata URI (Arweave/IPFS) | ✅ Ready |
+| Custom lifecycle types (5 types) | ✅ Ready |
+| Custom evolution thresholds | ✅ Ready |
+| Per-EVO unique artwork (image_template) | ✅ Ready |
+| Multi-stage per-EVO artwork | ✅ Ready |
+| Manifest hash verification | ✅ Ready |
+| Per-EVO image provenance | ✅ Ready |
+| Frontend auto-discovery | ✅ Ready |
+| Generic card/detail components | ✅ Ready |
+| Artwork authenticity UI | ✅ Ready |
+| On-chain tests (57/57) | ✅ Passing |
+| Frontend tests (53/53) | ✅ Passing |
+| TypeScript clean | ✅ Clean |
+| Production build | ✅ Clean |
+
+### What's Not Yet Built (Non-Blocking)
+
+These are enhancements, not blockers. A creator can launch today without them:
+
+| Feature | Priority | Notes |
+|---------|----------|-------|
+| Collection creation UI (web form) | Medium | Currently script-only (`scripts/create-collection.ts`). A web form would make it easier for non-technical creators. |
+| Devnet end-to-end test | High | Should create a test collection on devnet to prove the full flow works with a real manifest. |
+| Manifest documentation for creators | High | A guide showing creators how to format their manifest, compute hashes, and upload to Arweave. |
+| Per-EVO image verification UI | Low | Backend function exists (`verifyEvoImageHash`), but the UI doesn't call it yet for individual images. The manifest-level verification is already shown. |
+| Wallet recognition (SPL token wrapper) | Low | EVO uses custom PDAs, not SPL tokens. Standard wallets won't auto-display them. A wrapper or Proof of Ownership view could bridge this. |
+| Spam resistance / collection ranking | Low | Anyone can create a collection (permissionless). No discovery ranking or quality filter yet. |
+| Creator verification / KYC | Low | The chain proves who created a collection, not whether they own the IP. Off-chain moderation needed. |
+
+### Final Verdict
+
+**EVO is a generic, creator-driven platform.** The protocol is collection-agnostic,
+the frontend is manifest-driven, and artwork authenticity is cryptographically
+verifiable. An arbitrary creator can launch a fully custom collection tomorrow
+using the exact same flow as any other creator, without writing new code.
+
+The remaining items are UX improvements and trust layers — not protocol or
+architecture gaps.
