@@ -8,35 +8,53 @@ EVO is stateful capital — but it's also a collectible. Degens trade stories, a
 
 ---
 
-## Phase 1 — Primitive + Art + First Collection (NOW)
+## Phase 1 — Primitive + Art + First Collection (Current)
 
 **Goal:** Launch "speculation with a floor" with full visual expression on mainnet.
 
-### Program (DONE — live on mainnet)
+### Program (DONE — live on mainnet, NOT yet upgraded with lifecycle)
 - [x] Deploy EVO program to mainnet
-- [x] Initialize protocol
-- [x] 9 instructions working (forge, feed, list, buy, shatter, transfer, etc.)
+- [x] 15 instructions working (forge, feed, list, buy, shatter, transfer, reveal, evolve, etc.)
 - [x] Mint price + lock amount economic model
 - [x] Fee destinations (Treasury/Creator/Burn/Split)
+- [x] Protocol-native visual lifecycle (Static, Reveal, CommitReveal, RevealAndEvolve, Custom)
+- [x] Per-asset current_stage on-chain (program is source of truth)
+- [x] Commit-reveal for provably fair reveal (keccak256 commitment before minting)
+- [x] Configurable burn destination for test verification
+- [x] Permissionless evolution with modular triggers (trade, feed, hold, locked value)
+- [x] set_visual_stage instruction (Custom lifecycle authority override)
+- [x] artwork_manifest_hash for manifest integrity verification
+- [x] ~41 tests passing (forge, feed, transfer, buy, shatter, evolution, commit-reveal, burn, visual lifecycle)
 
-### Art System
-- [ ] Define art parameter mapping (on-chain data → visual properties)
-- [ ] Engage artist for visual identity
-- [ ] Curate 10-20 color palettes
-- [ ] Design facet geometry templates
-- [ ] Design fracture line rendering
-- [ ] Implement WebGL renderer
-- [ ] Implement SVG renderer (for thumbnails/marketplace grid)
-- [ ] Determinism tests (same data = same art)
+### Security Hardening (DONE)
+- [x] Direct lamport manipulation for shatter (correct program-owned account pattern)
+- [x] Reserve invariant enforced (account balance backs locked_lamports + rent)
+- [x] Checked math throughout (MathOverflow error)
+- [x] Evolve boundary fixed (off-by-one: current_state < max_states - 1)
 
-### Frontend
+### Frontend (In Progress)
 - [x] Wallet adapter (Phantom, Solflare, Backpack)
-- [ ] Wire frontend to real on-chain PDAs
+- [x] Visual lifecycle resolver (evo-visuals.ts, 25 vitest tests)
+- [x] Account parsers with lifecycle fields (evo-program.ts)
+- [x] Admin page with on-chain reveal/evolve/set_visual_stage buttons
+- [ ] Wire frontend to real on-chain PDAs (mainnet)
 - [ ] Forge page — mint an EVO with real SOL + see art
 - [ ] EVO detail page — live art render, stats, floor, feed
 - [ ] Marketplace page — browse, filter, buy (with art)
 - [ ] Shatter interface — reclaim SOL
 - [ ] Feed interface — add SOL to EVO, watch it grow
+
+### Art System
+- [ ] Define art parameter mapping (on-chain data → visual properties)
+- [ ] Engage artist for visual identity
+- [ ] Implement renderer (WebGL/SVG, deterministic from on-chain data)
+- [ ] Upload visual manifests to Arweave (production)
+
+### Testing & Audit
+- [ ] 9+ consecutive green CI runs (in progress)
+- [ ] Devnet testing — deploy to devnet, run full transaction suite
+- [ ] Independent security audit
+- [ ] Upgrade mainnet program with hardened binary (after audit)
 
 ### Launch
 - [ ] Create first collection on mainnet
@@ -45,7 +63,7 @@ EVO is stateful capital — but it's also a collectible. Degens trade stories, a
 - [ ] First shatter happens (proves the floor works)
 
 ### Success Criteria
-> A user can: forge an EVO with real SOL, see its generative art, see their floor, list it for sale, sell it to someone else, and the buyer can shatter it to reclaim SOL. The full cycle works with visuals.
+> A user can: forge an EVO with real SOL, see its art (pre-reveal → reveal → evolve), see their floor, list it for sale, sell it to someone else, and the buyer can shatter it to reclaim SOL. The full cycle works with visuals and lifecycle transitions.
 
 ---
 
