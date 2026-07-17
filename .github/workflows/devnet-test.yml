@@ -56,10 +56,10 @@ jobs:
           # Deployer keypair: use funded secret if available, else generate new
           if [ -n "$DEVNET_FUNDED_KEYPAIR" ]; then
             echo "Using pre-funded keypair from secret"
-            echo "$DEVNET_FUNDED_KEYPAIR" | base64 -d > ~/.config/solana/evo-deployer.json
+            echo "$DEVNET_FUNDED_KEYPAIR" | base64 -d > ~/.config/solana/id.json
           else
             echo "No funded keypair secret — generating new (will need airdrop)"
-            solana-keygen new -o ~/.config/solana/evo-deployer.json --no-bip39-passphrase --silent --force
+            solana-keygen new -o ~/.config/solana/id.json --no-bip39-passphrase --silent --force
           fi
 
           TEST_PID=$(solana-keygen pubkey target/deploy/evo-keypair.json)
@@ -71,8 +71,8 @@ jobs:
         env:
           DEVNET_FUNDED_KEYPAIR: ${{ secrets.DEVNET_FUNDED_KEYPAIR }}
         run: |
-          solana config set --url devnet --keypair ~/.config/solana/evo-deployer.json
-          DEPLOYER_PUBKEY=$(solana-keygen pubkey ~/.config/solana/evo-deployer.json)
+          solana config set --url devnet --keypair ~/.config/solana/id.json
+          DEPLOYER_PUBKEY=$(solana-keygen pubkey ~/.config/solana/id.json)
           echo "Deployer pubkey: $DEPLOYER_PUBKEY"
           echo "Current balance: $(solana balance 2>/dev/null || echo '0 SOL')"
 
@@ -101,7 +101,7 @@ jobs:
               RUSTFLAGS="--cfg ignore_wasm" cargo install devnet-pow --force 2>&1 || true
               if command -v devnet-pow &>/dev/null; then
                 timeout 600 devnet-pow mine -d 3 --reward 0.02 --no-infer \
-                  -u dev -k ~/.config/solana/evo-deployer.json -t 5000000000 2>&1 || true
+                  -u dev -k ~/.config/solana/id.json -t 5000000000 2>&1 || true
                 echo "Mining complete. Balance: $(solana balance)"
               else
                 echo "⚠️ devnet-pow not available"

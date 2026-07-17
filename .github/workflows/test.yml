@@ -37,7 +37,7 @@ jobs:
         run: |
           mkdir -p target/deploy ~/.config/solana
           solana-keygen new -o target/deploy/evo-keypair.json --no-bip39-passphrase --silent --force
-          solana-keygen new -o ~/.config/solana/evo-deployer.json --no-bip39-passphrase --silent --force
+          solana-keygen new -o ~/.config/solana/id.json --no-bip39-passphrase --silent --force
           TEST_PID=$(solana-keygen pubkey target/deploy/evo-keypair.json)
           echo "TEST_PID=$TEST_PID"
           sed -i "s/7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc/$TEST_PID/g" programs/evo/src/lib.rs Anchor.toml
