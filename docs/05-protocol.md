@@ -191,6 +191,36 @@ More collections launch on EVO
 
 ---
 
+### Lifecycle Instructions (New)
+
+EVO supports protocol-native visual lifecycles. The collection creator chooses one lifecycle type at creation:
+
+| Lifecycle | Stages | Transition Method | Authority |
+|---|---|---|---|
+| `Static` | 1 (stage 0) | None | N/A |
+| `Reveal` | 2 (0→1) | `reveal_collection()` | Reveal authority |
+| `CommitReveal` | 2 (0→1) | `commit_reveal()` → `reveal_collection()` | Reveal authority |
+| `RevealAndEvolve` | N (0→max) | `reveal_collection()` → `evolve()` | Permissionless evolution |
+| `Custom` | N (0→max) | `set_visual_stage()` | Reveal authority |
+
+**Key properties:**
+- Per-asset `current_state: u16` stored on-chain (program is source of truth)
+- `artwork_manifest_hash: [u8;32]` on collection for manifest integrity
+- Static assets cannot transition
+- Reveal assets can only go 0→1
+- RevealAndEvolve: `evolve()` is permissionless when thresholds met
+- Custom: authority can set any stage 0..max_states-1
+- No backward transitions (forward only)
+
+**Commit-reveal for provably fair reveal:**
+1. Creator commits `keccak256(secret)` before minting begins
+2. After all mints, creator reveals the secret
+3. Program verifies hash matches commitment
+4. Secret used as reveal entropy
+5. Creator cannot change secret after committing
+
+---
+
 ## PDA Seeds
 
 ```
