@@ -56,10 +56,16 @@ jobs:
           # Deployer keypair: use funded secret if available, else generate new
           if [ -n "$DEVNET_FUNDED_KEYPAIR" ]; then
             echo "Using pre-funded keypair from secret"
-            # -i ignores stray whitespace/newlines/CR from the GitHub web UI
-            echo "$DEVNET_FUNDED_KEYPAIR" | base64 -di > ~/.config/solana/id.json
+            # Strip ALL whitespace/CR/newlines, then handle either base64 or raw JSON
+            CLEAN=$(printf '%s' "$DEVNET_FUNDED_KEYPAIR" | tr -d ' \r\n\t')
+            if echo "$CLEAN" | grep -q '^\['; then
+              echo "$CLEAN" > ~/.config/solana/id.json
+            else
+              echo "$CLEAN" | base64 -d > ~/.config/solana/id.json
+            fi
             # Verify it's a valid keypair
-            solana-keygen pubkey ~/.config/solana/id.json > /dev/null || { echo "Funded keypair secret is invalid"; exit 1; }
+            DEPLOYER_PUBKEY=$(solana-keygen pubkey ~/.config/solana/id.json 2>/dev/null) || { echo "Funded keypair secret is invalid"; exit 1; }
+            echo "Funded keypair pubkey: $DEPLOYER_PUBKEY"
           else
             echo "No funded keypair secret — generating new (will need airdrop)"
             solana-keygen new -o ~/.config/solana/id.json --no-bip39-passphrase --silent --force
