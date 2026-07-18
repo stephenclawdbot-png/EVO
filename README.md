@@ -274,8 +274,7 @@ npm run dev
 - **naps** — [@x.com/naps000](https://x.com/naps000)
 - **admiralfinest** — [@x.com/admiralfinest](https://x.com/admiralfinest)
 - **Benedict A.** — private network engineer
-- **Stephen** — [@x.com/wino65](https://x.com/wino65) — protocol design, security hardening, deployment
 
 ---
 
-*Powered by [GitHub Copilot](https://github.com/features/copilot) — AI-assisted development and security review.*
+*Powered by [GitHub Copilot](https://github.com/features/copilot) — Stephen (@[wino65](https://x.com/wino65)). AI-assisted development and security review.*
