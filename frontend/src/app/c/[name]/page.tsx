@@ -7,6 +7,7 @@ import { EvoCard } from '@/components/EvoCard';
 import { EvoDetail } from '@/components/EvoDetail';
 import { Nav } from '@/components/Nav';
 import { TradeChart } from '@/components/TradeChart';
+import { TradingViewWidget } from '@/components/TradingViewWidget';
 import { EVOData, CollectionData, evoAccountToData, collectionConfigToData } from '@/lib/evo-data';
 import {
   readCollectionConfig,
@@ -18,6 +19,53 @@ import Link from 'next/link';
 import { IconSearch, IconArrowRight, IconHammer } from '@/components/Icons';
 
 type SortKey = 'newest' | 'oldest' | 'most-sol' | 'most-facets' | 'most-trades' | 'price-low' | 'price-high';
+
+function parseSocialLinks(uri: string): { website?: string; twitter?: string; telegram?: string } {
+  try {
+    const url = new URL(uri);
+    return {
+      website: url.searchParams.get('website') || undefined,
+      twitter: url.searchParams.get('twitter') || undefined,
+      telegram: url.searchParams.get('telegram') || undefined,
+    };
+  } catch {
+    return {};
+  }
+}
+
+function SocialIcons({ links }: { links: { website?: string; twitter?: string; telegram?: string } }) {
+  const icons = [];
+  if (links.website) icons.push({ href: links.website, label: 'Website', path: 'M12 20h9 1.5V3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z' });
+  // Actually let me use simpler approach
+  return (
+    <div className="flex items-center gap-1.5">
+      {links.website && (
+        <a href={links.website} target="_blank" rel="noreferrer" title="Website"
+          className="flex h-7 w-7 items-center justify-center rounded border border-border-strong bg-surface text-muted transition-colors hover:border-accent hover:text-accent">
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+          </svg>
+        </a>
+      )}
+      {links.twitter && (
+        <a href={links.twitter} target="_blank" rel="noreferrer" title="X / Twitter"
+          className="flex h-7 w-7 items-center justify-center rounded border border-border-strong bg-surface text-muted transition-colors hover:border-accent hover:text-accent">
+          <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+          </svg>
+        </a>
+      )}
+      {links.telegram && (
+        <a href={links.telegram} target="_blank" rel="noreferrer" title="Telegram"
+          className="flex h-7 w-7 items-center justify-center rounded border border-border-strong bg-surface text-muted transition-colors hover:border-accent hover:text-accent">
+          <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .17.338c.016.084.039.276-.02.434-.06.156-.378.94-.51 1.162-.13.218-.24.42-.43.625-.19.207-.318.348-.536.547-.218.198-.437.41-.708.41-.27 0-.34-.177-.605-.177-.266 0-.427.18-.66.388-.234.207-.36.41-.69.41-.331 0-.587-.29-.83-.54-.243-.25-.49-.49-.49-.76 0-.27.246-.49.49-.74.244-.25.49-.49.49-.76 0-.27-.246-.49-.49-.74-.244-.25-.49-.49-.49-.76 0-.27.246-.49.49-.74.244-.25.49-.49.49-.76 0-.27-.246-.49-.49-.74-.244-.25-.49-.49-.49-.76 0-.27.246-.49.49-.74.244-.25.49-.49.49-.76 0-.27-.246-.49-.49-.74-.244-.25-.49-.49-.49-.76 0-.27.246-.49.49-.74.244-.25.49-.49.49-.76z" />
+          </svg>
+        </a>
+      )}
+    </div>
+  );
+}
 
 export default function CollectionPage() {
   const params = useParams<{ name: string }>();
@@ -166,7 +214,10 @@ export default function CollectionPage() {
         <div className="mx-auto max-w-7xl px-3 py-2.5 lg:px-4">
           <div className="flex flex-wrap items-center gap-2">
             <div className="mr-auto">
-              <h2 className="text-sm font-bold tracking-tight text-text-strong">{collectionName} Collection</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold tracking-tight text-text-strong">{collectionName} Collection</h2>
+                {collection?.metadataUri && <SocialIcons links={parseSocialLinks(collection.metadataUri)} />}
+              </div>
               <p className="text-[11px] text-dim">{collection ? `${collection.supplyCap} supply cap` : ''}</p>
             </div>
 
@@ -210,9 +261,9 @@ export default function CollectionPage() {
         </div>
       </section>
 
-      {/* Trade chart — internal, from on-chain EVO trades */}
+      {/* Trade chart — TradingView + internal on-chain data */}
       <section className="mx-auto max-w-7xl px-3 pt-3 lg:px-4">
-        <TradeChart events={trades} loading={tradesLoading} currentFloorSol={parseFloat(stats.floorPrice)} />
+        <TradingViewWidget events={trades} loading={tradesLoading} currentFloorSol={parseFloat(stats.floorPrice)} collectionName={collectionName} />
       </section>
 
       {/* Gallery */}

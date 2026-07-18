@@ -135,6 +135,104 @@ function isValidManifest(raw: unknown): raw is EvoVisualManifest {
   return true;
 }
 
+// ─── URI Normalization ──────────────────────────────────────
+/** Convert ipfs://, arweave://, and other protocol URIs to fetchable HTTPS URLs. */
+export function normalizeUri(uri: string): string {
+  if (!uri) return uri;
+  if (uri.startsWith('ipfs://')) {
+    return uri.replace('ipfs://', 'https://dweb.link/ipfs/');
+  }
+  if (uri.startsWith('arweave://')) {
+    return uri.replace('arweave://', 'https://gateway.irys.xyz/');
+  }
+  return uri;
+}
+
+// ─── Bulk Manifest Support ──────────────────────────────────
+/** Check if a raw object is a bulk manifest (from BulkArtworkUploader). */
+function isBulkManifest(raw: unknown): boolean {
+  if (!raw || typeof raw !== 'object') return false;
+  const m = raw as Record<string, unknown>;
+  if (typeof m.name !== 'string') return false;
+  if (!Array.isArray(m.items)) return false;
+  for (const item of m.items) {
+    if (!item || typeof item !== 'object') return false;
+    const it = item as Record<string, unknown>;
+    if (typeof it.index !== 'number') return false;
+    if (!Array.isArray(it.states) || it.states.length === 0) return false;
+    if (!it.states.every((s: unknown) => typeof s === 'string')) return false;
+  }
+  return true;
+}
+
+/** Check if a raw object is a small-upload CollectionManifest (from ArtworkDropzone). */
+function isSmallManifest(raw: unknown): boolean {
+  if (!raw || typeof raw !== 'object') return false;
+  const m = raw as Record<string, unknown>;
+  if (typeof m.name !== 'string') return false;
+  if (!m.lifecycle || typeof m.lifecycle !== 'object') return false;
+  const lc = m.lifecycle as Record<string, unknown>;
+  if (!Array.isArray(lc.states)) return false;
+  for (const s of lc.states) {
+    if (!s || typeof s !== 'object') return false;
+    const st = s as Record<string, unknown>;
+    if (typeof st.index !== 'number') return false;
+    if (typeof st.image !== 'string') return false;
+  }
+  return true;
+}
+
+/** Convert a bulk or small manifest to EvoVisualManifest for unified resolution. */
+function normalizeToVisualManifest(raw: unknown): EvoVisualManifest | null {
+  if (isValidManifest(raw)) return raw;
+
+  if (isBulkManifest(raw)) {
+    const m = raw as any;
+    const stages = (m.lifecycle?.stateNames || []).map((name: string, i: number) => ({
+      id: i,
+      name,
+      image: m.items[0]?.states?.[i] || m.image || '',
+    }));
+    return {
+      schema: 'evo-visual-manifest-v1',
+      name: m.name,
+      description: m.description,
+      lifecycle: 'reveal_and_evolve',
+      fallback_image: normalizeUri(m.image || m.items[0]?.states?.[0] || ''),
+      stages,
+      provenance: undefined,
+    };
+  }
+
+  if (isSmallManifest(raw)) {
+    const m = raw as any;
+    const stages: EvoVisualStage[] = (m.lifecycle.states || []).map((s: any) => ({
+      id: s.index,
+      name: s.name || `State ${s.index + 1}`,
+      image: normalizeUri(s.image),
+    }));
+    return {
+      schema: 'evo-visual-manifest-v1',
+      name: m.name,
+      description: m.description,
+      lifecycle: 'static',
+      fallback_image: normalizeUri(stages[0]?.image || m.image || ''),
+      stages,
+      provenance: undefined,
+    };
+  }
+
+  return null;
+}
+
+/** Store bulk manifest items for per-EVO image resolution. */
+const bulkManifestCache = new Map<string, { index: number; states: string[] }[]>();
+
+/** Check if metadataUri has a cached bulk manifest with per-EVO items. */
+function getBulkItems(metadataUri: string): { index: number; states: string[] }[] | null {
+  return bulkManifestCache.get(metadataUri) ?? null;
+}
+
 // ─── Fetch ───────────────────────────────────────────────────
 /**
  * Fetch a collection manifest from metadata_uri.
@@ -158,11 +256,25 @@ export async function fetchVisualManifest(
   }
 
   try {
-    const res = await fetch(metadataUri, { cache: 'no-store' });
+    const res = await fetch(normalizeUri(metadataUri), { cache: 'no-store' });
     if (!res.ok) return null;
     const rawText = await res.text();
     const data = JSON.parse(rawText);
-    if (!isValidManifest(data)) return null;
+
+    // Normalize any manifest format to EvoVisualManifest
+    const normalized = normalizeToVisualManifest(data);
+    if (!normalized) return null;
+
+    // Cache bulk items for per-EVO resolution
+    if (isBulkManifest(data)) {
+      const items = (data as any).items.map((it: any) => ({
+        index: it.index,
+        states: it.states.map((s: string) => normalizeUri(s)),
+      }));
+      bulkManifestCache.set(metadataUri, items);
+    }
+
+    const manifest = normalized;
 
     // Hash the raw response text and verify against on-chain hash
     const actualHash = await sha256Hex(rawText);
@@ -310,7 +422,17 @@ export function resolveActiveImage(
 ): string {
   const stageNum = resolveActiveStageNumber(manifest, onChainStage, isRevealed);
 
-  // 1. Per-EVO template — highest priority
+  // 0. Per-EVO bulk manifest items (highest priority)
+  if (evoId !== undefined) {
+    for (const [uri, items] of bulkManifestCache) {
+      const item = items.find(it => it.index === evoId);
+      if (item && item.states[stageNum]) {
+        return item.states[stageNum];
+      }
+    }
+  }
+
+  // 1. Per-EVO template
   if (manifest.image_template) {
     let url = manifest.image_template;
     if (evoId !== undefined) {
@@ -360,8 +482,10 @@ export function invalidateManifestCache(metadataUri?: string): void {
   if (metadataUri) {
     manifestCache.delete(metadataUri);
     verificationCache.delete(metadataUri);
+    bulkManifestCache.delete(metadataUri);
   } else {
     manifestCache.clear();
     verificationCache.clear();
+    bulkManifestCache.clear();
   }
 }

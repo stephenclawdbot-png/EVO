@@ -48,6 +48,11 @@ export default function CreateCollectionPage() {
   const [supplyCap, setSupplyCap] = useState('100');
   const [metadataUri, setMetadataUri] = useState('');
 
+  // Socials
+  const [website, setWebsite] = useState('');
+  const [twitter, setTwitter] = useState('');
+  const [telegram, setTelegram] = useState('');
+
   // Economics
   const [mintPriceSol, setMintPriceSol] = useState('0.1');
   const [lockAmountSol, setLockAmountSol] = useState('0.05');
@@ -126,13 +131,23 @@ export default function CreateCollectionPage() {
     if (!protocol?.initialized) { setError('Protocol not initialized yet. Initialize it first.'); return; }
     if (!name.trim()) { setError('Collection name is required'); return; }
     const effectiveMetadataUri =
-      artMode === 'upload' && artwork ? artwork.manifestUri :
-      artMode === 'bulk' && bulkArtwork ? bulkArtwork.manifestUri :
-      metadataUri.trim();
+      (artMode === 'upload' && artwork ? artwork.manifestUri :
+       artMode === 'bulk' && bulkArtwork ? bulkArtwork.manifestUri :
+       metadataUri.trim()) || '';
+
     if (!effectiveMetadataUri) {
       setError(artMode === 'upload' || artMode === 'bulk' ? 'Upload at least one image' : 'Metadata URI is required');
       return;
     }
+
+    // Append social links as query params so the collection page can display them
+    const socialParams = new URLSearchParams();
+    if (website.trim()) socialParams.set('website', website.trim());
+    if (twitter.trim()) socialParams.set('twitter', twitter.trim());
+    if (telegram.trim()) socialParams.set('telegram', telegram.trim());
+    const finalMetadataUri = socialParams.toString()
+      ? `${effectiveMetadataUri}${effectiveMetadataUri.includes('?') ? '&' : '?'}${socialParams.toString()}`
+      : effectiveMetadataUri;
     setSubmitting(true); setError(null); setTxSig(null);
     try {
       const lamportsPerSol = 1_000_000_000;
@@ -165,7 +180,7 @@ export default function CreateCollectionPage() {
         royaltyDest,
         Math.floor(parseFloat(mintPriceSol) * lamportsPerSol),
         Math.floor(parseFloat(lockAmountSol) * lamportsPerSol),
-        effectiveMetadataUri,
+        finalMetadataUri,
         lifecycle,
       );
       const sig = await sendTx(ix);
@@ -250,6 +265,20 @@ export default function CreateCollectionPage() {
                   <div>
                     <label className={labelCls}>Supply Cap</label>
                     <input type="number" className={inputCls} value={supplyCap} onChange={e => setSupplyCap(e.target.value)} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className={labelCls}>Website</label>
+                    <input className={inputCls} value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://…" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>X (Twitter)</label>
+                    <input className={inputCls} value={twitter} onChange={e => setTwitter(e.target.value)} placeholder="https://x.com/…" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Telegram</label>
+                    <input className={inputCls} value={telegram} onChange={e => setTelegram(e.target.value)} placeholder="https://t.me/…" />
                   </div>
                 </div>
               </div>

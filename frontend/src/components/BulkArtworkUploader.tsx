@@ -53,6 +53,7 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
   const [costEstimate, setCostEstimate] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [useDevnet, setUseDevnet] = useState(true);
+  const [lastManifestItems, setLastManifestItems] = useState<{ index: number; name?: string; states: string[] }[]>([]);
   const [verifyResults, setVerifyResults] = useState<{ checked: number; failed: string[] } | null>(null);
   const [resumeSession, setResumeSession] = useState<CompletedUpload[] | null>(null);
   const [showWarning, setShowWarning] = useState(false);
@@ -281,9 +282,9 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
         const stateUris: string[] = [];
         for (let s = 0; s < allResults.length; s++) {
           if (allResults[s][i]) {
-            stateUris.push(`arweave://${allResults[s][i]!.txId}`);
+            stateUris.push(`https://gateway.irys.xyz/${allResults[s][i]!.txId}`);
           } else {
-            stateUris.push(allResults[0]?.[i] ? `arweave://${allResults[0][i]!.txId}` : '');
+            stateUris.push(allResults[0]?.[i] ? `https://gateway.irys.xyz/${allResults[0][i]!.txId}` : '');
           }
         }
         items.push({ traits: traits[i] || {}, stateUris });
@@ -303,7 +304,7 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
       // Verify a sample of uploads
       setVerifying(true);
       setPhase('Verifying uploads…');
-      const allTxIds = manifest.items.flatMap(item => item.states.map(s => s.replace('arweave://', '')));
+      const allTxIds = manifest.items.flatMap(item => item.states.map(s => s.replace('https://gateway.irys.xyz/', '')));
       const failedVerifications = await verifyUploadsSample(allTxIds, 5);
       setVerifyResults({ checked: Math.min(5, allTxIds.length), failed: failedVerifications });
       setVerifying(false);
@@ -315,9 +316,10 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
       setPhase('Uploading manifest…');
       const manifestResult = await uploadJson(manifest, wallet, useDevnet);
 
+      setLastManifestItems(manifest.items.map(it => ({ index: it.index, name: it.name, states: it.states })));
       onArtworkReady({
         manifest,
-        manifestUri: `arweave://${manifestResult.txId}`,
+        manifestUri: `https://gateway.irys.xyz/${manifestResult.txId}`,
         merkleRoot,
         totalImages: total,
       });
@@ -580,6 +582,75 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
           </svg>
           <span>{error}</span>
         </div>
+      )}
+
+      {/* Post-upload gallery preview */}
+      {phase === 'Done!' && lastManifestItems.length > 0 && (
+        <PostUploadGallery items={lastManifestItems} stateNames={stateNames} />
+      )}
+    </div>
+  );
+}
+
+function PostUploadGallery({ items, stateNames }: { items: { index: number; name?: string; states: string[] }[]; stateNames: string[] }) {
+  const [selectedState, setSelectedState] = useState(0);
+  const [previewCount, setPreviewCount] = useState(12);
+  const [imgErrors, setImgErrors] = useState<Set<number>>(new Set());
+
+  const previewItems = items.slice(0, previewCount);
+
+  return (
+    <div className="rounded-lg border border-positive/40 bg-positive/5 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <svg className="h-4 w-4 text-positive" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+          <span className="text-xs font-bold text-positive">Upload Complete — Preview Gallery</span>
+        </div>
+        <span className="text-[10px] text-dim">{items.length} items total</span>
+      </div>
+
+      {/* State selector */}
+      <div className="mb-2 flex flex-wrap gap-1.5">
+        {stateNames.map((name, i) => (
+          <button key={i} onClick={() => setSelectedState(i)}
+            className={`rounded px-2 py-1 text-[10px] font-semibold transition-colors ${selectedState === i ? 'bg-accent text-white' : 'border border-border-strong bg-surface text-muted hover:text-text'}`}>
+            {name}
+          </button>
+        ))}
+      </div>
+
+      {/* Image grid */}
+      <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8">
+        {previewItems.map((item) => {
+          const uri = item.states[selectedState];
+          const idx = item.index;
+          const hasError = imgErrors.has(idx);
+          return (
+            <div key={idx} className="relative aspect-square overflow-hidden rounded border border-border bg-bg">
+              {uri && !hasError ? (
+                <img src={uri} alt={`#${idx}`} className="h-full w-full pixelated object-cover"
+                  style={{ imageRendering: 'pixelated' }}
+                  onError={() => setImgErrors(prev => new Set(prev).add(idx))} />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-[10px] text-dim">
+                  {hasError ? '⚠' : '…'}
+                </div>
+              )}
+              <span className="absolute bottom-0 left-0 right-0 bg-bg/70 px-1 py-0.5 text-center text-[8px] font-mono text-muted backdrop-blur-sm">
+                #{idx}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {previewCount < items.length && (
+        <button onClick={() => setPreviewCount(Math.min(previewCount + 12, items.length))}
+          className="mt-2 w-full rounded border border-border-strong py-1.5 text-[11px] font-semibold text-muted transition-colors hover:text-text">
+          Show more ({items.length - previewCount} remaining)
+        </button>
       )}
     </div>
   );

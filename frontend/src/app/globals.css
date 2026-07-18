@@ -150,6 +150,11 @@ body {
 .flash-up { animation: flash-up 0.5s ease-out; }
 .flash-down { animation: flash-down 0.5s ease-out; }
 
+@keyframes evo-pulse {
+  0% { opacity: 0.3; transform: scale(0.95); }
+  100% { opacity: 0.7; transform: scale(1.05); }
+}
+
 /* Number inputs */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
