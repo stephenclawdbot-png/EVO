@@ -194,6 +194,9 @@ export default function Home() {
           <p className="mt-4 max-w-md text-sm text-muted">
             EVOs hold locked SOL, evolve over time, and can be shattered to recover their value.
           </p>
+          <p className="mt-3 max-w-lg text-[12px] font-mono leading-relaxed text-dim">
+            Lock SOL. Mint evolving art. Trade on-chain. No admin keys.
+          </p>
         </div>
       </section>
 
