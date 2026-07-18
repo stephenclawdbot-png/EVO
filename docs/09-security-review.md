@@ -59,6 +59,11 @@
 **Fix:** Burn destination is configurable at collection creation. In tests, a fake burn wallet is used so the test can verify the exact burn fee amount arrives. In production, defaults to the real incinerator.
 **Status:** Done — configurable burn destination implemented and tested.
 
+#### 9. Transfer Bypasses Royalties (FIXED)
+**Risk:** Direct transfers (off-platform deals) let owners move EVOs without paying any fee, bypassing marketplace royalties entirely. Since EVOs use PDA-ownership (no SPL token), transfers were free — a seller could arrange an off-platform sale and transfer the EVO for nothing.
+**Fix:** A flat `TRANSFER_FEE_LAMPORTS` (0.009 SOL) is now charged on every transfer, routed to the protocol treasury via System Program CPI. This makes every ownership change non-free regardless of sale price, closing the royalty-bypass vector. The fee is decoupled from the EVO's value, so it's a small fixed cost rather than a percentage.
+**Status:** Done — flat transfer fee implemented and tested.
+
 ---
 
 ## Upgrade Policy
