@@ -89,6 +89,26 @@
 **Fix:** Changed `seller` from `SystemAccount` to `UncheckedAccount` with `address = evo.owner` constraint. The address check still enforces that the seller matches the EVO owner, but no longer requires system ownership.
 **Status:** Done — seller type relaxed to UncheckedAccount.
 
+#### 15. Transfer to Zero Address Bricks EVO (FIXED)
+**Risk:** `transfer.rs` had no check that `new_owner != Pubkey::default()`. If a user transferred their EVO to the zero address (Pubkey::default()), the EVO would be permanently bricked — no one owns the default key, so no one could ever shatter, list, feed, or transfer the EVO again. The locked SOL inside would be lost forever.
+**Fix:** Added `require!(new_owner != Pubkey::default(), EvoError::InvalidNewOwner)` at the start of `transfer()`. Also added `InvalidNewOwner` error variant.
+**Status:** Done — zero address rejection implemented.
+
+#### 16. mint_index Collision After Shatter (FIXED)
+**Risk:** `forge.rs` assigned `evo.mint_index = collection.current_supply`. But `shatter.rs` decrements `current_supply`. After shatter + re-forge, two live EVOs could share the same `mint_index`. For `BatchReveal` randomness policy, the mint_index determines which artwork asset an EVO receives — a collision means two EVOs get the same art, breaking uniqueness guarantees.
+**Fix:** Added `total_minted: u32` field to `CollectionConfig` (monotonic counter, only incremented in `forge`, never decremented). `mint_index` now uses `total_minted` instead of `current_supply`. Updated `SPACE` constant (+4 bytes). Initialized to 0 in `create_collection`.
+**Status:** Done — monotonic mint_index implemented. CI passing (#132).
+
+#### 17. Defense-in-Depth: Collection Mismatch Checks (FIXED)
+**Risk:** While PDA seed derivation implicitly ties an EVO to its collection, five instructions (`feed`, `list`, `delist`, `shatter`, `transfer`) did not explicitly verify `evo.collection == collection_config.key()`. In theory, a crafted transaction with mismatched collection accounts could pass seed validation but operate on the wrong collection context.
+**Fix:** Added `constraint = evo.collection == collection_config.key() @ EvoError::CollectionMismatch` to all five instructions. This is defense-in-depth — the PDA seeds already prevent the attack, but the explicit check provides an additional layer of safety and clearer error messages.
+**Status:** Done — collection mismatch checks added to feed, list, delist, shatter, transfer.
+
+#### 18. Unchecked trade_count Overflow (FIXED)
+**Risk:** `buy.rs` used `evo.trade_count + 1` without checked arithmetic. While u32 overflow would require ~4 billion trades (practically impossible), it violates the protocol's checked-math invariant.
+**Fix:** Changed to `evo.trade_count.checked_add(1).ok_or(EvoError::MathOverflow)?`.
+**Status:** Done — checked arithmetic enforced.
+
 ---
 
 ## Upgrade Policy
@@ -166,13 +186,18 @@ redeemable = min(account.lamports() - rent_exempt, locked_lamports) - shatter_fe
 - [x] Devnet testing — full transaction suite with real RPC
 - [ ] Upgrade authority locked (post-audit)
 - [ ] SDK published
-- [x] Security audit (line-by-line manual + agent review, 6 findings fixed)
+- [x] Security audit (line-by-line manual + agent review, 10 findings fixed across 5 passes)
 - [ ] VRF integration for commit-reveal (Switchboard/ORAO)
 - [x] Deployer authority check on initialize_protocol
 - [x] Burn destination PDA validation
 - [x] Listed EVO transfer rejection
 - [x] Panic-free close_collection data parsing
 - [x] buy.rs seller type fix (UncheckedAccount)
+- [x] Transfer to zero address rejection (InvalidNewOwner)
+- [x] mint_index collision fix (monotonic total_minted counter)
+- [x] Defense-in-depth: collection mismatch checks on feed/list/delist/shatter/transfer
+- [x] buy.rs trade_count checked_add
+- [ ] **Set REQUIRED_DEPLOYER to real deployer pubkey before mainnet**
 
 ---
 
