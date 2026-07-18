@@ -14,6 +14,7 @@ pub struct Transfer<'info> {
         constraint = evo.owner == current_owner.key() @ EvoError::NotEvoOwner,
         constraint = !evo.is_shattered @ EvoError::EvoShattered,
         constraint = !evo.is_listed @ EvoError::EvoIsListedForTransfer,
+        constraint = evo.collection == collection_config.key() @ EvoError::CollectionMismatch,
     )]
     pub evo: Account<'info, EVOAccount>,
 
@@ -39,6 +40,10 @@ pub struct Transfer<'info> {
 
 pub fn transfer(ctx: Context<Transfer>, evo_id: u32, new_owner: Pubkey) -> Result<()> {
     let evo = &mut ctx.accounts.evo;
+
+    // Prevent transferring to the zero address — would permanently brick
+    // the EVO and lock the embedded SOL (no one owns the default key).
+    require!(new_owner != Pubkey::default(), EvoError::InvalidNewOwner);
 
     // Charge a flat transfer fee routed to the protocol treasury. This closes
     // the royalty-bypass vector (off-platform deals done via free transfer)

@@ -14,6 +14,7 @@ pub struct Feed<'info> {
         bump = evo.bump,
         constraint = evo.owner == feeder.key() @ EvoError::NotEvoOwner,
         constraint = !evo.is_shattered @ EvoError::EvoShattered,
+        constraint = evo.collection == collection_config.key() @ EvoError::CollectionMismatch,
     )]
     pub evo: Account<'info, EVOAccount>,
 

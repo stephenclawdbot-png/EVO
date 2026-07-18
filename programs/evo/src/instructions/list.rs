@@ -13,6 +13,7 @@ pub struct List<'info> {
         constraint = evo.owner == seller.key() @ EvoError::NotEvoOwner,
         constraint = !evo.is_shattered @ EvoError::EvoShattered,
         constraint = !evo.is_listed @ EvoError::EvoAlreadyListed,
+        constraint = evo.collection == collection_config.key() @ EvoError::CollectionMismatch,
     )]
     pub evo: Account<'info, EVOAccount>,
 

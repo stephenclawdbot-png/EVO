@@ -12,6 +12,7 @@ pub struct Delist<'info> {
         bump = evo.bump,
         constraint = evo.owner == seller.key() @ EvoError::NotEvoOwner,
         constraint = evo.is_listed @ EvoError::EvoNotListed,
+        constraint = evo.collection == collection_config.key() @ EvoError::CollectionMismatch,
     )]
     pub evo: Account<'info, EVOAccount>,
 

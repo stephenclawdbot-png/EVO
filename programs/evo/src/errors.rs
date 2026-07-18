@@ -157,4 +157,7 @@ pub enum EvoError {
 
     #[msg("EVO is currently listed — delist before transferring")]
     EvoIsListedForTransfer,
+
+    #[msg("Cannot transfer EVO to the zero address")]
+    InvalidNewOwner,
 }

@@ -14,6 +14,7 @@ pub struct Shatter<'info> {
         constraint = evo.owner == owner.key() @ EvoError::NotEvoOwner,
         constraint = !evo.is_shattered @ EvoError::EvoShattered,
         constraint = !evo.is_listed @ EvoError::EvoIsListed,
+        constraint = evo.collection == collection_config.key() @ EvoError::CollectionMismatch,
         close = owner,
     )]
     pub evo: Account<'info, EVOAccount>,
