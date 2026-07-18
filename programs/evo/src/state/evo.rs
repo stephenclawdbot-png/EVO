@@ -33,6 +33,10 @@ pub struct EVOAccount {
     pub last_transition_at: i64,
     pub feed_count: u32,
     pub total_fed_lamports: u64,
+
+    /// Whether this EVO's metadata has been verified against the
+    /// collection's `manifest_root` Merkle tree via `verify_merkle_proof`.
+    pub manifest_verified: bool,
 }
 
 impl EVOAccount {
@@ -55,5 +59,6 @@ impl EVOAccount {
         2 +      // current_state
         8 +      // last_transition_at
         4 +      // feed_count
-        8;       // total_fed_lamports
+        8 +      // total_fed_lamports
+        1;       // manifest_verified
 }

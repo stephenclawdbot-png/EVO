@@ -37,6 +37,7 @@ export {
   createRevealCollectionIx,
   createEvolveIx,
   createSetVisualStageIx,
+  createVerifyMerkleProofIx,
   generateResonanceSeed,
 } from './instructions';
 
@@ -65,3 +66,6 @@ export type {
   RandomnessPolicy,
   LifecycleParams,
 } from './types';
+
+// ─── Builder API ─────────────────────────────
+export { CollectionBuilder } from './builder';

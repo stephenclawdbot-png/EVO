@@ -13,6 +13,7 @@ pub mod reveal_collection;
 pub mod commit_reveal;
 pub mod evolve;
 pub mod set_visual_stage;
+pub mod verify_merkle_proof;
 
 pub use initialize::*;
 pub use create_collection::*;
@@ -29,3 +30,4 @@ pub use reveal_collection::*;
 pub use commit_reveal::*;
 pub use evolve::*;
 pub use set_visual_stage::*;
+pub use verify_merkle_proof::*;

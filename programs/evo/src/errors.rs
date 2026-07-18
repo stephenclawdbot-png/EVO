@@ -136,4 +136,13 @@ pub enum EvoError {
 
     #[msg("Cannot buy your own listed EVO — self-trades are not allowed")]
     SelfTradeNotAllowed,
+
+    #[msg("Collection has no manifest root set — cannot verify")]
+    NoManifestRoot,
+
+    #[msg("EVO manifest is already verified")]
+    AlreadyVerified,
+
+    #[msg("Merkle proof does not match the collection's manifest root")]
+    MerkleProofInvalid,
 }

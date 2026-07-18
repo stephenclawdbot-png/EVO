@@ -41,6 +41,7 @@ export interface EVOAccount {
   isListed: boolean;
   listPriceLamports: number | null;
   isShattered: boolean;
+  manifestVerified: boolean;
 }
 
 /** Evolution stage derived from facet count */

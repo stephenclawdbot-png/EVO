@@ -130,6 +130,13 @@ export function deserializeEVOAccount(data: Buffer, address: string): EVOAccount
   offset = afterListPrice;
 
   const isShattered = readBool(data, offset);
+  offset += BOOL_LEN;
+
+  // Skip bump (1) + lifecycle fields (mint_index 4, current_state 2,
+  // last_transition_at 8, feed_count 4, total_fed_lamports 8) = 27 bytes
+  offset += 1 + U32_LEN + U16_LEN + I64_LEN + U32_LEN + U64_LEN;
+
+  const manifestVerified = readBool(data, offset);
 
   return {
     address,
@@ -144,6 +151,7 @@ export function deserializeEVOAccount(data: Buffer, address: string): EVOAccount
     isListed,
     listPriceLamports,
     isShattered,
+    manifestVerified,
   };
 }
 

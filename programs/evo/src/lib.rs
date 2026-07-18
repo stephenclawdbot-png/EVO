@@ -162,4 +162,16 @@ pub mod evo {
     pub fn set_visual_stage(ctx: Context<SetVisualStage>, stage: u16) -> Result<()> {
         instructions::set_visual_stage::set_visual_stage(ctx, stage)
     }
+
+    /// Verify a Merkle inclusion proof for an EVO's metadata.
+    /// Permissionless — anyone can call. Sets `manifest_verified = true`
+    /// on the EVO if the proof matches the collection's `manifest_root`.
+    pub fn verify_merkle_proof(
+        ctx: Context<VerifyMerkleProof>,
+        evo_id: u32,
+        leaf_hash: [u8; 32],
+        proof: Vec<[u8; 32]>,
+    ) -> Result<()> {
+        instructions::verify_merkle_proof::verify_merkle_proof(ctx, evo_id, leaf_hash, proof)
+    }
 }

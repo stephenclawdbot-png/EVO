@@ -22,6 +22,7 @@ pub struct Forge<'info> {
         seeds = [COLLECTION_SEED, collection_config.name.as_bytes()],
         bump = collection_config.bump
     )]
+
     pub collection_config: Account<'info, CollectionConfig>,
 
     #[account(
@@ -68,6 +69,7 @@ pub fn forge(
     evo.list_price_lamports = 0;
     evo.is_shattered = false;
     evo.bump = ctx.bumps.evo;
+    evo.manifest_verified = false;
 
     // Lifecycle state — mint_index is the slot this EVO takes in the collection
     // (assigned BEFORE incrementing supply, so first forge = index 0).

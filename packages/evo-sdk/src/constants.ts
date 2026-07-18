@@ -50,6 +50,7 @@ export const IX_DISCRIMINATORS = {
   commitReveal: [30, 139, 34, 56, 94, 246, 114, 243],
   evolve: [139, 139, 160, 98, 252, 226, 106, 81],
   setVisualStage: [44, 218, 23, 167, 61, 241, 78, 244],
+  verifyMerkleProof: [51, 191, 37, 169, 74, 207, 201, 102],
 } as const;
 
 // ─── Account discriminators (first 8 bytes of sha256("account:<Name>")) ───

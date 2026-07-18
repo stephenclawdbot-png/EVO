@@ -311,6 +311,34 @@ export function createBuyIx(
 }
 
 /**
+ * Verify a Merkle inclusion proof for an EVO's metadata.
+ * Permissionless — anyone can call. Sets `manifest_verified` on the EVO.
+ */
+export function createVerifyMerkleProofIx(
+    evoPda: PublicKey,
+    collectionPda: PublicKey,
+    evoId: number,
+    leafHash: Uint8Array,
+    proof: Uint8Array[],
+): TransactionInstruction {
+    const data = Buffer.concat([
+      disc('verifyMerkleProof'),
+      writeU32(evoId),
+      writeBytes(leafHash),
+      writeU32(proof.length),
+      ...proof.map((p) => writeBytes(p)),
+    ]);
+    return new TransactionInstruction({
+      programId: PROGRAM,
+      keys: [
+        { pubkey: evoPda, isSigner: false, isWritable: true },
+        { pubkey: collectionPda, isSigner: false, isWritable: false },
+      ],
+      data,
+    });
+}
+
+/**
  * Shatter an EVO — destroy it and recover the locked SOL (minus fee).
  * The owner signs. Fee routed per collection config.
  */
