@@ -216,11 +216,26 @@ function CollectionCard({ summary }: { summary: CollectionSummary }) {
   const { data, evoCount, totalLockedSol, floorPriceSol, listedCount } = summary;
   const supplyPct = data.supplyCap > 0 ? (data.currentSupply / data.supplyCap) * 100 : 0;
 
+  // Parse logo URI from metadata_uri query params
+  const logoUri = (() => {
+    try { return new URL(data.metadataUri).searchParams.get('logo') || ''; }
+    catch { return ''; }
+  })();
+
   return (
     <Link href={`/c/${data.name}`} className="group block overflow-hidden rounded border border-border bg-surface transition-colors hover:border-border-strong">
       <div className="border-b border-border px-3 py-3">
         <div className="flex items-baseline justify-between">
-          <h3 className="text-sm font-bold tracking-tight text-text-strong">{data.name}</h3>
+          <div className="flex items-center gap-2">
+            {logoUri ? (
+              <img src={logoUri} alt="" className="h-6 w-6 rounded-full border border-border object-cover" />
+            ) : (
+              <span className="flex h-6 w-6 items-center justify-center rounded-full border border-border bg-bg text-[10px] font-bold text-dim">
+                {data.name.charAt(0).toUpperCase()}
+              </span>
+            )}
+            <h3 className="text-sm font-bold tracking-tight text-text-strong">{data.name}</h3>
+          </div>
           <span className="font-mono text-[10px] text-dim">{data.creator.slice(0, 4)}...{data.creator.slice(-4)}</span>
         </div>
         <div className="mt-2 flex items-baseline gap-1">

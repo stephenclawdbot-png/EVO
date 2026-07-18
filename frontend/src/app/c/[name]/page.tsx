@@ -20,20 +20,21 @@ import { IconSearch, IconArrowRight, IconHammer } from '@/components/Icons';
 
 type SortKey = 'newest' | 'oldest' | 'most-sol' | 'most-facets' | 'most-trades' | 'price-low' | 'price-high';
 
-function parseSocialLinks(uri: string): { website?: string; twitter?: string; telegram?: string } {
+function parseSocialLinks(uri: string): { website?: string; twitter?: string; telegram?: string; logo?: string } {
   try {
     const url = new URL(uri);
     return {
       website: url.searchParams.get('website') || undefined,
       twitter: url.searchParams.get('twitter') || undefined,
       telegram: url.searchParams.get('telegram') || undefined,
+      logo: url.searchParams.get('logo') || undefined,
     };
   } catch {
     return {};
   }
 }
 
-function SocialIcons({ links }: { links: { website?: string; twitter?: string; telegram?: string } }) {
+function SocialIcons({ links }: { links: { website?: string; twitter?: string; telegram?: string; logo?: string } }) {
   const icons = [];
   if (links.website) icons.push({ href: links.website, label: 'Website', path: 'M12 20h9 1.5V3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z' });
   // Actually let me use simpler approach
@@ -215,6 +216,9 @@ export default function CollectionPage() {
           <div className="flex flex-wrap items-center gap-2">
             <div className="mr-auto">
               <div className="flex items-center gap-2">
+                {collection?.metadataUri && parseSocialLinks(collection.metadataUri).logo && (
+                  <img src={parseSocialLinks(collection.metadataUri).logo} alt="" className="h-6 w-6 rounded-full border border-border object-cover" />
+                )}
                 <h2 className="text-sm font-bold tracking-tight text-text-strong">{collectionName} Collection</h2>
                 {collection?.metadataUri && <SocialIcons links={parseSocialLinks(collection.metadataUri)} />}
               </div>

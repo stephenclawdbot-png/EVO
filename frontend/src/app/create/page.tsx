@@ -20,6 +20,7 @@ import {
 } from '@/lib/evo-program';
 import { IconCheck, IconAlertTriangle, IconExternalLink, IconHammer, IconSparkle } from '@/components/Icons';
 import { BulkArtworkUploader, type BulkArtworkResult } from '@/components/BulkArtworkUploader';
+import { uploadFile } from '@/lib/arweave-upload';
 
 const FEE_DESTINATIONS: FeeDestination[] = ['Treasury', 'Creator', 'Burn', 'Split'];
 const FEE_DEST_LABELS: Record<FeeDestination, string> = {
@@ -110,6 +111,10 @@ export default function CreateCollectionPage() {
   const [artMode, setArtMode] = useState<'generative' | 'bulk'>('bulk');
   const [bulkArtwork, setBulkArtwork] = useState<BulkArtworkResult | null>(null);
 
+  // Collection logo
+  const [logoUri, setLogoUri] = useState('');
+  const [logoUploading, setLogoUploading] = useState(false);
+
   const fetchProtocol = useCallback(async () => {
     setLoadingProto(true);
     try {
@@ -151,6 +156,25 @@ export default function CreateCollectionPage() {
   }, [wallet.connected, wallet.publicKey, connection]);
 
   const needsLifecycle = lifecycleType !== 'Static';
+
+  // Upload collection logo to Arweave via Irys
+  const handleLogoUpload = async (file: File) => {
+    if (!wallet.connected || !wallet.publicKey) { setError('Connect wallet first'); return; }
+    if (file.size > 2_000_000) { setError('Logo must be under 2MB'); return; }
+    setLogoUploading(true); setError(null);
+    try {
+      const result = await uploadFile(file, wallet, [
+        { name: 'App-Name', value: 'EVO' },
+        { name: 'Content-Type', value: file.type || 'image/png' },
+        { name: 'Type', value: 'collection-logo' },
+      ], true); // devnet Irys
+      setLogoUri(result.uri);
+    } catch (err: any) {
+      setError(err?.message || 'Logo upload failed');
+    } finally {
+      setLogoUploading(false);
+    }
+  };
 
   const sendTx = async (ix: any) => {
     if (!wallet.connected || !wallet.publicKey) { setError('Connect wallet first'); return null; }
@@ -200,6 +224,7 @@ export default function CreateCollectionPage() {
     if (website.trim()) socialParams.set('website', website.trim());
     if (twitter.trim()) socialParams.set('twitter', twitter.trim());
     if (telegram.trim()) socialParams.set('telegram', telegram.trim());
+    if (logoUri) socialParams.set('logo', logoUri);
     const finalMetadataUri = socialParams.toString()
       ? `${effectiveMetadataUri}${effectiveMetadataUri.includes('?') ? '&' : '?'}${socialParams.toString()}`
       : effectiveMetadataUri;
@@ -330,6 +355,30 @@ export default function CreateCollectionPage() {
                   <label className={labelCls}>Collection Name</label>
                   <input className={inputCls} value={name} onChange={e => setName(e.target.value)} placeholder="genesis" />
                   <p className="mt-1 text-[10px] text-dim">Unique on-chain identifier. Lowercase recommended.</p>
+                </div>
+                <div>
+                  <label className={labelCls}>Collection Logo</label>
+                  <div className="flex items-center gap-3">
+                    {logoUri ? (
+                      <img src={logoUri} alt="Logo" className="h-12 w-12 rounded-lg border border-border object-cover" />
+                    ) : (
+                      <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-surface text-dim">
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+                        onChange={e => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f); }}
+                        className="block w-full text-[10px] text-dim file:mr-2 file:rounded file:border file:border-border file:bg-surface file:px-2 file:py-1 file:text-[10px] file:font-semibold file:text-text hover:file:border-accent"
+                        disabled={logoUploading}
+                      />
+                      <p className="mt-1 text-[10px] text-dim">
+                        {logoUploading ? 'Uploading to Arweave…' : 'PNG/JPG/SVG. Shown on gallery cards. Stored on Arweave.'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
