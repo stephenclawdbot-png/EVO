@@ -29,6 +29,8 @@ export interface EVOData {
   isShattered: boolean;
   // Lifecycle state from protocol (source of truth for visual stage)
   currentState: number;
+  totalFedLamports: number; // for evolution progress display
+  lastTransitionAt: number; // unix timestamp (ms)
   // On-chain references
   evoPda?: string;
   collectionPda?: string;
@@ -52,6 +54,11 @@ export interface CollectionData {
   artworkManifestHash: Uint8Array;
   shatterFeeDestination: string;
   royaltyDestination: string;
+  // Evolution thresholds
+  evolveTradeThreshold: number;
+  evolveFeedThreshold: number;   // lamports
+  evolveHoldSeconds: number;
+  evolveLockedThreshold: number; // lamports
 }
 
 // Map an on-chain EVOAccount to display EVOData
@@ -101,6 +108,8 @@ export function evoAccountToData(
     listPrice: evo.isListed ? lamportsToSol(evo.listPriceLamports) : null,
     isShattered: evo.isShattered,
     currentState: evo.currentState,
+    totalFedLamports: evo.totalFedLamports,
+    lastTransitionAt: evo.lastTransitionAt * 1000,
     evoPda: evo.pda?.toBase58(),
     collectionPda: evo.collection.toBase58(),
     collectionName: collectionName,
@@ -125,6 +134,10 @@ export function collectionConfigToData(cfg: CollectionConfig): CollectionData {
     artworkManifestHash: cfg.artworkManifestHash,
     shatterFeeDestination: cfg.shatterFeeDestination,
     royaltyDestination: cfg.royaltyDestination,
+    evolveTradeThreshold: cfg.evolveTradeThreshold,
+    evolveFeedThreshold: cfg.evolveFeedThreshold,
+    evolveHoldSeconds: cfg.evolveHoldSeconds,
+    evolveLockedThreshold: cfg.evolveLockedThreshold,
   };
 }
 

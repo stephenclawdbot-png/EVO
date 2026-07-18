@@ -22,6 +22,29 @@ import { BulkArtworkUploader, type BulkArtworkResult } from '@/components/BulkAr
 
 const FEE_DESTINATIONS: FeeDestination[] = ['Treasury', 'Creator', 'Burn', 'Split'];
 const LIFECYCLE_TYPES: LifecycleType[] = ['Static', 'Reveal', 'CommitReveal', 'RevealAndEvolve', 'Custom'];
+
+const LIFECYCLE_INFO: Record<LifecycleType, { label: string; desc: string }> = {
+  Static: {
+    label: 'Static',
+    desc: 'The art never changes. No reveal, no evolution. Simplest option — like a standard NFT with a SOL floor.',
+  },
+  Reveal: {
+    label: 'Reveal',
+    desc: 'Art starts hidden. A reveal authority (you by default) triggers the reveal, showing the final art to everyone at once. No evolution after that.',
+  },
+  CommitReveal: {
+    label: 'Commit-Reveal (provably fair)',
+    desc: 'Same as Reveal, but you commit a cryptographic hash of the reveal secret before minting. Guarantees you can\'t change the art after seeing who minted what. Best for fair drops.',
+  },
+  RevealAndEvolve: {
+    label: 'Reveal & Evolve',
+    desc: 'After reveal, the EVO evolves through multiple visual stages. Each stage is triggered when ALL thresholds below are met. The art literally changes over time.',
+  },
+  Custom: {
+    label: 'Custom',
+    desc: 'Full control. Supports evolution with thresholds (like Reveal & Evolve), plus a reveal authority can manually set the visual stage at any time. Most flexible.',
+  },
+};
 const RANDOMNESS_POLICIES: RandomnessPolicy[] = ['None', 'Predetermined', 'BatchReveal'];
 
 function parseHex32(hex: string): Uint8Array {
@@ -385,8 +408,9 @@ export default function CreateCollectionPage() {
                   <div>
                     <label className={labelCls}>Lifecycle Type</label>
                     <select className={inputCls} value={lifecycleType} onChange={e => setLifecycleType(e.target.value as LifecycleType)}>
-                      {LIFECYCLE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                      {LIFECYCLE_TYPES.map(t => <option key={t} value={t}>{LIFECYCLE_INFO[t].label}</option>)}
                     </select>
+                    <p className="mt-1 text-[10px] leading-relaxed text-dim">{LIFECYCLE_INFO[lifecycleType].desc}</p>
                   </div>
                   <div>
                     <label className={labelCls}>Max States</label>
@@ -412,23 +436,45 @@ export default function CreateCollectionPage() {
 
                     {(lifecycleType === 'RevealAndEvolve' || lifecycleType === 'Custom') && (
                       <div className="rounded border border-border bg-bg p-3">
-                        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-dim">Evolve Triggers</p>
+                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-dim">Evolve Triggers</p>
+                        <p className="mb-3 text-[10px] leading-relaxed text-muted">
+                          The EVO advances to the next stage when <span className="text-text">all</span> enabled triggers below are met.
+                          Thresholds are cumulative — stage 2 needs 2× the threshold, stage 3 needs 3×, etc.
+                          Evolution is permissionless: anyone can trigger it, but it only fires if conditions are met.
+                          Set a field to 0 to disable that trigger.
+                        </p>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className={labelCls}>Trade Threshold</label>
+                            <label className={labelCls}>Trades to evolve</label>
                             <input type="number" className={inputCls} value={evolveTradeThreshold} onChange={e => setEvolveTradeThreshold(e.target.value)} />
+                            <p className="mt-1 text-[10px] text-dim">How many times the EVO must be bought before evolving. 3 = need 3 trades for stage 1, 6 for stage 2…</p>
                           </div>
                           <div>
-                            <label className={labelCls}>Feed Threshold (lamports)</label>
-                            <input type="number" className={inputCls} value={evolveFeedThreshold} onChange={e => setEvolveFeedThreshold(e.target.value)} />
+                            <label className={labelCls}>Feed SOL to evolve</label>
+                            <input type="number" step="0.001" className={inputCls}
+                              value={evolveFeedThreshold ? (parseInt(evolveFeedThreshold) / 1_000_000_000).toString() : ''}
+                              onChange={e => setEvolveFeedThreshold(e.target.value ? Math.floor(parseFloat(e.target.value) * 1_000_000_000).toString() : '0')}
+                              placeholder="0.01"
+                            />
+                            <p className="mt-1 text-[10px] text-dim">Total SOL fed into the EVO. 0.01 = need 0.01 SOL fed for stage 1, 0.02 for stage 2…</p>
                           </div>
                           <div>
-                            <label className={labelCls}>Hold Seconds</label>
-                            <input type="number" className={inputCls} value={evolveHoldSeconds} onChange={e => setEvolveHoldSeconds(e.target.value)} />
+                            <label className={labelCls}>Hold time (hours)</label>
+                            <input type="number" step="0.1" className={inputCls}
+                              value={evolveHoldSeconds ? (parseInt(evolveHoldSeconds) / 3600).toString() : ''}
+                              onChange={e => setEvolveHoldSeconds(e.target.value ? Math.floor(parseFloat(e.target.value) * 3600).toString() : '0')}
+                              placeholder="24"
+                            />
+                            <p className="mt-1 text-[10px] text-dim">Time held since last evolution. 24h = need 24h for stage 1, 48h for stage 2…</p>
                           </div>
                           <div>
-                            <label className={labelCls}>Locked Threshold (lamports)</label>
-                            <input type="number" className={inputCls} value={evolveLockedThreshold} onChange={e => setEvolveLockedThreshold(e.target.value)} />
+                            <label className={labelCls}>Locked SOL to evolve</label>
+                            <input type="number" step="0.001" className={inputCls}
+                              value={evolveLockedThreshold ? (parseInt(evolveLockedThreshold) / 1_000_000_000).toString() : ''}
+                              onChange={e => setEvolveLockedThreshold(e.target.value ? Math.floor(parseFloat(e.target.value) * 1_000_000_000).toString() : '0')}
+                              placeholder="0.01"
+                            />
+                            <p className="mt-1 text-[10px] text-dim">Minimum SOL locked in the PDA. 0.01 = need 0.01 SOL locked for stage 1, 0.02 for stage 2…</p>
                           </div>
                         </div>
                       </div>

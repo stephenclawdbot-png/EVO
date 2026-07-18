@@ -105,6 +105,11 @@ export interface CollectionConfig {
   isRevealed: boolean;
   burnDestination: PublicKey;
   artworkManifestHash: Uint8Array;
+  // Evolution thresholds
+  evolveTradeThreshold: number;
+  evolveFeedThreshold: number;   // lamports
+  evolveHoldSeconds: number;
+  evolveLockedThreshold: number; // lamports
 }
 
 export interface FractureLine {
@@ -311,9 +316,22 @@ export function parseCollectionConfig(data: Buffer): CollectionConfig | null {
   if (off + 1 <= data.length) {
     [isRevealed, off] = readBool(data, off);
   }
-  // Skip evolve thresholds (4+8+8+8=28) + transition_policy_hash (32) + randomness_policy (1) + manifest_root (32) + reveal_commitment (32)
-  if (off + 28 + 32 + 1 + 32 + 32 <= data.length) {
-    off += 28 + 32 + 1 + 32 + 32;
+
+  // Evolve thresholds (u32 + u64 + i64 + u64 = 28 bytes)
+  let evolveTradeThreshold = 0;
+  let evolveFeedThreshold = 0;
+  let evolveHoldSeconds = 0;
+  let evolveLockedThreshold = 0;
+  if (off + 28 <= data.length) {
+    [evolveTradeThreshold, off] = readU32(data, off);
+    [evolveFeedThreshold, off] = readU64(data, off);
+    [evolveHoldSeconds, off] = readI64(data, off);
+    [evolveLockedThreshold, off] = readU64(data, off);
+  }
+
+  // Skip transition_policy_hash (32) + randomness_policy (1) + manifest_root (32) + reveal_commitment (32)
+  if (off + 32 + 1 + 32 + 32 <= data.length) {
+    off += 32 + 1 + 32 + 32;
   }
   if (off + 32 <= data.length) {
     [burnDestination, off] = readPubkey(data, off);
@@ -329,6 +347,7 @@ export function parseCollectionConfig(data: Buffer): CollectionConfig | null {
     mintPriceLamports, lockAmountLamports, bump,
     metadataUri, lifecycleType, maxStates, revealAuthority,
     isRevealed, burnDestination, artworkManifestHash,
+    evolveTradeThreshold, evolveFeedThreshold, evolveHoldSeconds, evolveLockedThreshold,
   };
 }
 

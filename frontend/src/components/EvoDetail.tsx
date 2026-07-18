@@ -46,6 +46,9 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
   const [stageImages, setStageImages] = useState<{ name: string; image: string }[]>([]);
   const [manifestVerification, setManifestVerification] = useState<ManifestVerification | null>(null);
   const [shatterFeeBps, setShatterFeeBps] = useState<number>(500);
+  const [evolveThresholds, setEvolveThresholds] = useState<{
+    trade: number; feed: number; hold: number; locked: number; maxStates: number; lifecycleType: string;
+  } | null>(null);
 
   useEffect(() => {
     readCollectionConfig(connection, collectionName).then(cfg => {
@@ -54,6 +57,14 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
         setMetadataUri(cfg.metadataUri);
         setIsRevealed(cfg.isRevealed);
         setShatterFeeBps(cfg.shatterFeeBps);
+        setEvolveThresholds({
+          trade: cfg.evolveTradeThreshold,
+          feed: cfg.evolveFeedThreshold,
+          hold: cfg.evolveHoldSeconds,
+          locked: cfg.evolveLockedThreshold,
+          maxStates: cfg.maxStates,
+          lifecycleType: cfg.lifecycleType,
+        });
       }
     }).catch(() => {});
   }, [connection, collectionName]);
@@ -272,6 +283,56 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                     )}
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Evolution progress */}
+            {evolveThresholds && (evolveThresholds.lifecycleType === 'RevealAndEvolve' || evolveThresholds.lifecycleType === 'Custom')
+              && evolveThresholds.maxStates > 1 && evo.currentState < evolveThresholds.maxStates - 1 && !evo.isShattered && (
+              <div className="mt-3 rounded border border-border bg-surface p-3">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-dim">
+                  Progress to stage {evo.currentState + 2}
+                </p>
+                <div className="space-y-2">
+                  {evolveThresholds.trade > 0 && (
+                    <EvoProgress
+                      label="Trades"
+                      current={evo.tradeCount}
+                      required={evolveThresholds.trade * (evo.currentState + 1)}
+                    />
+                  )}
+                  {evolveThresholds.feed > 0 && (
+                    <EvoProgress
+                      label="Fed"
+                      current={evo.totalFedLamports}
+                      required={evolveThresholds.feed * (evo.currentState + 1)}
+                      format={(lamports) => `${(lamports / 1_000_000_000).toFixed(4)} SOL`}
+                    />
+                  )}
+                  {evolveThresholds.hold > 0 && (
+                    <EvoProgress
+                      label="Hold time"
+                      current={Math.max(0, Math.floor(Date.now() / 1000) - Math.floor(evo.lastTransitionAt / 1000))}
+                      required={evolveThresholds.hold * (evo.currentState + 1)}
+                      format={(s) => {
+                        if (s < 3600) return `${Math.floor(s / 60)}m`;
+                        if (s < 86400) return `${(s / 3600).toFixed(1)}h`;
+                        return `${Math.floor(s / 86400)}d ${(s % 86400) / 3600 | 0}h`;
+                      }}
+                    />
+                  )}
+                  {evolveThresholds.locked > 0 && (
+                    <EvoProgress
+                      label="Locked"
+                      current={Math.round(evo.lockedLamports * 1_000_000_000)}
+                      required={evolveThresholds.locked * (evo.currentState + 1)}
+                      format={(lamports) => `${(lamports / 1_000_000_000).toFixed(4)} SOL`}
+                    />
+                  )}
+                </div>
+                <p className="mt-2 text-[10px] text-dim">
+                  All conditions must be met. Anyone can trigger evolution.
+                </p>
               </div>
             )}
 
@@ -630,6 +691,25 @@ function Cap({ label, desc }: { label: string; desc: string }) {
     <div className="flex items-center gap-1.5">
       <IconCheck className="h-3 w-3 text-positive" />
       <span className="text-[11px] text-muted"><span className="text-text">{label}</span> <span className="text-dim">{desc}</span></span>
+    </div>
+  );
+}
+
+function EvoProgress({ label, current, required, format }: {
+  label: string; current: number; required: number;
+  format?: (n: number) => string;
+}) {
+  const fmt = format || ((n: number) => String(n));
+  const pct = required > 0 ? Math.min(100, (current / required) * 100) : 100;
+  return (
+    <div>
+      <div className="flex items-center justify-between text-[11px]">
+        <span className="text-muted">{label}</span>
+        <span className="font-mono text-dim">{fmt(current)} / {fmt(required)}</span>
+      </div>
+      <div className="mt-1 h-1.5 overflow-hidden rounded bg-surface-2">
+        <div className="h-full rounded bg-accent transition-all" style={{ width: `${pct}%` }} />
+      </div>
     </div>
   );
 }
