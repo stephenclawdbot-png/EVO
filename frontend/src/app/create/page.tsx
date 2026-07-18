@@ -21,6 +21,12 @@ import { ArtworkDropzone, type ArtworkResult } from '@/components/ArtworkDropzon
 import { BulkArtworkUploader, type BulkArtworkResult } from '@/components/BulkArtworkUploader';
 
 const FEE_DESTINATIONS: FeeDestination[] = ['Treasury', 'Creator', 'Burn', 'Split'];
+const FEE_DEST_LABELS: Record<FeeDestination, string> = {
+  Treasury: 'Protocol Treasury (EVO)',
+  Creator: 'Creator',
+  Burn: 'Burn (Incinerator)',
+  Split: 'Split (Creator + Treasury)',
+};
 const LIFECYCLE_TYPES: LifecycleType[] = ['Static', 'Reveal', 'CommitReveal', 'RevealAndEvolve', 'Custom'];
 
 const LIFECYCLE_INFO: Record<LifecycleType, { label: string; desc: string }> = {
@@ -379,7 +385,7 @@ export default function CreateCollectionPage() {
                   <div>
                     <label className={labelCls}>Shatter Fee →</label>
                     <select className={inputCls} value={shatterFeeDest} onChange={e => setShatterFeeDest(e.target.value as FeeDestination)}>
-                      {FEE_DESTINATIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                      {FEE_DESTINATIONS.map(d => <option key={d} value={d}>{FEE_DEST_LABELS[d]}</option>)}
                     </select>
                   </div>
                 </div>
@@ -392,7 +398,7 @@ export default function CreateCollectionPage() {
                   <div>
                     <label className={labelCls}>Royalty →</label>
                     <select className={inputCls} value={royaltyDest} onChange={e => setRoyaltyDest(e.target.value as FeeDestination)}>
-                      {FEE_DESTINATIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                      {FEE_DESTINATIONS.map(d => <option key={d} value={d}>{FEE_DEST_LABELS[d]}</option>)}
                     </select>
                   </div>
                 </div>
