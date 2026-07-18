@@ -16,11 +16,11 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EVO — Stateful Capital. SOL that remembers.",
-  description: "Every collectible has real value inside it. Trade stories. Keep your floor. The first EVO collection on Solana.",
+  title: "EVO — Assets that don't stay the same.",
+  description: "EVOs hold locked SOL, evolve over time, and can be shattered to recover their value. Not a token. Not an NFT. A new on-chain primitive on Solana.",
   openGraph: {
-    title: "EVO — Stateful Capital. SOL that remembers.",
-    description: "Every collectible has real value inside it. Trade stories. Keep your floor.",
+    title: "EVO — Assets that don't stay the same.",
+    description: "EVOs hold locked SOL, evolve over time, and can be shattered to recover their value. A new on-chain primitive on Solana.",
     type: "website",
   },
 };
