@@ -61,6 +61,7 @@ The program is live on mainnet with these instructions:
 | `reveal_collection` | Reveal authority reveals collection (commit-reveal verified) |
 | `evolve` | Permissionless stage advancement when thresholds met |
 | `set_visual_stage` | Authority-only stage override (Custom lifecycle) |
+| `verify_merkle_proof` | Permissionless — verify EVO metadata against collection's Merkle root |
 
 ### Future Architecture (Redesign)
 
