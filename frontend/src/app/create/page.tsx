@@ -17,6 +17,7 @@ import {
   type ProtocolConfig,
 } from '@/lib/evo-program';
 import { IconCheck, IconAlertTriangle, IconExternalLink, IconHammer, IconSparkle } from '@/components/Icons';
+import { ArtworkDropzone, type ArtworkResult } from '@/components/ArtworkDropzone';
 
 const FEE_DESTINATIONS: FeeDestination[] = ['Treasury', 'Creator', 'Burn', 'Split'];
 const LIFECYCLE_TYPES: LifecycleType[] = ['Static', 'Reveal', 'CommitReveal', 'RevealAndEvolve', 'Custom'];
@@ -68,6 +69,10 @@ export default function CreateCollectionPage() {
   const [transitionPolicyHash, setTransitionPolicyHash] = useState('');
   const [artworkManifestHash, setArtworkManifestHash] = useState('');
 
+  // Art mode
+  const [artMode, setArtMode] = useState<'generative' | 'upload'>('upload');
+  const [artwork, setArtwork] = useState<ArtworkResult | null>(null);
+
   const fetchProtocol = useCallback(async () => {
     setLoadingProto(true);
     try {
@@ -118,16 +123,21 @@ export default function CreateCollectionPage() {
     if (!wallet.connected || !wallet.publicKey) { setError('Connect wallet first'); return; }
     if (!protocol?.initialized) { setError('Protocol not initialized yet. Initialize it first.'); return; }
     if (!name.trim()) { setError('Collection name is required'); return; }
-    if (!metadataUri.trim()) { setError('Metadata URI is required'); return; }
+    const effectiveMetadataUri = artMode === 'upload' && artwork ? artwork.manifestUri : metadataUri.trim();
+    if (!effectiveMetadataUri) {
+      setError(artMode === 'upload' ? 'Upload at least one image' : 'Metadata URI is required');
+      return;
+    }
     setSubmitting(true); setError(null); setTxSig(null);
     try {
       const lamportsPerSol = 1_000_000_000;
+      const effectiveManifestRoot = artMode === 'upload' && artwork ? artwork.merkleRoot : manifestRoot;
       const lifecycle = {
         lifecycleType,
         maxStates: parseInt(maxStates) || 1,
         revealAuthority: revealAuthority.trim() ? new PublicKey(revealAuthority.trim()) : wallet.publicKey!,
         randomnessPolicy,
-        manifestRoot: parseHex32(manifestRoot),
+        manifestRoot: parseHex32(effectiveManifestRoot),
         evolveTradeThreshold: parseInt(evolveTradeThreshold) || 0,
         evolveFeedThreshold: parseInt(evolveFeedThreshold) || 0,
         evolveHoldSeconds: parseInt(evolveHoldSeconds) || 0,
@@ -147,7 +157,7 @@ export default function CreateCollectionPage() {
         royaltyDest,
         Math.floor(parseFloat(mintPriceSol) * lamportsPerSol),
         Math.floor(parseFloat(lockAmountSol) * lamportsPerSol),
-        metadataUri.trim(),
+        effectiveMetadataUri,
         lifecycle,
       );
       const sig = await sendTx(ix);
@@ -233,12 +243,43 @@ export default function CreateCollectionPage() {
                     <label className={labelCls}>Supply Cap</label>
                     <input type="number" className={inputCls} value={supplyCap} onChange={e => setSupplyCap(e.target.value)} />
                   </div>
-                  <div>
-                    <label className={labelCls}>Metadata URI</label>
-                    <input className={inputCls} value={metadataUri} onChange={e => setMetadataUri(e.target.value)} placeholder="https://…/manifest.json" />
-                  </div>
                 </div>
               </div>
+
+              {/* Art mode toggle */}
+              <div className="mt-3">
+                <label className={labelCls}>Art Mode</label>
+                <div className="flex rounded-lg border border-border p-0.5">
+                  <button
+                    onClick={() => setArtMode('upload')}
+                    className={`flex-1 rounded px-3 py-1.5 text-xs font-semibold transition-colors ${artMode === 'upload' ? 'bg-accent text-white' : 'text-muted hover:text-text'}`}
+                  >
+                    Upload Images
+                  </button>
+                  <button
+                    onClick={() => setArtMode('generative')}
+                    className={`flex-1 rounded px-3 py-1.5 text-xs font-semibold transition-colors ${artMode === 'generative' ? 'bg-accent text-white' : 'text-muted hover:text-text'}`}
+                  >
+                    Generative (paste URI)
+                  </button>
+                </div>
+              </div>
+
+              {artMode === 'upload' ? (
+                <div className="mt-3">
+                  <label className={labelCls}>Artwork (drag &amp; drop)</label>
+                  <ArtworkDropzone
+                    collectionName={name}
+                    maxStates={parseInt(maxStates) || 1}
+                    onArtworkReady={setArtwork}
+                  />
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <label className={labelCls}>Metadata URI</label>
+                  <input className={inputCls} value={metadataUri} onChange={e => setMetadataUri(e.target.value)} placeholder="https://…/manifest.json" />
+                </div>
+              )}
             </div>
 
             {/* Economics */}
@@ -354,7 +395,13 @@ export default function CreateCollectionPage() {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className={labelCls}>Manifest Root (hex)</label>
-                        <input className={inputCls} value={manifestRoot} onChange={e => setManifestRoot(e.target.value)} placeholder="64 hex chars (optional)" />
+                        <input
+                          className={inputCls}
+                          value={artMode === 'upload' && artwork ? artwork.merkleRoot : manifestRoot}
+                          onChange={e => setManifestRoot(e.target.value)}
+                          placeholder="64 hex chars (auto-filled from upload)"
+                          readOnly={artMode === 'upload' && !!artwork}
+                        />
                       </div>
                       <div>
                         <label className={labelCls}>Transition Policy Hash (hex)</label>
