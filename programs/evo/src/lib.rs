@@ -7,6 +7,7 @@ mod errors;
 mod state;
 mod instructions;
 mod utils;
+mod vrf;
 
 use instructions::*;
 use state::*;
