@@ -148,4 +148,13 @@ pub enum EvoError {
 
     #[msg("Insufficient lamports to pay the transfer fee")]
     InsufficientTransferFee,
+
+    #[msg("Only the protocol deployer can call this instruction")]
+    NotProtocolDeployer,
+
+    #[msg("Burn destination cannot be a program-derived address of this program")]
+    BurnDestinationIsProgramPda,
+
+    #[msg("EVO is currently listed — delist before transferring")]
+    EvoIsListedForTransfer,
 }

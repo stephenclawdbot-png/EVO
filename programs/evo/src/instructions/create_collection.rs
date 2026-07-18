@@ -108,12 +108,22 @@ pub fn create_collection(
     config.manifest_root = lifecycle.manifest_root;
     config.reveal_commitment = [0u8; 32];
 
-    // Configurable burn destination — must NOT be the creator's wallet
-    // (prevents "burn" fees being silently routed back to the creator)
+    // Configurable burn destination — must NOT be:
+    //   1. The creator's wallet (prevents "burn" fees routed back to creator)
+    //   2. The collection PDA itself (prevents reclaiming burned fees via close_collection)
+    //   3. The protocol PDA (same vector via future protocol instructions)
     if lifecycle.burn_destination != Pubkey::default() {
         require!(
             lifecycle.burn_destination != ctx.accounts.payer.key(),
             EvoError::InvalidBurnDestination
+        );
+        require!(
+            lifecycle.burn_destination != ctx.accounts.collection_config.key(),
+            EvoError::BurnDestinationIsProgramPda
+        );
+        require!(
+            lifecycle.burn_destination != ctx.accounts.protocol_config.key(),
+            EvoError::BurnDestinationIsProgramPda
         );
     }
     config.burn_destination = lifecycle.burn_destination;

@@ -100,6 +100,11 @@ pub fn route_fee<'info>(
                 incinerator.key() == burn_dest,
                 EvoError::InvalidBurnDestination
             );
+            // Prevent burn destination from being a program-owned PDA
+            require!(
+                incinerator.owner != &crate::ID,
+                EvoError::BurnDestinationIsProgramPda
+            );
             let cpi_ctx = CpiContext::new(
                 system_program.to_account_info(),
                 Transfer {

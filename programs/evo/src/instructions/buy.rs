@@ -28,9 +28,9 @@ pub struct Buy<'info> {
     pub protocol_config: Account<'info, ProtocolConfig>,
 
     /// Current seller — receives the sale price minus royalty
-    /// CHECK: Verified by evo.owner
+    /// CHECK: Verified by address constraint against evo.owner
     #[account(mut, address = evo.owner)]
-    pub seller: SystemAccount<'info>,
+    pub seller: UncheckedAccount<'info>,
 
     /// Collection creator — may receive royalty depending on config
     /// CHECK: Verified by collection_config.creator

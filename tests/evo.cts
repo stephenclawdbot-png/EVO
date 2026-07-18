@@ -1320,8 +1320,8 @@ describe("EVO", () => {
       assert.isTrue(evoAfter.isListed, "EVO still listed");
     });
 
-    // --- Buy stale listing after transfer ---
-    it("rejects buy of stale listing after ownership transfer", async () => {
+    // --- Transfer of listed EVO is rejected (security fix) ---
+    it("rejects transfer of listed EVO (must delist first)", async () => {
       // Forge a new EVO for this test
       const EVO_ID2 = 1;
       const evoPk2 = evoPda(collectionPk, EVO_ID2);
@@ -1343,35 +1343,21 @@ describe("EVO", () => {
         .signers([buyer])
         .rpc();
 
-      // Transfer clears the listing
-      await program.methods
-        .transfer(EVO_ID2, other.publicKey)
-        .accounts({ evo: evoPk2, collectionConfig: collectionPk, protocolConfig: protocolPda, treasury: treasury.publicKey, currentOwner: buyer.publicKey, systemProgram: SystemProgram.programId })
-        .signers([buyer])
-        .rpc();
-
-      const evo = await program.account.evoAccount.fetch(evoPk2);
-      assert.isFalse(evo.isListed, "transfer clears listing");
-
-      // Try to buy the stale listing — should fail
+      // Transfer should be rejected — EVO is listed
       try {
         await program.methods
-          .buy(EVO_ID2)
-          .accounts({
-            evo: evoPk2,
-            collectionConfig: collectionPk,
-            seller: buyer.publicKey, // old owner, now wrong
-            creator: creator.publicKey,
-            treasury: treasury.publicKey,
-            incinerator: INCINERATOR,
-            buyer: buyer.publicKey,
-          })
+          .transfer(EVO_ID2, other.publicKey)
+          .accounts({ evo: evoPk2, collectionConfig: collectionPk, protocolConfig: protocolPda, treasury: treasury.publicKey, currentOwner: buyer.publicKey, systemProgram: SystemProgram.programId })
           .signers([buyer])
           .rpc();
-        assert.fail("should reject stale listing buy");
+        assert.fail("should reject transfer of listed EVO");
       } catch (e) {
-        expect(e.message).to.match(/not listed|ConstraintAddress|address|0x7d3|0x6/i);
+        expect(e.message).to.match(/EvoIsListedForTransfer|listed/i);
       }
+
+      // EVO should still be listed (transfer was blocked)
+      const evo = await program.account.evoAccount.fetch(evoPk2);
+      assert.isTrue(evo.isListed, "EVO still listed after rejected transfer");
     });
 
     // --- Malformed lifecycle parameters ---

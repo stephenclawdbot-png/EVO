@@ -35,13 +35,15 @@ pub fn close_collection(ctx: Context<CloseCollection>, name: String) -> Result<(
 
     // Read name string length
     let name_len = u32::from_le_bytes(
-        data[offset..offset + 4].try_into().unwrap()
+        data[offset..offset + 4].try_into().map_err(|_| error!(EvoError::CollectionMismatch))?
     ) as usize;
     offset += 4 + name_len;
 
     // Read creator (32 bytes)
     let creator_bytes = &data[offset..offset + 32];
-    let creator_pubkey = Pubkey::new_from_array(creator_bytes.try_into().unwrap());
+    let creator_pubkey = Pubkey::new_from_array(
+        creator_bytes.try_into().map_err(|_| error!(EvoError::CollectionMismatch))?
+    );
     offset += 32;
 
     // Skip supply_cap (4 bytes)
@@ -49,7 +51,7 @@ pub fn close_collection(ctx: Context<CloseCollection>, name: String) -> Result<(
 
     // Read current_supply (4 bytes)
     let current_supply = u32::from_le_bytes(
-        data[offset..offset + 4].try_into().unwrap()
+        data[offset..offset + 4].try_into().map_err(|_| error!(EvoError::CollectionMismatch))?
     );
 
     drop(data);

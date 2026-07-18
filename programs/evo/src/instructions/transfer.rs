@@ -13,6 +13,7 @@ pub struct Transfer<'info> {
         bump = evo.bump,
         constraint = evo.owner == current_owner.key() @ EvoError::NotEvoOwner,
         constraint = !evo.is_shattered @ EvoError::EvoShattered,
+        constraint = !evo.is_listed @ EvoError::EvoIsListedForTransfer,
     )]
     pub evo: Account<'info, EVOAccount>,
 

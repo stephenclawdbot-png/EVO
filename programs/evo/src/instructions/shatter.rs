@@ -105,6 +105,12 @@ pub fn shatter(ctx: Context<Shatter>, evo_id: u32) -> Result<()> {
                     ctx.accounts.incinerator.key() == burn_dest,
                     EvoError::InvalidBurnDestination
                 );
+                // Prevent burn destination from being a program-owned PDA
+                // (stops creator from reclaiming "burned" fees via close_collection)
+                require!(
+                    ctx.accounts.incinerator.owner != &crate::ID,
+                    EvoError::BurnDestinationIsProgramPda
+                );
                 transfer_lamports(
                     &evo_info,
                     &ctx.accounts.incinerator.to_account_info(),
