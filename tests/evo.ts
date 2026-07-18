@@ -27,6 +27,7 @@ describe("EVO", () => {
 
   // Constants
   const CREATION_FEE = SOL(0.001);
+  const TRANSFER_FEE_LAMPORTS = 9_000_000;
   const MINT_PRICE = SOL(0.0001);
   const LOCK_AMOUNT = SOL(0.001);
   const SHATTER_FEE_BPS = 500; // 5%
@@ -268,10 +269,11 @@ describe("EVO", () => {
     it("transfers ownership without moving locked SOL", async () => {
       const evoBalBefore = await lamportsOf(evoPk);
       const lockedBefore = (await program.account.evoAccount.fetch(evoPk)).lockedLamports;
+      const treasuryBefore = await lamportsOf(treasury.publicKey);
 
       await program.methods
         .transfer(EVO_ID, buyer.publicKey)
-        .accounts({ evo: evoPk, collectionConfig: collectionPk, currentOwner: other.publicKey })
+        .accounts({ evo: evoPk, collectionConfig: collectionPk, protocolConfig: protocolPda, treasury: treasury.publicKey, currentOwner: other.publicKey, systemProgram: SystemProgram.programId })
         .signers([other])
         .rpc();
 
@@ -281,13 +283,15 @@ describe("EVO", () => {
       assert.isFalse(evo.isListed, "transfer should clear listing");
       const evoBalAfter = await lamportsOf(evoPk);
       assert.equal(evoBalAfter, evoBalBefore, "EVO balance unchanged on transfer");
+      const treasuryAfter = await lamportsOf(treasury.publicKey);
+      assert.equal(treasuryAfter - treasuryBefore, TRANSFER_FEE_LAMPORTS, "treasury receives flat transfer fee");
     });
 
     it("rejects transfer by non-owner", async () => {
       try {
         await program.methods
           .transfer(EVO_ID, other.publicKey)
-          .accounts({ evo: evoPk, collectionConfig: collectionPk, currentOwner: other.publicKey })
+          .accounts({ evo: evoPk, collectionConfig: collectionPk, protocolConfig: protocolPda, treasury: treasury.publicKey, currentOwner: other.publicKey, systemProgram: SystemProgram.programId })
           .signers([other])
           .rpc();
         assert.fail("non-owner should not transfer");
@@ -1364,7 +1368,7 @@ describe("EVO", () => {
       // Transfer clears the listing
       await program.methods
         .transfer(EVO_ID2, other.publicKey)
-        .accounts({ evo: evoPk2, collectionConfig: collectionPk, currentOwner: buyer.publicKey })
+        .accounts({ evo: evoPk2, collectionConfig: collectionPk, protocolConfig: protocolPda, treasury: treasury.publicKey, currentOwner: buyer.publicKey, systemProgram: SystemProgram.programId })
         .signers([buyer])
         .rpc();
 

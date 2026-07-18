@@ -181,8 +181,10 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
     setAction('transfer'); setError(null); setTxResult(null);
     try {
       const collectionPda = new PublicKey(evo.collectionPda!);
+      const proto = await readProtocolConfig(connection);
+      if (!proto) throw new Error('Protocol not found');
       const sig = await sendTx(createTransferIx(
-        new PublicKey(evo.evoPda!), collectionPda, wallet.publicKey!, evo.id, new PublicKey(transferAddress),
+        new PublicKey(evo.evoPda!), collectionPda, wallet.publicKey!, proto.treasury, evo.id, new PublicKey(transferAddress),
       ));
       if (sig) { setTxResult(sig); setTransferAddress(''); onRefresh?.(); }
     } catch (err: any) { setError(err.message || 'Transfer failed'); } finally { setAction(null); }

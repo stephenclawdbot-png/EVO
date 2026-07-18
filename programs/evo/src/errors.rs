@@ -145,4 +145,7 @@ pub enum EvoError {
 
     #[msg("Merkle proof does not match the collection's manifest root")]
     MerkleProofInvalid,
+
+    #[msg("Insufficient lamports to pay the transfer fee")]
+    InsufficientTransferFee,
 }

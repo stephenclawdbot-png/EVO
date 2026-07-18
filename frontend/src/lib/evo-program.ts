@@ -591,6 +591,7 @@ export function createTransferIx(
   evoPda: PublicKey,
   collectionPda: PublicKey,
   currentOwner: PublicKey,
+  treasury: PublicKey,
   evoId: number,
   newOwner: PublicKey,
 ): TransactionInstruction {
@@ -600,7 +601,10 @@ export function createTransferIx(
     keys: [
       { pubkey: evoPda, isSigner: false, isWritable: true },
       { pubkey: collectionPda, isSigner: false, isWritable: false },
+      { pubkey: PROTOCOL_PDA, isSigner: false, isWritable: false },
+      { pubkey: treasury, isSigner: false, isWritable: true },
       { pubkey: currentOwner, isSigner: true, isWritable: true },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     ],
     data,
   });

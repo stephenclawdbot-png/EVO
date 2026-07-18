@@ -392,16 +392,21 @@ export function createTransferIx(
   evoPda: PublicKey,
   collectionPda: PublicKey,
   currentOwner: PublicKey,
+  treasury: PublicKey,
   evoId: number,
   newOwner: PublicKey,
 ): TransactionInstruction {
+  const [protocolPda] = getProtocolConfigPDA();
   const data = Buffer.concat([disc('transfer'), writeU32(evoId), writePubkey(newOwner)]);
   return new TransactionInstruction({
     programId: PROGRAM,
     keys: [
       { pubkey: evoPda, isSigner: false, isWritable: true },
       { pubkey: collectionPda, isSigner: false, isWritable: false },
+      { pubkey: protocolPda, isSigner: false, isWritable: false },
+      { pubkey: treasury, isSigner: false, isWritable: true },
       { pubkey: currentOwner, isSigner: true, isWritable: true },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     ],
     data,
   });

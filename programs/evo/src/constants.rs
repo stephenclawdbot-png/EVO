@@ -25,3 +25,8 @@ pub const MAX_SUPPLY_CEILING: u32 = 20_000;
 
 /// Solana incinerator — lamports sent here are permanently destroyed
 pub const INCINERATOR: Pubkey = pubkey!("1nc1nerator11111111111111111111111111111111");
+
+/// Flat fee charged on every EVO transfer, routed to the protocol treasury.
+/// Prevents royalty bypass via off-platform deals — a small, fixed cost that
+/// makes direct transfers non-free without coupling to a sale price.
+pub const TRANSFER_FEE_LAMPORTS: u64 = 9_000_000; // 0.009 SOL
