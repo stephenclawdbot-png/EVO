@@ -17,7 +17,6 @@ import {
   type ProtocolConfig,
 } from '@/lib/evo-program';
 import { IconCheck, IconAlertTriangle, IconExternalLink, IconHammer, IconSparkle } from '@/components/Icons';
-import { ArtworkDropzone, type ArtworkResult } from '@/components/ArtworkDropzone';
 import { BulkArtworkUploader, type BulkArtworkResult } from '@/components/BulkArtworkUploader';
 
 const FEE_DESTINATIONS: FeeDestination[] = ['Treasury', 'Creator', 'Burn', 'Split'];
@@ -104,8 +103,7 @@ export default function CreateCollectionPage() {
   const [artworkManifestHash, setArtworkManifestHash] = useState('');
 
   // Art mode
-  const [artMode, setArtMode] = useState<'generative' | 'upload' | 'bulk'>('upload');
-  const [artwork, setArtwork] = useState<ArtworkResult | null>(null);
+  const [artMode, setArtMode] = useState<'generative' | 'bulk'>('bulk');
   const [bulkArtwork, setBulkArtwork] = useState<BulkArtworkResult | null>(null);
 
   const fetchProtocol = useCallback(async () => {
@@ -159,12 +157,11 @@ export default function CreateCollectionPage() {
     if (!protocol?.initialized) { setError('Protocol not initialized yet. Initialize it first.'); return; }
     if (!name.trim()) { setError('Collection name is required'); return; }
     const effectiveMetadataUri =
-      (artMode === 'upload' && artwork ? artwork.manifestUri :
-       artMode === 'bulk' && bulkArtwork ? bulkArtwork.manifestUri :
+      (artMode === 'bulk' && bulkArtwork ? bulkArtwork.manifestUri :
        metadataUri.trim()) || '';
 
     if (!effectiveMetadataUri) {
-      setError(artMode === 'upload' || artMode === 'bulk' ? 'Upload at least one image' : 'Metadata URI is required');
+      setError(artMode === 'bulk' ? 'Upload at least one image' : 'Metadata URI is required');
       return;
     }
 
@@ -180,7 +177,6 @@ export default function CreateCollectionPage() {
     try {
       const lamportsPerSol = 1_000_000_000;
       const effectiveManifestRoot =
-        artMode === 'upload' && artwork ? artwork.merkleRoot :
         artMode === 'bulk' && bulkArtwork ? bulkArtwork.merkleRoot :
         manifestRoot;
       const lifecycle = {
@@ -312,54 +308,6 @@ export default function CreateCollectionPage() {
               </div>
 
               {/* Art mode toggle */}
-              <div className="mt-3">
-                <label className={labelCls}>Art Mode</label>
-                <div className="flex rounded-lg border border-border p-0.5">
-                  <button
-                    onClick={() => setArtMode('upload')}
-                    className={`flex-1 rounded px-3 py-1.5 text-xs font-semibold transition-colors ${artMode === 'upload' ? 'bg-accent text-white' : 'text-muted hover:text-text'}`}
-                  >
-                    Upload
-                  </button>
-                  <button
-                    onClick={() => setArtMode('bulk')}
-                    className={`flex-1 rounded px-3 py-1.5 text-xs font-semibold transition-colors ${artMode === 'bulk' ? 'bg-accent text-white' : 'text-muted hover:text-text'}`}
-                  >
-                    Bulk (10k+)
-                  </button>
-                  <button
-                    onClick={() => setArtMode('generative')}
-                    className={`flex-1 rounded px-3 py-1.5 text-xs font-semibold transition-colors ${artMode === 'generative' ? 'bg-accent text-white' : 'text-muted hover:text-text'}`}
-                  >
-                    Generative
-                  </button>
-                </div>
-              </div>
-
-              {artMode === 'upload' ? (
-                <div className="mt-3">
-                  <label className={labelCls}>Artwork (drag &amp; drop)</label>
-                  <ArtworkDropzone
-                    collectionName={name}
-                    maxStates={parseInt(maxStates) || 1}
-                    onArtworkReady={setArtwork}
-                  />
-                </div>
-              ) : artMode === 'bulk' ? (
-                <div className="mt-3">
-                  <label className={labelCls}>Bulk Artwork (ZIP or per-state)</label>
-                  <BulkArtworkUploader
-                    collectionName={name}
-                    stateNames={Array.from({ length: parseInt(maxStates) || 1 }, (_, i) => `State ${i + 1}`)}
-                    onArtworkReady={setBulkArtwork}
-                  />
-                </div>
-              ) : (
-                <div className="mt-3">
-                  <label className={labelCls}>Metadata URI</label>
-                  <input className={inputCls} value={metadataUri} onChange={e => setMetadataUri(e.target.value)} placeholder="https://…/manifest.json" />
-                </div>
-              )}
             </div>
 
             {/* Economics */}
@@ -520,13 +468,12 @@ export default function CreateCollectionPage() {
                         <input
                           className={inputCls}
                           value={
-                            artMode === 'upload' && artwork ? artwork.merkleRoot :
                             artMode === 'bulk' && bulkArtwork ? bulkArtwork.merkleRoot :
                             manifestRoot
                           }
                           onChange={e => setManifestRoot(e.target.value)}
                           placeholder="64 hex chars (auto-filled from upload)"
-                          readOnly={(artMode === 'upload' && !!artwork) || (artMode === 'bulk' && !!bulkArtwork)}
+                          readOnly={artMode === 'bulk' && !!bulkArtwork}
                         />
                       </div>
                       <div>
@@ -535,6 +482,50 @@ export default function CreateCollectionPage() {
                       </div>
                     </div>
                   </>
+                )}
+              </div>
+            </div>
+
+            {/* Artwork */}
+            <div className={sectionCls}>
+              <h2 className={sectionTitleCls}><IconSparkle className="h-4 w-4 text-accent" /> Artwork</h2>
+              <div className="space-y-3">
+                <div>
+                  <label className={labelCls}>Art Mode</label>
+                  <div className="flex rounded-lg border border-border p-0.5">
+                    <button
+                      onClick={() => setArtMode('bulk')}
+                      className={`flex-1 rounded px-3 py-1.5 text-xs font-semibold transition-colors ${artMode === 'bulk' ? 'bg-accent text-white' : 'text-muted hover:text-text'}`}
+                    >
+                      Upload (Arweave)
+                    </button>
+                    <button
+                      onClick={() => setArtMode('generative')}
+                      className={`flex-1 rounded px-3 py-1.5 text-xs font-semibold transition-colors ${artMode === 'generative' ? 'bg-accent text-white' : 'text-muted hover:text-text'}`}
+                    >
+                      External URI
+                    </button>
+                  </div>
+                  <p className="mt-1 text-[10px] leading-relaxed text-dim">
+                    {artMode === 'bulk' && 'Uploads to Arweave via Irys. Permanent storage, costs SOL. Mainnet-ready. Supports ZIP and 10k+ images.'}
+                    {artMode === 'generative' && 'Point to an existing metadata manifest URI. No upload needed. For creators who already host their art elsewhere.'}
+                  </p>
+                </div>
+
+                {artMode === 'bulk' ? (
+                  <div>
+                    <label className={labelCls}>Artwork (ZIP or per-state)</label>
+                    <BulkArtworkUploader
+                      collectionName={name}
+                      stateNames={Array.from({ length: lifecycleType === 'Static' ? 1 : (parseInt(maxStates) || 1) }, (_, i) => `State ${i + 1}`)}
+                      onArtworkReady={setBulkArtwork}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className={labelCls}>Metadata URI</label>
+                    <input className={inputCls} value={metadataUri} onChange={e => setMetadataUri(e.target.value)} placeholder="https://…/manifest.json" />
+                  </div>
                 )}
               </div>
             </div>
