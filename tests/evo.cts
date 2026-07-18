@@ -335,7 +335,7 @@ describe("EVO", () => {
       const lockedBefore = (await program.account.evoAccount.fetch(evoPk)).lockedLamports;
 
       await program.methods
-        .buy()
+        .buy(EVO_ID)
         .accounts({
           evo: evoPk,
           collectionConfig: collectionPk,
@@ -490,7 +490,7 @@ describe("EVO", () => {
     it("rejects buying an unlisted EVO", async () => {
       try {
         await program.methods
-          .buy()
+          .buy(EVO_ID)
           .accounts({
             evo: evoPk,
             collectionConfig: collectionPk,
@@ -689,7 +689,7 @@ describe("EVO", () => {
     it("rejects evolve when conditions not met", async () => {
       try {
         await program.methods
-          .evolve()
+          .evolve(EVO_ID)
           .accounts({ evo: evoPk, collection: collectionPk })
           .rpc();
         assert.fail("should not evolve without feeding");
@@ -705,7 +705,7 @@ describe("EVO", () => {
         .signers([buyer])
         .rpc();
       await program.methods
-        .evolve()
+        .evolve(EVO_ID)
         .accounts({ evo: evoPk, collection: collectionPk })
         .rpc();
       const evo = await program.account.evoAccount.fetch(evoPk);
@@ -716,7 +716,7 @@ describe("EVO", () => {
     it("rejects evolve when feed below cumulative threshold for state 2", async () => {
       try {
         await program.methods
-          .evolve()
+          .evolve(EVO_ID)
           .accounts({ evo: evoPk, collection: collectionPk })
           .rpc();
         assert.fail("should not evolve (need 2x threshold for state 2)");
@@ -732,7 +732,7 @@ describe("EVO", () => {
         .signers([buyer])
         .rpc();
       await program.methods
-        .evolve()
+        .evolve(EVO_ID)
         .accounts({ evo: evoPk, collection: collectionPk })
         .rpc();
       const evo = await program.account.evoAccount.fetch(evoPk);
@@ -748,7 +748,7 @@ describe("EVO", () => {
         .rpc();
       try {
         await program.methods
-          .evolve()
+          .evolve(EVO_ID)
           .accounts({ evo: evoPk, collection: collectionPk })
           .rpc();
         assert.fail("should not evolve past max state");
@@ -908,7 +908,7 @@ describe("EVO", () => {
     it("rejects evolve on a Reveal collection (no evolution)", async () => {
       try {
         await program.methods
-          .evolve()
+          .evolve(EVO_ID)
           .accounts({ evo: evoPk, collection: collectionPk })
           .rpc();
         assert.fail("should not evolve on Reveal collection");
@@ -994,7 +994,7 @@ describe("EVO", () => {
 
     it("set_visual_stage to 3 succeeds (authority)", async () => {
       await program.methods
-        .setVisualStage(3)
+        .setVisualStage(EVO_ID, 3)
         .accounts({
           evo: evoPk,
           collectionConfig: collectionPk,
@@ -1010,7 +1010,7 @@ describe("EVO", () => {
     it("rejects set_visual_stage by non-authority", async () => {
       try {
         await program.methods
-          .setVisualStage(2)
+          .setVisualStage(EVO_ID, 2)
           .accounts({
             evo: evoPk,
             collectionConfig: collectionPk,
@@ -1027,7 +1027,7 @@ describe("EVO", () => {
     it("rejects set_visual_stage exceeding max_states", async () => {
       try {
         await program.methods
-          .setVisualStage(5) // maxStates=5, valid range 0..4
+          .setVisualStage(EVO_ID, 5) // maxStates=5, valid range 0..4
           .accounts({
             evo: evoPk,
             collectionConfig: collectionPk,
@@ -1047,7 +1047,7 @@ describe("EVO", () => {
       const evo1Pk = evoPda(evo1CollectionPk, 0);
       try {
         await program.methods
-          .setVisualStage(1)
+          .setVisualStage(EVO_ID, 1)
           .accounts({
             evo: evo1Pk,
             collectionConfig: evo1CollectionPk,
@@ -1106,7 +1106,7 @@ describe("EVO", () => {
     it("rejects evolve on Static collection", async () => {
       try {
         await program.methods
-          .evolve()
+          .evolve(EVO_ID)
           .accounts({ evo: evoPk, collection: collectionPk })
           .rpc();
         assert.fail("should not evolve on Static collection");
@@ -1228,7 +1228,7 @@ describe("EVO", () => {
 
       try {
         await program.methods
-          .buy()
+          .buy(EVO_ID)
           .accounts({
             evo: evoPk,
             collectionConfig: collectionPk,
@@ -1342,7 +1342,7 @@ describe("EVO", () => {
       // Try to buy the stale listing — should fail
       try {
         await program.methods
-          .buy()
+          .buy(EVO_ID2)
           .accounts({
             evo: evoPk2,
             collectionConfig: collectionPk,
@@ -1464,7 +1464,7 @@ describe("EVO", () => {
       const creatorBefore = await lamportsOf(creator.publicKey);
 
       await program.methods
-        .buy()
+        .buy(EVO_ID)
         .accounts({
           evo: evoPk0,
           collectionConfig: zeroRoyCol,
@@ -1586,7 +1586,7 @@ describe("EVO", () => {
       // Buy should fail — no one has u64::MAX lamports
       try {
         await program.methods
-          .buy()
+          .buy(EVO_ID)
           .accounts({
             evo: evoPk4,
             collectionConfig: collectionPk,

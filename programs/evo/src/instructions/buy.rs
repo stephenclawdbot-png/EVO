@@ -6,9 +6,12 @@ use anchor_lang::prelude::*;
 use anchor_lang::system_program::{Transfer, transfer};
 
 #[derive(Accounts)]
+#[instruction(evo_id: u32)]
 pub struct Buy<'info> {
     #[account(
         mut,
+        seeds = [EVO_SEED, collection_config.key().as_ref(), &evo_id.to_le_bytes()],
+        bump = evo.bump,
         constraint = evo.is_listed @ EvoError::EvoNotListed,
         constraint = !evo.is_shattered @ EvoError::EvoShattered,
         constraint = evo.collection == collection_config.key() @ EvoError::CollectionMismatch,
@@ -52,7 +55,7 @@ pub struct Buy<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn buy(ctx: Context<Buy>) -> Result<()> {
+pub fn buy(ctx: Context<Buy>, evo_id: u32) -> Result<()> {
     let evo = &mut ctx.accounts.evo;
     let collection = &ctx.accounts.collection_config;
     let price = evo.list_price_lamports;

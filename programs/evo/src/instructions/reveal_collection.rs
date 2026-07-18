@@ -1,11 +1,17 @@
+use crate::constants::*;
 use crate::state::CollectionConfig;
 use crate::errors::EvoError;
+use crate::state::LifecycleType;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::keccak;
 
 #[derive(Accounts)]
 pub struct RevealCollection<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [COLLECTION_SEED, collection.name.as_bytes()],
+        bump = collection.bump,
+    )]
     pub collection: Account<'info, CollectionConfig>,
 
     /// The reveal authority — must match collection.reveal_authority
@@ -26,9 +32,19 @@ pub fn reveal_collection(ctx: Context<RevealCollection>, secret: [u8; 32]) -> Re
 
     // Static collections cannot be revealed
     require!(
-        collection.lifecycle_type != crate::state::LifecycleType::Static,
+        collection.lifecycle_type != LifecycleType::Static,
         EvoError::StageTransitionNotAllowed
     );
+
+    // CommitReveal collections MUST have a commitment set before reveal.
+    // This enforces the "provably fair" guarantee — without this check,
+    // a creator who never called commit_reveal could freely choose the secret.
+    if collection.lifecycle_type == LifecycleType::CommitReveal {
+        require!(
+            collection.reveal_commitment != [0u8; 32],
+            EvoError::CommitmentAfterMintStarted
+        );
+    }
 
     // If a commitment was set (commit_reveal before minting), verify the secret.
     if collection.reveal_commitment != [0u8; 32] {

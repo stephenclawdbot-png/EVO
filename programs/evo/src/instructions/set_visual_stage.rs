@@ -11,8 +11,13 @@ use anchor_lang::prelude::*;
 /// `Static`, `Reveal`, `CommitReveal`, and `RevealAndEvolve` collections
 /// reject this instruction — their stage transitions are protocol-enforced.
 #[derive(Accounts)]
+#[instruction(evo_id: u32, stage: u16)]
 pub struct SetVisualStage<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [EVO_SEED, collection_config.key().as_ref(), &evo_id.to_le_bytes()],
+        bump = evo.bump,
+    )]
     pub evo: Account<'info, EVOAccount>,
 
     /// Collection config — must match the EVO's collection
@@ -29,7 +34,7 @@ pub struct SetVisualStage<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn set_visual_stage(ctx: Context<SetVisualStage>, stage: u16) -> Result<()> {
+pub fn set_visual_stage(ctx: Context<SetVisualStage>, evo_id: u32, stage: u16) -> Result<()> {
     let evo = &mut ctx.accounts.evo;
     let collection = &ctx.accounts.collection_config;
 

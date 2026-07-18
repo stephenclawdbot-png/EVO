@@ -282,6 +282,7 @@ export function createBuyIx(
   buyer: PublicKey,
   treasury: PublicKey,
   royaltyDest: FeeDestination,
+  evoId: number,
   burnDestination?: PublicKey,
 ): TransactionInstruction {
   const [protocolPda] = getProtocolConfigPDA();
@@ -306,7 +307,7 @@ export function createBuyIx(
       { pubkey: buyer, isSigner: true, isWritable: true },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     ],
-    data: disc('buy'),
+    data: Buffer.concat([disc('buy'), writeU32(evoId)]),
   });
 }
 
@@ -437,6 +438,7 @@ export function createRevealCollectionIx(
 export function createEvolveIx(
   evoPda: PublicKey,
   collectionPda: PublicKey,
+  evoId: number,
 ): TransactionInstruction {
   return new TransactionInstruction({
     programId: PROGRAM,
@@ -445,7 +447,7 @@ export function createEvolveIx(
       { pubkey: collectionPda, isSigner: false, isWritable: false },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     ],
-    data: disc('evolve'),
+    data: Buffer.concat([disc('evolve'), writeU32(evoId)]),
   });
 }
 
@@ -454,10 +456,12 @@ export function createSetVisualStageIx(
   evoPda: PublicKey,
   collectionPda: PublicKey,
   authority: PublicKey,
+  evoId: number,
   stage: number,
 ): TransactionInstruction {
   const data = Buffer.concat([
     disc('setVisualStage'),
+    writeU32(evoId),
     writeU16(stage),
   ]);
   return new TransactionInstruction({

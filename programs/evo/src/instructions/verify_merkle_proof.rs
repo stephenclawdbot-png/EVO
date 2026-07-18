@@ -54,6 +54,15 @@ pub fn verify_merkle_proof(
     // EVO must not already be verified
     require!(!evo.manifest_verified, EvoError::AlreadyVerified);
 
+    // Bind the leaf hash to this EVO's on-chain identity.
+    // The leaf must be keccak256(evo_id_le || resonance_seed) — this
+    // prevents replaying a valid proof from one EVO onto a different EVO.
+    let expected_leaf = keccak::hashv(&[&evo_id.to_le_bytes(), &evo.resonance_seed]).0;
+    require!(
+        leaf_hash == expected_leaf,
+        EvoError::MerkleProofInvalid
+    );
+
     // Compute the Merkle root from leaf + proof
     let mut computed = leaf_hash;
     for sibling in &proof {

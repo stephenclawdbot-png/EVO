@@ -520,7 +520,7 @@ async function main() {
 
     // Evolve
     const evolveSig = await program.methods
-      .evolve()
+      .evolve(1)
       .accounts({ evo: evo1Pk, collection: collPk })
       .rpc();
     await sleep(2000);
@@ -570,7 +570,7 @@ async function main() {
     const buyerBefore = await connection.getBalance(deployerPk);
 
     const buySig = await program.methods
-      .buy()
+      .buy(0)
       .accounts({
         evo: evo0Pk,
         collectionConfig: collPk,

@@ -94,8 +94,8 @@ pub mod evo {
     /// - Seller receives: price - royalty
     /// - Royalty destination receives: price * royalty_bps / 10000
     /// The EVO's trade count increments and a fracture line is recorded.
-    pub fn buy(ctx: Context<Buy>) -> Result<()> {
-        instructions::buy::buy(ctx)
+    pub fn buy(ctx: Context<Buy>, evo_id: u32) -> Result<()> {
+        instructions::buy::buy(ctx, evo_id)
     }
 
     /// Shatter an EVO to reclaim locked SOL.
@@ -154,14 +154,14 @@ pub mod evo {
     /// Permissionless evolution — advances an EVO to its next lifecycle
     /// stage if all enabled thresholds (trades, feeds, hold time, locked value)
     /// for the next stage are met.
-    pub fn evolve(ctx: Context<Evolve>) -> Result<()> {
-        instructions::evolve::evolve(ctx)
+    pub fn evolve(ctx: Context<Evolve>, evo_id: u32) -> Result<()> {
+        instructions::evolve::evolve(ctx, evo_id)
     }
 
     /// Authority-only stage override for Custom lifecycle collections.
     /// Sets an EVO's `current_state` to any valid stage without threshold checks.
-    pub fn set_visual_stage(ctx: Context<SetVisualStage>, stage: u16) -> Result<()> {
-        instructions::set_visual_stage::set_visual_stage(ctx, stage)
+    pub fn set_visual_stage(ctx: Context<SetVisualStage>, evo_id: u32, stage: u16) -> Result<()> {
+        instructions::set_visual_stage::set_visual_stage(ctx, evo_id, stage)
     }
 
     /// Verify a Merkle inclusion proof for an EVO's metadata.

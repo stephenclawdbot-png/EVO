@@ -520,6 +520,7 @@ export function createBuyIx(
   treasury: PublicKey,
   royaltyDest: FeeDestination,
   burnDestination: PublicKey,
+  evoId: number,
 ): TransactionInstruction {
   const incinerator = (royaltyDest === 'Burn')
     ? (burnDestination.equals(PublicKey.default) ? INCINERATOR : burnDestination)
@@ -539,7 +540,7 @@ export function createBuyIx(
   return new TransactionInstruction({
     programId: PROGRAM_ID,
     keys,
-    data: DISC.buy,
+    data: Buffer.concat([DISC.buy, writeU32(evoId)]),
   });
 }
 
@@ -633,6 +634,7 @@ export function createRevealCollectionIx(
 export function createEvolveIx(
   evoPda: PublicKey,
   collectionPda: PublicKey,
+  evoId: number,
 ): TransactionInstruction {
   return new TransactionInstruction({
     programId: PROGRAM_ID,
@@ -641,7 +643,7 @@ export function createEvolveIx(
       { pubkey: collectionPda, isSigner: false, isWritable: false },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     ],
-    data: DISC.evolve,
+    data: Buffer.concat([DISC.evolve, writeU32(evoId)]),
   });
 }
 
@@ -649,10 +651,12 @@ export function createSetVisualStageIx(
   evoPda: PublicKey,
   collectionPda: PublicKey,
   authority: PublicKey,
+  evoId: number,
   stage: number,
 ): TransactionInstruction {
   const data = Buffer.concat([
     DISC.setVisualStage,
+    writeU32(evoId),
     Buffer.from(new Uint16Array([stage]).buffer),
   ]);
   return new TransactionInstruction({

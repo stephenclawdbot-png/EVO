@@ -108,7 +108,14 @@ pub fn create_collection(
     config.manifest_root = lifecycle.manifest_root;
     config.reveal_commitment = [0u8; 32];
 
-    // Configurable burn destination
+    // Configurable burn destination — must NOT be the creator's wallet
+    // (prevents "burn" fees being silently routed back to the creator)
+    if lifecycle.burn_destination != Pubkey::default() {
+        require!(
+            lifecycle.burn_destination != ctx.accounts.payer.key(),
+            EvoError::InvalidBurnDestination
+        );
+    }
     config.burn_destination = lifecycle.burn_destination;
 
     // Artwork manifest integrity hash

@@ -35,6 +35,7 @@ function resolveEvoId(data: Buffer, kind: TradeKind): number | null {
   try {
     if (kind === 'forge' && data.length >= 12) return data.readUInt32LE(8);
     if (kind === 'shatter' && data.length >= 12) return data.readUInt32LE(8);
+    if (kind === 'buy' && data.length >= 12) return data.readUInt32LE(8);
   } catch { /* ignore */ }
   return null;
 }
@@ -140,7 +141,7 @@ export async function readCollectionTradeHistory(
         events.push({
           signature: s.signature, kind: 'buy', timestamp: blockTime,
           priceSol: outflow / 1e9, amountSol: outflow / 1e9,
-          evoId: null,
+          evoId: resolveEvoId(data, 'buy'),
         });
       } else if (ixMatches(data, DISC_FEED)) {
         const lamports = data.length >= 16 ? readU64LE(data, 8) : 0;

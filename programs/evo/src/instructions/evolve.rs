@@ -1,21 +1,31 @@
 use crate::state::{CollectionConfig, EVOAccount};
 use crate::errors::EvoError;
+use crate::constants::*;
 use anchor_lang::prelude::*;
 
 /// Permissionless evolution — anyone can call it, but the EVO only
 /// advances if all enabled thresholds for the next stage are met.
 #[derive(Accounts)]
+#[instruction(evo_id: u32)]
 pub struct Evolve<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [EVO_SEED, collection.key().as_ref(), &evo_id.to_le_bytes()],
+        bump = evo.bump,
+    )]
     pub evo: Account<'info, EVOAccount>,
 
     /// Collection config — needed to check thresholds
+    #[account(
+        seeds = [COLLECTION_SEED, collection.name.as_bytes()],
+        bump = collection.bump,
+    )]
     pub collection: Account<'info, CollectionConfig>,
 
     pub system_program: Program<'info, System>,
 }
 
-pub fn evolve(ctx: Context<Evolve>) -> Result<()> {
+pub fn evolve(ctx: Context<Evolve>, evo_id: u32) -> Result<()> {
     let evo = &mut ctx.accounts.evo;
     let collection = &ctx.accounts.collection;
 

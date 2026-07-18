@@ -149,7 +149,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
       const sig = await sendTx(createBuyIx(
         new PublicKey(evo.evoPda!), collectionPda,
         new PublicKey(evo.owner), cfg.creator, wallet.publicKey!, proto.treasury,
-        cfg.royaltyDestination, cfg.burnDestination,
+        cfg.royaltyDestination, cfg.burnDestination, evo.id,
       ));
       if (sig) { setTxResult(sig); onRefresh?.(); }
     } catch (err: any) { setError(err.message || 'Buy failed'); } finally { setAction(null); }

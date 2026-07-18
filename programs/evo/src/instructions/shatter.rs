@@ -19,6 +19,7 @@ pub struct Shatter<'info> {
     pub evo: Account<'info, EVOAccount>,
 
     #[account(
+        mut,
         seeds = [COLLECTION_SEED, collection_config.name.as_bytes()],
         bump = collection_config.bump
     )]
@@ -53,7 +54,7 @@ pub struct Shatter<'info> {
 
 pub fn shatter(ctx: Context<Shatter>, evo_id: u32) -> Result<()> {
     let evo = &mut ctx.accounts.evo;
-    let collection = &ctx.accounts.collection_config;
+    let collection = &mut ctx.accounts.collection_config;
 
     // Verify reserve invariant BEFORE any mutation
     verify_reserve_invariant(&evo.to_account_info(), evo.locked_lamports)?;
@@ -64,6 +65,13 @@ pub fn shatter(ctx: Context<Shatter>, evo_id: u32) -> Result<()> {
     // Mark as shattered BEFORE any lamport movement (prevents re-entrancy)
     evo.is_shattered = true;
     evo.locked_lamports = 0;
+
+    // Decrement live supply — the EVO is being destroyed.
+    // This allows close_collection to work after all EVOs are shattered.
+    collection.current_supply = collection
+        .current_supply
+        .checked_sub(1)
+        .ok_or(EvoError::MathOverflow)?;
 
     // Move the fee out of the EVO PDA using direct lamport manipulation.
     // System Program transfer CPI does NOT work on program-owned accounts.

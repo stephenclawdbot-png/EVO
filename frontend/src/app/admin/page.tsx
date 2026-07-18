@@ -100,7 +100,7 @@ function AdminContent() {
       if (isNaN(evoId)) throw new Error('Enter a valid EVO ID');
       const [collectionPda] = getCollectionPDA(COLLECTION_NAME);
       const [evoPda] = getEvoPDA(collectionPda, evoId);
-      const sig = await sendTx(createEvolveIx(evoPda, collectionPda));
+      const sig = await sendTx(createEvolveIx(evoPda, collectionPda, evoId));
       if (sig) {
         setTxResult(sig);
         setEvolveEvoId('');
@@ -118,7 +118,7 @@ function AdminContent() {
       if (isNaN(stage)) throw new Error('Enter a valid stage number');
       const [collectionPda] = getCollectionPDA(COLLECTION_NAME);
       const [evoPda] = getEvoPDA(collectionPda, evoId);
-      const sig = await sendTx(createSetVisualStageIx(evoPda, collectionPda, wallet.publicKey, stage));
+      const sig = await sendTx(createSetVisualStageIx(evoPda, collectionPda, wallet.publicKey, evoId, stage));
       if (sig) {
         setTxResult(sig);
         setCustomEvoId('');
