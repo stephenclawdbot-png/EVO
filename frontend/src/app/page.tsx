@@ -12,7 +12,7 @@ import {
 } from '@/components/Icons';
 
 interface CollectionSummary {
-  discovery: CollectionDiscovery;
+  discovery?: CollectionDiscovery;
   data: CollectionData;
   evoCount: number;
   totalLockedSol: number;
@@ -20,42 +20,111 @@ interface CollectionSummary {
   listedCount: number;
 }
 
+// ── Cache helpers (stale-while-revalidate) ──
+const CACHE_KEY = 'evo_collections_v1';
+const CACHE_TTL = 60_000; // 60s — fresh data matters for floor prices
+
+interface CachedSummary {
+  data: CollectionData;
+  evoCount: number;
+  totalLockedSol: number;
+  floorPriceSol: number | null;
+  listedCount: number;
+  cachedAt: number;
+}
+
+function loadCache(): CachedSummary[] | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const { timestamp, summaries } = JSON.parse(raw);
+    if (!timestamp || !summaries) return null;
+    return summaries;
+  } catch { return null; }
+}
+
+function saveCache(summaries: CollectionSummary[]) {
+  try {
+    const cached: CachedSummary[] = summaries.map(s => ({
+      data: s.data, evoCount: s.evoCount, totalLockedSol: s.totalLockedSol,
+      floorPriceSol: s.floorPriceSol, listedCount: s.listedCount, cachedAt: Date.now(),
+    }));
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), summaries: cached }));
+  } catch { /* quota / private mode */ }
+}
+
+const PAGE_SIZE = 8;
+
 export default function Home() {
   const { connection } = useConnection();
   const [collections, setCollections] = useState<CollectionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [isStale, setIsStale] = useState(false); // showing cached data while revalidating
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  const fetchData = useCallback(async (opts?: { skipCache?: boolean }) => {
+    // Stale-while-revalidate: show cached data instantly, then re-fetch
+    if (!opts?.skipCache) {
+      const cached = loadCache();
+      if (cached) {
+        const isExpired = cached[0] && (Date.now() - cached[0].cachedAt > CACHE_TTL);
+        // Reconstruct CollectionSummary from cache (discovery not needed for display)
+        const cachedSummaries: CollectionSummary[] = cached.map(c => ({
+          discovery: undefined, // not used by card UI
+          data: c.data, evoCount: c.evoCount, totalLockedSol: c.totalLockedSol,
+          floorPriceSol: c.floorPriceSol, listedCount: c.listedCount,
+        }));
+        setCollections(cachedSummaries);
+        setLoading(false);
+        if (isExpired) {
+          setIsStale(true);
+          fetchData({ skipCache: true }); // revalidate in background
+        }
+        return;
+      }
+    }
+
+    if (!opts?.skipCache) setLoading(true);
     try {
       const discovered = await readAllCollections(connection);
+
+      // Parallelize EVO fetches in batches of 8 to avoid RPC rate limits
+      const batchSize = 8;
       const summaries: CollectionSummary[] = [];
 
-      for (const disc of discovered) {
-        const data = collectionConfigToData(disc.config);
-        const [collectionPda] = getCollectionPDA(disc.config.name);
-        const evos = await readAllEVOs(connection, collectionPda, disc.config.supplyCap);
-        const active = evos.filter(e => !e.isShattered);
-        const listed = active.filter(e => e.isListed);
-        const totalLocked = active.reduce((sum, e) => sum + e.lockedLamports, 0);
-        const floor = listed.length > 0
-          ? Math.min(...listed.map(e => e.listPriceLamports))
-          : null;
-
-        summaries.push({
-          discovery: disc,
-          data,
-          evoCount: active.length,
-          totalLockedSol: lamportsToSol(totalLocked),
-          floorPriceSol: floor !== null ? lamportsToSol(floor) : null,
-          listedCount: listed.length,
-        });
+      for (let i = 0; i < discovered.length; i += batchSize) {
+        const batch = discovered.slice(i, i + batchSize);
+        const results = await Promise.all(
+          batch.map(async (disc): Promise<CollectionSummary> => {
+            const data = collectionConfigToData(disc.config);
+            const [collectionPda] = getCollectionPDA(disc.config.name);
+            const evos = await readAllEVOs(connection, collectionPda, disc.config.supplyCap);
+            const active = evos.filter(e => !e.isShattered);
+            const listed = active.filter(e => e.isListed);
+            const totalLocked = active.reduce((sum, e) => sum + e.lockedLamports, 0);
+            const floor = listed.length > 0
+              ? Math.min(...listed.map(e => e.listPriceLamports))
+              : null;
+            return {
+              discovery: disc,
+              data,
+              evoCount: active.length,
+              totalLockedSol: lamportsToSol(totalLocked),
+              floorPriceSol: floor !== null ? lamportsToSol(floor) : null,
+              listedCount: listed.length,
+            };
+          })
+        );
+        summaries.push(...results);
       }
 
       summaries.sort((a, b) => b.totalLockedSol - a.totalLockedSol);
       setCollections(summaries);
+      setVisibleCount(PAGE_SIZE);
+      saveCache(summaries);
+      setIsStale(false);
     } catch (err) {
       console.error('Failed to fetch collections:', err);
     } finally {
@@ -206,7 +275,7 @@ export default function Home() {
                     })();
                     return (
                       <Link
-                        key={c.discovery.pda.toBase58()}
+                        key={c.data.name}
                         href={`/c/${c.data.name}`}
                         className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-surface-2"
                         onClick={() => { setShowDropdown(false); setSearchQuery(''); }}
@@ -254,11 +323,26 @@ export default function Home() {
             <p className="text-xs text-muted">No collections match &quot;{searchQuery}&quot;</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredCollections.map(c => (
-              <CollectionCard key={c.discovery.pda.toBase58()} summary={c} />
-            ))}
-          </div>
+          <>
+            {isStale && (
+              <p className="mb-2 text-[10px] text-dim">Updating live data…</p>
+            )}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {filteredCollections.slice(0, visibleCount).map(c => (
+                <CollectionCard key={c.data.name} summary={c} />
+              ))}
+            </div>
+            {visibleCount < filteredCollections.length && (
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+                  className="inline-flex items-center gap-2 rounded border border-border-strong bg-surface px-5 py-2 text-xs font-semibold text-text transition-colors hover:border-accent hover:text-text-strong"
+                >
+                  Load more ({filteredCollections.length - visibleCount} remaining)
+                </button>
+              </div>
+            )}
+          </>
         )}
       </section>
 
