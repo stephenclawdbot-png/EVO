@@ -2,6 +2,7 @@
 name = "evo"
 version = "0.1.0"
 description = "EVO Protocol — Evolving Value Objects on Solana"
+authors = ["naps (https://x.com/naps000)", "admiralfinest (https://x.com/admiralfinest)", "Benedict A."]
 edition = "2021"
 
 [lib]

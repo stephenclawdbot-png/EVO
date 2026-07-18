@@ -4,6 +4,11 @@
 >
 > Not a token. Not an NFT. A third model for digital assets.
 
+**Authors**
+- **naps** — [@x.com/naps000](https://x.com/naps000)
+- **admiralfinest** — [@x.com/admiralfinest](https://x.com/admiralfinest)
+- **Benedict A.** — private network engineer
+
 ---
 
 ## What Is EVO?
@@ -261,3 +266,11 @@ npm run dev
 
 *EVO — Stateful Capital. SOL that remembers.*
 *Not a token. Not an NFT. Programmable value.*
+
+---
+
+## Credits
+
+- **naps** — [@x.com/naps000](https://x.com/naps000)
+- **admiralfinest** — [@x.com/admiralfinest](https://x.com/admiralfinest)
+- **Benedict A.** — private network engineer

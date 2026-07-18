@@ -45,3 +45,6 @@ HANDOFF.md
 .yarn/
 
 test-ledger/
+
+devnet-funder.json
+*devnet-funder*

@@ -4,6 +4,11 @@
 
 **Version 1.0 — July 2026**
 
+**Authors**
+- **naps** — [@x.com/naps000](https://x.com/naps000)
+- **admiralfinest** — [@x.com/admiralfinest](https://x.com/admiralfinest)
+- **Benedict A.** — private network engineer
+
 ---
 
 ## 1. Abstract
