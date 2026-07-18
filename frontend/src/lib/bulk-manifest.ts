@@ -80,51 +80,156 @@ export async function computeBulkMerkleRoot(items: ManifestItem[]): Promise<stri
   return current[0];
 }
 
-export async function unzipFiles(zipFile: File): Promise<File[]> {
+const TYPE_MAP: Record<string, string> = {
+  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+  gif: 'image/gif', webp: 'image/webp', json: 'application/json',
+};
+
+export interface ExtractedFiles {
+  images: File[];
+  jsons: File[];
+  imagePaths: string[];
+  jsonPaths: string[];
+}
+
+/**
+ * Extract ZIP in chunks to reduce peak memory usage.
+ * Processes entries in batches and yields results progressively.
+ */
+export async function* unzipFilesStream(zipFile: File, chunkSize = 100): AsyncGenerator<File[]> {
   const { unzipSync } = await import('fflate');
   const buf = new Uint8Array(await zipFile.arrayBuffer());
   const entries = unzipSync(buf);
-  const files: File[] = [];
+  const paths = Object.keys(entries).filter(p => !p.startsWith('__MACOSX/') && !p.endsWith('/')).sort();
 
-  for (const [path, data] of Object.entries(entries)) {
-    if (path.startsWith('__MACOSX/') || path.endsWith('/')) continue;
-    const name = path.split('/').pop() || path;
-    const ext = name.toLowerCase().split('.').pop() || '';
-    const typeMap: Record<string, string> = {
-      png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
-      gif: 'image/gif', webp: 'image/webp', json: 'application/json',
-    };
-    const type = typeMap[ext] || 'application/octet-stream';
-    files.push(new File([data], name, { type }));
+  for (let i = 0; i < paths.length; i += chunkSize) {
+    const batch: File[] = [];
+    for (let j = i; j < Math.min(i + chunkSize, paths.length); j++) {
+      const path = paths[j];
+      const name = path.split('/').pop() || path;
+      const ext = name.toLowerCase().split('.').pop() || '';
+      const type = TYPE_MAP[ext] || 'application/octet-stream';
+      batch.push(new File([entries[path]], name, { type }));
+      delete entries[path];
+    }
+    yield batch;
   }
+}
 
-  files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-  return files;
+export async function unzipFiles(zipFile: File): Promise<File[]> {
+  const all: File[] = [];
+  for await (const batch of unzipFilesStream(zipFile)) {
+    all.push(...batch);
+  }
+  return all;
 }
 
 export function groupFilesByState(
   files: File[],
   stateNames: string[],
-): File[][] {
-  const groups: File[][] = stateNames.map(() => []);
+): { images: File[][]; jsons: File[] } {
+  const imageGroups: File[][] = stateNames.map(() => []);
+  const jsons: File[] = [];
 
   for (const file of files) {
+    if (file.type === 'application/json') {
+      jsons.push(file);
+      continue;
+    }
+    if (!file.type.startsWith('image/')) continue;
+
     const lower = file.name.toLowerCase();
+    let placed = false;
     for (let i = 0; i < stateNames.length; i++) {
       const stateLower = stateNames[i].toLowerCase().replace(/[^a-z0-9]/g, '');
       if (lower.includes(stateLower) || lower.includes(`state${i}`) || lower.includes(`state${i + 1}`)) {
-        groups[i].push(file);
+        imageGroups[i].push(file);
+        placed = true;
         break;
+      }
+    }
+    if (!placed) {
+      imageGroups[0].push(file);
+    }
+  }
+
+  return { images: imageGroups, jsons };
+}
+
+/**
+ * Parse traits from JSON files.
+ * Supports:
+ *  - Single metadata.json/_metadata.json with array of objects
+ *  - Per-token JSON files (0.json, 1.json, or token0.json, etc.)
+ *  - Metaplex format: { attributes: [{trait_type, value}] }
+ *  - Simple format: { trait: value, ... }
+ */
+export async function parseTraitsFromJsons(
+  jsons: File[],
+  count: number,
+): Promise<Record<string, string>[]> {
+  const traits: Record<string, string>[] = Array.from({ length: count }, () => ({}));
+
+  if (jsons.length === 0) return traits;
+
+  // Try single-file metadata first
+  const metaFile = jsons.find(f => {
+    const n = f.name.toLowerCase();
+    return n === 'metadata.json' || n === '_metadata.json' || n === 'collection.json';
+  });
+
+  if (metaFile) {
+    try {
+      const text = await metaFile.text();
+      const data = JSON.parse(text);
+
+      if (Array.isArray(data)) {
+        for (let i = 0; i < Math.min(data.length, count); i++) {
+          traits[i] = extractTraits(data[i]);
+        }
+      } else if (data.items && Array.isArray(data.items)) {
+        for (let i = 0; i < Math.min(data.items.length, count); i++) {
+          traits[i] = extractTraits(data.items[i]);
+        }
+      }
+      return traits;
+    } catch { /* fall through to per-token */ }
+  }
+
+  // Per-token JSON files
+  const tokenJsons = jsons.filter(f => {
+    const n = f.name.toLowerCase();
+    return n !== 'metadata.json' && n !== '_metadata.json' && n !== 'collection.json';
+  }).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+
+  for (let i = 0; i < Math.min(tokenJsons.length, count); i++) {
+    try {
+      const text = await tokenJsons[i].text();
+      const data = JSON.parse(text);
+      traits[i] = extractTraits(data);
+    } catch { /* leave empty traits */ }
+  }
+
+  return traits;
+}
+
+function extractTraits(obj: any): Record<string, string> {
+  const result: Record<string, string> = {};
+
+  if (obj.attributes && Array.isArray(obj.attributes)) {
+    for (const attr of obj.attributes) {
+      if (attr.trait_type && attr.value !== undefined) {
+        result[attr.trait_type] = String(attr.value);
+      }
+    }
+  } else {
+    for (const [key, val] of Object.entries(obj)) {
+      if (['name', 'image', 'description', 'external_url', 'properties', 'collection'].includes(key)) continue;
+      if (typeof val === 'string' || typeof val === 'number') {
+        result[key] = String(val);
       }
     }
   }
 
-  if (groups.every((g) => g.length === 0)) {
-    const perState = Math.ceil(files.length / stateNames.length);
-    for (let i = 0; i < stateNames.length; i++) {
-      groups[i] = files.slice(i * perState, (i + 1) * perState);
-    }
-  }
-
-  return groups;
+  return result;
 }
