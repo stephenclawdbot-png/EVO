@@ -18,6 +18,7 @@ import {
 } from '@/lib/evo-program';
 import { IconCheck, IconAlertTriangle, IconExternalLink, IconHammer, IconSparkle } from '@/components/Icons';
 import { ArtworkDropzone, type ArtworkResult } from '@/components/ArtworkDropzone';
+import { BulkArtworkUploader, type BulkArtworkResult } from '@/components/BulkArtworkUploader';
 
 const FEE_DESTINATIONS: FeeDestination[] = ['Treasury', 'Creator', 'Burn', 'Split'];
 const LIFECYCLE_TYPES: LifecycleType[] = ['Static', 'Reveal', 'CommitReveal', 'RevealAndEvolve', 'Custom'];
@@ -70,8 +71,9 @@ export default function CreateCollectionPage() {
   const [artworkManifestHash, setArtworkManifestHash] = useState('');
 
   // Art mode
-  const [artMode, setArtMode] = useState<'generative' | 'upload'>('upload');
+  const [artMode, setArtMode] = useState<'generative' | 'upload' | 'bulk'>('upload');
   const [artwork, setArtwork] = useState<ArtworkResult | null>(null);
+  const [bulkArtwork, setBulkArtwork] = useState<BulkArtworkResult | null>(null);
 
   const fetchProtocol = useCallback(async () => {
     setLoadingProto(true);
@@ -123,15 +125,21 @@ export default function CreateCollectionPage() {
     if (!wallet.connected || !wallet.publicKey) { setError('Connect wallet first'); return; }
     if (!protocol?.initialized) { setError('Protocol not initialized yet. Initialize it first.'); return; }
     if (!name.trim()) { setError('Collection name is required'); return; }
-    const effectiveMetadataUri = artMode === 'upload' && artwork ? artwork.manifestUri : metadataUri.trim();
+    const effectiveMetadataUri =
+      artMode === 'upload' && artwork ? artwork.manifestUri :
+      artMode === 'bulk' && bulkArtwork ? bulkArtwork.manifestUri :
+      metadataUri.trim();
     if (!effectiveMetadataUri) {
-      setError(artMode === 'upload' ? 'Upload at least one image' : 'Metadata URI is required');
+      setError(artMode === 'upload' || artMode === 'bulk' ? 'Upload at least one image' : 'Metadata URI is required');
       return;
     }
     setSubmitting(true); setError(null); setTxSig(null);
     try {
       const lamportsPerSol = 1_000_000_000;
-      const effectiveManifestRoot = artMode === 'upload' && artwork ? artwork.merkleRoot : manifestRoot;
+      const effectiveManifestRoot =
+        artMode === 'upload' && artwork ? artwork.merkleRoot :
+        artMode === 'bulk' && bulkArtwork ? bulkArtwork.merkleRoot :
+        manifestRoot;
       const lifecycle = {
         lifecycleType,
         maxStates: parseInt(maxStates) || 1,
@@ -254,13 +262,19 @@ export default function CreateCollectionPage() {
                     onClick={() => setArtMode('upload')}
                     className={`flex-1 rounded px-3 py-1.5 text-xs font-semibold transition-colors ${artMode === 'upload' ? 'bg-accent text-white' : 'text-muted hover:text-text'}`}
                   >
-                    Upload Images
+                    Upload
+                  </button>
+                  <button
+                    onClick={() => setArtMode('bulk')}
+                    className={`flex-1 rounded px-3 py-1.5 text-xs font-semibold transition-colors ${artMode === 'bulk' ? 'bg-accent text-white' : 'text-muted hover:text-text'}`}
+                  >
+                    Bulk (10k+)
                   </button>
                   <button
                     onClick={() => setArtMode('generative')}
                     className={`flex-1 rounded px-3 py-1.5 text-xs font-semibold transition-colors ${artMode === 'generative' ? 'bg-accent text-white' : 'text-muted hover:text-text'}`}
                   >
-                    Generative (paste URI)
+                    Generative
                   </button>
                 </div>
               </div>
@@ -272,6 +286,15 @@ export default function CreateCollectionPage() {
                     collectionName={name}
                     maxStates={parseInt(maxStates) || 1}
                     onArtworkReady={setArtwork}
+                  />
+                </div>
+              ) : artMode === 'bulk' ? (
+                <div className="mt-3">
+                  <label className={labelCls}>Bulk Artwork (ZIP or per-state)</label>
+                  <BulkArtworkUploader
+                    collectionName={name}
+                    stateNames={Array.from({ length: parseInt(maxStates) || 1 }, (_, i) => `State ${i + 1}`)}
+                    onArtworkReady={setBulkArtwork}
                   />
                 </div>
               ) : (
@@ -389,7 +412,16 @@ export default function CreateCollectionPage() {
                       </div>
                       <div>
                         <label className={labelCls}>Artwork Manifest Hash (hex)</label>
-                        <input className={inputCls} value={artworkManifestHash} onChange={e => setArtworkManifestHash(e.target.value)} placeholder="64 hex chars (optional)" />
+                        <input
+                          className={inputCls}
+                          value={
+                            artMode === 'bulk' && bulkArtwork ? bulkArtwork.merkleRoot :
+                            artworkManifestHash
+                          }
+                          onChange={e => setArtworkManifestHash(e.target.value)}
+                          placeholder="64 hex chars (optional)"
+                          readOnly={artMode === 'bulk' && !!bulkArtwork}
+                        />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
@@ -397,10 +429,14 @@ export default function CreateCollectionPage() {
                         <label className={labelCls}>Manifest Root (hex)</label>
                         <input
                           className={inputCls}
-                          value={artMode === 'upload' && artwork ? artwork.merkleRoot : manifestRoot}
+                          value={
+                            artMode === 'upload' && artwork ? artwork.merkleRoot :
+                            artMode === 'bulk' && bulkArtwork ? bulkArtwork.merkleRoot :
+                            manifestRoot
+                          }
                           onChange={e => setManifestRoot(e.target.value)}
                           placeholder="64 hex chars (auto-filled from upload)"
-                          readOnly={artMode === 'upload' && !!artwork}
+                          readOnly={(artMode === 'upload' && !!artwork) || (artMode === 'bulk' && !!bulkArtwork)}
                         />
                       </div>
                       <div>
