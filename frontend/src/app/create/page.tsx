@@ -403,18 +403,21 @@ export default function CreateCollectionPage() {
 
                     {(lifecycleType === 'RevealAndEvolve' || lifecycleType === 'Custom') && (
                       <div className="rounded border border-border bg-bg p-3">
-                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-dim">Evolve Triggers</p>
+                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-dim">Evolution Rules</p>
                         <p className="mb-3 text-[10px] leading-relaxed text-muted">
-                          The EVO advances to the next stage when <span className="text-text">all</span> enabled triggers below are met.
-                          Thresholds are cumulative — stage 2 needs 2× the threshold, stage 3 needs 3×, etc.
+                          Choose what makes an EVO reach its next form. Evolution fires automatically once all enabled conditions are met.
+                          Leave a field at 0 to ignore that condition. Each stage becomes progressively harder — stage 2 needs 2× the threshold, stage 3 needs 3×, etc.
                           Evolution is permissionless: anyone can trigger it, but it only fires if conditions are met.
-                          Set a field to 0 to disable that trigger.
                         </p>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className={labelCls}>Trades to evolve</label>
                             <input type="number" className={inputCls} value={evolveTradeThreshold} onChange={e => setEvolveTradeThreshold(e.target.value)} />
-                            <p className="mt-1 text-[10px] text-dim">How many times the EVO must be bought before evolving. 3 = need 3 trades for stage 1, 6 for stage 2…</p>
+                            <p className="mt-1 text-[10px] leading-relaxed text-dim">
+                              How many secondary-market trades before evolving. 3 = 3 trades for stage 1, 6 for stage 2, 9 for stage 3…
+                              <br /><span className="text-text">0</span> = trading does not affect evolution (encourages diamond handing).
+                              <br />Keep this low (1-3). High values encourage wash trading between wallets, which creates fake volume and hurts credibility.
+                            </p>
                           </div>
                           <div>
                             <label className={labelCls}>Feed SOL to evolve</label>
@@ -423,7 +426,9 @@ export default function CreateCollectionPage() {
                               onChange={e => setEvolveFeedThreshold(e.target.value ? Math.floor(parseFloat(e.target.value) * 1_000_000_000).toString() : '0')}
                               placeholder="0.01"
                             />
-                            <p className="mt-1 text-[10px] text-dim">Total SOL fed into the EVO. 0.01 = need 0.01 SOL fed for stage 1, 0.02 for stage 2…</p>
+                            <p className="mt-1 text-[10px] leading-relaxed text-dim">
+                              Total SOL deposited into the EVO. Rewards owners for investing. 0.01 = 0.01 SOL for stage 1, 0.02 for stage 2…
+                            </p>
                           </div>
                           <div>
                             <label className={labelCls}>Hold time (hours)</label>
@@ -432,7 +437,9 @@ export default function CreateCollectionPage() {
                               onChange={e => setEvolveHoldSeconds(e.target.value ? Math.floor(parseFloat(e.target.value) * 3600).toString() : '0')}
                               placeholder="24"
                             />
-                            <p className="mt-1 text-[10px] text-dim">Time held since last evolution. 24h = need 24h for stage 1, 48h for stage 2…</p>
+                            <p className="mt-1 text-[10px] leading-relaxed text-dim">
+                              How long the current owner must hold before evolving. 24h = 24h for stage 1, 48h for stage 2… Rewards long-term conviction.
+                            </p>
                           </div>
                           <div>
                             <label className={labelCls}>Locked SOL to evolve</label>
@@ -441,8 +448,16 @@ export default function CreateCollectionPage() {
                               onChange={e => setEvolveLockedThreshold(e.target.value ? Math.floor(parseFloat(e.target.value) * 1_000_000_000).toString() : '0')}
                               placeholder="0.01"
                             />
-                            <p className="mt-1 text-[10px] text-dim">Minimum SOL locked in the PDA. 0.01 = need 0.01 SOL locked for stage 1, 0.02 for stage 2…</p>
+                            <p className="mt-1 text-[10px] leading-relaxed text-dim">
+                              Minimum SOL permanently locked in the PDA. 0.01 = 0.01 SOL for stage 1, 0.02 for stage 2… Encourages stronger backing.
+                            </p>
                           </div>
+                        </div>
+                        <div className="mt-3 rounded border border-border bg-surface p-2">
+                          <p className="text-[10px] leading-relaxed text-muted">
+                            <span className="font-semibold text-text">Tip:</span> For diamond-hand collections, set Trades to 0 and use Hold Time + Feed SOL instead.
+                            This rewards holders and investors rather than speculators. Use Trades only for collections designed to be highly tradable.
+                          </p>
                         </div>
                       </div>
                     )}
