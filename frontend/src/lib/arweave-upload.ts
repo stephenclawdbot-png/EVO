@@ -22,18 +22,24 @@ export interface FailedUpload {
   error: string;
 }
 
-const IRYS_NODE = 'https://node1.irys.xyz';
-const IRYS_DEVNET = 'https://devnet.irys.xyz';
-const ARWEAVE_GATEWAY = 'https://arweave.net/';
+const IRYS_GATEWAY = 'https://gateway.irys.xyz/';
 
 let irysInstance: any = null;
 let irysDevnetInstance: any = null;
 
+/**
+ * Create an Irys uploader instance using the new @irys/upload + @irys/upload-solana SDK.
+ * Uses the browser's Solana wallet adapter as the signing provider.
+ */
 export async function getIrys(wallet: WalletContextState, useDevnet = false) {
   const cached = useDevnet ? irysDevnetInstance : irysInstance;
   if (cached) return cached;
 
-  const Irys = (await import('@irys/sdk')).default;
+  const uploadMod = await import('@irys/web-upload');
+  const solanaMod = await import('@irys/web-upload-solana');
+
+  const Uploader = uploadMod.WebUploader ?? uploadMod.default;
+  const WebSolana = solanaMod.WebSolana ?? solanaMod.default;
 
   const provider = {
     publicKey: wallet.publicKey,
@@ -41,16 +47,18 @@ export async function getIrys(wallet: WalletContextState, useDevnet = false) {
       if (!wallet.signMessage) throw new Error('Wallet does not support signMessage');
       return wallet.signMessage(message);
     },
+    sendTransaction: wallet.sendTransaction,
   };
 
-  const instance = new Irys({
-    url: useDevnet ? IRYS_DEVNET : IRYS_NODE,
-    token: 'solana',
-    key: undefined as any,
-    config: { provider } as any,
-  });
+  let builder = Uploader(WebSolana).withProvider(provider);
 
-  await instance.ready();
+  if (useDevnet) {
+    builder = builder.devnet();
+  } else {
+    builder = builder.mainnet();
+  }
+
+  const instance = await builder;
 
   if (useDevnet) irysDevnetInstance = instance;
   else irysInstance = instance;
@@ -62,7 +70,14 @@ export async function getIrysBalance(wallet: WalletContextState): Promise<number
   try {
     const irys = await getIrys(wallet, false);
     const balance = await irys.getLoadedBalance();
-    return irys.utils.unitConverter(balance);
+    // Convert from atomic units if unitConverter exists, otherwise return raw
+    if (irys.utils?.unitConverter) {
+      return parseFloat(irys.utils.unitConverter(balance).toString());
+    }
+    if (irys.utils?.fromAtomic) {
+      return parseFloat(irys.utils.fromAtomic(balance).toString());
+    }
+    return parseFloat(balance.toString()) / 1e9; // lamports to SOL fallback
   } catch {
     return 0;
   }
@@ -77,7 +92,14 @@ export async function estimateUploadCost(
     const irys = await getIrys(wallet, useDevnet);
     const manifestOverhead = totalBytes * 0.01;
     const atomicCost = await irys.getPrice(totalBytes + manifestOverhead);
-    return irys.utils.unitConverter(atomicCost);
+    // Convert from atomic units
+    if (irys.utils?.unitConverter) {
+      return parseFloat(irys.utils.unitConverter(atomicCost).toString());
+    }
+    if (irys.utils?.fromAtomic) {
+      return parseFloat(irys.utils.fromAtomic(atomicCost).toString());
+    }
+    return parseFloat(atomicCost.toString()) / 1e9;
   } catch {
     return (totalBytes / 1_000_000) * 0.0001;
   }
@@ -91,7 +113,7 @@ export async function uploadFile(
 ): Promise<UploadResult> {
   const irys = await getIrys(wallet, useDevnet);
 
-  let data: Uint8Array;
+  let data: Uint8Array | string;
   let size: number;
   let fileName: string;
 
@@ -105,17 +127,17 @@ export async function uploadFile(
     fileName = 'data';
   }
 
-  const tx = irys.createTransaction(data, { tags: [
-    { name: 'Content-Type', value: 'application/octet-stream' },
-    ...tags,
-  ]});
-  await tx.sign();
-  await tx.upload();
+  const receipt = await irys.upload(data, {
+    tags: [
+      { name: 'Content-Type', value: 'application/octet-stream' },
+      ...tags,
+    ],
+  });
 
-  const txId = tx.id;
+  const txId = receipt.id;
   return {
     txId,
-    uri: `${ARWEAVE_GATEWAY}${txId}`,
+    uri: `${IRYS_GATEWAY}${txId}`,
     size,
     fileName,
   };
@@ -174,13 +196,13 @@ export async function uploadStateFiles(
 }
 
 /**
- * Verify that an Arweave transaction is accessible via the gateway.
+ * Verify that an Arweave/Irys transaction is accessible via the gateway.
  */
 export async function verifyUpload(txId: string, timeoutMs = 15000): Promise<boolean> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
-    const res = await fetch(`${ARWEAVE_GATEWAY}${txId}`, {
+    const res = await fetch(`${IRYS_GATEWAY}${txId}`, {
       method: 'HEAD',
       signal: controller.signal,
     });
@@ -218,8 +240,8 @@ export async function uploadJson(
   wallet: WalletContextState,
   useDevnet = false,
 ): Promise<UploadResult> {
-  const jsonBytes = new TextEncoder().encode(JSON.stringify(data, null, 2));
-  const result = await uploadFile(jsonBytes, wallet, [
+  const jsonStr = JSON.stringify(data, null, 2);
+  const result = await uploadFile(new TextEncoder().encode(jsonStr), wallet, [
     { name: 'App-Name', value: 'EVO' },
     { name: 'Content-Type', value: 'application/json' },
   ], useDevnet);

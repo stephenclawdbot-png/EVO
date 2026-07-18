@@ -11,10 +11,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@irys/web-upload": "^0.0.15",
+    "@irys/web-upload-solana": "^0.1.8",
     "@solana/wallet-adapter-react": "^0.15.39",
     "@solana/wallet-adapter-react-ui": "^0.9.39",
     "@solana/wallet-adapter-wallets": "^0.19.38",
     "@solana/web3.js": "^1.98.4",
+    "fflate": "^0.8.3",
     "multiformats": "^14.0.4",
     "next": "16.2.10",
     "react": "19.2.4",
