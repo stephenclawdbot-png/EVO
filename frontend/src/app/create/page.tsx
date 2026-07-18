@@ -207,7 +207,7 @@ export default function CreateCollectionPage() {
         parseInt(tradeRoyaltyBps) || 0,
         royaltyDest,
         Math.floor(parseFloat(mintPriceSol) * lamportsPerSol),
-        Math.floor(parseFloat(lockAmountSol) * lamportsPerSol),
+        Math.floor(parseFloat(lifecycleType === 'Static' ? '0.001' : lockAmountSol) * lamportsPerSol),
         finalMetadataUri,
         lifecycle,
       );
@@ -372,8 +372,16 @@ export default function CreateCollectionPage() {
                     <input type="number" step="0.001" className={inputCls} value={mintPriceSol} onChange={e => setMintPriceSol(e.target.value)} />
                   </div>
                   <div>
-                    <label className={labelCls}>Locked SOL per EVO</label>
-                    <input type="number" step="0.001" className={inputCls} value={lockAmountSol} onChange={e => setLockAmountSol(e.target.value)} />
+                    <label className={labelCls}>Locked SOL per EVO{lifecycleType === 'Static' ? ' (auto)' : ''}</label>
+                    <input
+                      type="number"
+                      step="0.001"
+                      className={inputCls}
+                      value={lifecycleType === 'Static' ? '0.001' : lockAmountSol}
+                      onChange={e => setLockAmountSol(e.target.value)}
+                      readOnly={lifecycleType === 'Static'}
+                    />
+                    {lifecycleType === 'Static' && <p className="mt-1 text-[10px] text-dim">Minimal lock for Static — no evolution needed.</p>}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
