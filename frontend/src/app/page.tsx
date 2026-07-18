@@ -177,64 +177,28 @@ export default function Home() {
     <div className="min-h-screen bg-bg text-text">
       <Nav onRefresh={fetchData} ticker={ticker} />
 
-      {/* ─── Hero — intrigue, not explanation ─── */}
+      {/* ─── Hero — compact ─── */}
       <section className="relative overflow-hidden border-b border-border">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-1/3 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+          <div className="absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
             style={{ background: 'radial-gradient(circle, #818cf814, transparent 65%)' }} />
         </div>
-        <div className="relative mx-auto flex max-w-4xl flex-col items-center px-4 py-24 text-center lg:py-36">
-          <span className="mb-6 inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-surface px-3 py-1 text-[11px] text-muted">
+        <div className="relative mx-auto flex max-w-4xl flex-col items-center px-4 py-12 text-center lg:py-16">
+          <span className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-surface px-3 py-1 text-[11px] text-muted">
             <IconSparkle className="h-3 w-3 text-accent" />
             New primitive on Solana
           </span>
-          <h1 className="text-4xl font-bold leading-[1.05] tracking-tight text-text-strong sm:text-5xl lg:text-6xl">
-            Assets that don't
-            <br />
-            stay the same.
+          <h1 className="text-3xl font-bold leading-[1.05] tracking-tight text-text-strong sm:text-4xl lg:text-5xl">
+            Assets that don't stay the same.
           </h1>
-          <p className="mt-6 max-w-md text-sm text-muted sm:text-base">
+          <p className="mt-4 max-w-md text-sm text-muted">
             EVOs hold locked SOL, evolve over time, and can be shattered to recover their value.
-            Not a token. Not an NFT. A new on-chain primitive.
           </p>
-          <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
-            <a href="#collections"
-              className="inline-flex items-center gap-2 rounded bg-accent px-6 py-2.5 text-sm font-semibold text-[#0a0a0c] transition-colors hover:bg-accent-hover">
-              Explore collections <IconArrowRight className="h-4 w-4" />
-            </a>
-            <a href="https://github.com/stephenclawdbot-png/EVO" target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded border border-border-strong px-6 py-2.5 text-sm font-semibold text-text transition-colors hover:bg-surface-2">
-              Read the protocol
-            </a>
-          </div>
         </div>
       </section>
 
-      {/* ─── How it works — five operations ─── */}
-      <section className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-6xl px-4 py-16 lg:py-24">
-          <div className="mb-12 text-center">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-dim">How it works</p>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight text-text-strong sm:text-2xl">
-              Five operations. One object.
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 gap-px overflow-hidden rounded border border-border bg-border sm:grid-cols-2 lg:grid-cols-5">
-            <OpCard icon={IconHammer} name="Forge" desc="Lock SOL into a PDA. A new EVO is born with a floor value." />
-            <OpCard icon={IconTrendingUp} name="Trade" desc="Buy and sell on-chain. Royalties enforced. The floor travels." />
-            <OpCard icon={IconFeed} name="Feed" desc="Add SOL to the lock. The object grows in value and form." />
-            <OpCard icon={IconEvolve} name="Evolve" desc="Hit a threshold. The art changes. The state machine is the art." />
-            <OpCard icon={IconShatter} name="Shatter" desc="Destroy the EVO. Recover the locked SOL, minus a fee." />
-          </div>
-          <div className="mt-10 flex items-center justify-center gap-2 text-center text-xs text-dim">
-            <IconLock className="h-3.5 w-3.5 text-accent" />
-            No admin keys. No escrow. The SOL lives in the PDA.
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Collections — delayed, after the story ─── */}
-      <section id="collections" className="mx-auto max-w-7xl px-3 py-12 lg:px-4">
+      {/* ─── Collections — primary focus ─── */}
+      <section id="collections" className="mx-auto max-w-7xl px-3 py-8 lg:px-4">
         <div className="mb-4 flex items-center gap-2">
           <IconCollection className="h-4 w-4 text-accent" />
           <h2 className="text-sm font-bold tracking-tight text-text-strong">Collections</h2>
@@ -335,15 +299,38 @@ export default function Home() {
             {visibleCount < filteredCollections.length && (
               <div className="mt-6 text-center">
                 <button
-                  onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+                  onClick={() => setVisibleCount(filteredCollections.length)}
                   className="inline-flex items-center gap-2 rounded border border-border-strong bg-surface px-5 py-2 text-xs font-semibold text-text transition-colors hover:border-accent hover:text-text-strong"
                 >
-                  Load more ({filteredCollections.length - visibleCount} remaining)
+                  Show all {filteredCollections.length} collections
                 </button>
               </div>
             )}
           </>
         )}
+      </section>
+
+      {/* ─── How it works — five operations ─── */}
+      <section className="border-t border-border bg-surface">
+        <div className="mx-auto max-w-6xl px-4 py-12 lg:py-16">
+          <div className="mb-8 text-center">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-dim">How it works</p>
+            <h2 className="mt-2 text-lg font-semibold tracking-tight text-text-strong sm:text-xl">
+              Five operations. One object.
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 gap-px overflow-hidden rounded border border-border bg-border sm:grid-cols-2 lg:grid-cols-5">
+            <OpCard icon={IconHammer} name="Forge" desc="Lock SOL into a PDA. A new EVO is born with a floor value." />
+            <OpCard icon={IconTrendingUp} name="Trade" desc="Buy and sell on-chain. Royalties enforced. The floor travels." />
+            <OpCard icon={IconFeed} name="Feed" desc="Add SOL to the lock. The object grows in value and form." />
+            <OpCard icon={IconEvolve} name="Evolve" desc="Hit a threshold. The art changes. The state machine is the art." />
+            <OpCard icon={IconShatter} name="Shatter" desc="Destroy the EVO. Recover the locked SOL, minus a fee." />
+          </div>
+          <div className="mt-8 flex items-center justify-center gap-2 text-center text-xs text-dim">
+            <IconLock className="h-3.5 w-3.5 text-accent" />
+            No admin keys. No escrow. The SOL lives in the PDA.
+          </div>
+        </div>
       </section>
 
       {/* ─── Footer ─── */}
