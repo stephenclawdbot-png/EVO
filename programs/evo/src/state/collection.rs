@@ -10,6 +10,9 @@ pub struct CollectionConfig {
     pub creator: Pubkey,
     pub supply_cap: u32,
     pub current_supply: u32,
+    /// Monotonic counter — only ever incremented in `forge`, never decremented.
+    /// Used for `mint_index` assignment so that shattered slots are never reused.
+    pub total_minted: u32,
     pub shatter_fee_bps: u16,
     pub shatter_fee_destination: FeeDestination,
     pub trade_royalty_bps: u16,
@@ -57,6 +60,7 @@ impl CollectionConfig {
         32 +     // creator
         4 +      // supply_cap
         4 +      // current_supply
+        4 +      // total_minted
         2 +      // shatter_fee_bps
         1 +      // shatter_fee_destination
         2 +      // trade_royalty_bps

@@ -100,7 +100,9 @@ pub fn buy(ctx: Context<Buy>, evo_id: u32) -> Result<()> {
     }
 
     // Record the trade — add a fracture line
-    let trade_number = evo.trade_count + 1;
+    let trade_number = evo.trade_count
+        .checked_add(1)
+        .ok_or(EvoError::MathOverflow)?;
     let clock = Clock::get()?;
 
     let fracture = FractureLine {

@@ -86,6 +86,7 @@ pub fn create_collection(
     config.creator = ctx.accounts.payer.key();
     config.supply_cap = supply_cap;
     config.current_supply = 0;
+    config.total_minted = 0;
     config.shatter_fee_bps = shatter_fee_bps;
     config.shatter_fee_destination = shatter_fee_destination;
     config.trade_royalty_bps = trade_royalty_bps;

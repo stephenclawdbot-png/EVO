@@ -71,16 +71,20 @@ pub fn forge(
     evo.bump = ctx.bumps.evo;
     evo.manifest_verified = false;
 
-    // Lifecycle state — mint_index is the slot this EVO takes in the collection
-    // (assigned BEFORE incrementing supply, so first forge = index 0).
-    evo.mint_index = collection.current_supply;
+    // Lifecycle state — mint_index is the slot this EVO takes in the collection.
+    // Uses total_minted (monotonic) so shattered slots are never reassigned.
+    evo.mint_index = collection.total_minted;
     evo.current_state = 0;
     evo.last_transition_at = evo.forged_at;
     evo.feed_count = 0;
     evo.total_fed_lamports = 0;
 
-    // Increment supply
+    // Increment live supply and total minted
     collection.current_supply += 1;
+    collection.total_minted = collection
+        .total_minted
+        .checked_add(1)
+        .ok_or(EvoError::MathOverflow)?;
 
     // Transfer mint price from owner to creator (speculative value)
     if mint_price > 0 {
