@@ -214,17 +214,21 @@ export function createForgeIx(
 /** Feed SOL to an EVO to increase its locked value (anyone can feed). */
 export function createFeedIx(
   evoPda: PublicKey,
+  collectionPda: PublicKey,
   feeder: PublicKey,
+  evoId: number,
   additionalLamports: number,
 ): TransactionInstruction {
   const data = Buffer.concat([
     disc('feed'),
+    writeU32(evoId),
     writeU64(additionalLamports),
   ]);
   return new TransactionInstruction({
     programId: PROGRAM,
     keys: [
       { pubkey: evoPda, isSigner: false, isWritable: true },
+      { pubkey: collectionPda, isSigner: false, isWritable: false },
       { pubkey: feeder, isSigner: true, isWritable: true },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     ],
@@ -235,17 +239,21 @@ export function createFeedIx(
 /** List an EVO for sale at a fixed price. */
 export function createListIx(
   evoPda: PublicKey,
+  collectionPda: PublicKey,
   seller: PublicKey,
+  evoId: number,
   priceLamports: number,
 ): TransactionInstruction {
   const data = Buffer.concat([
     disc('list'),
+    writeU32(evoId),
     writeU64(priceLamports),
   ]);
   return new TransactionInstruction({
     programId: PROGRAM,
     keys: [
       { pubkey: evoPda, isSigner: false, isWritable: true },
+      { pubkey: collectionPda, isSigner: false, isWritable: false },
       { pubkey: seller, isSigner: true, isWritable: true },
     ],
     data,
@@ -255,15 +263,18 @@ export function createListIx(
 /** Delist an EVO (remove from sale). */
 export function createDelistIx(
   evoPda: PublicKey,
+  collectionPda: PublicKey,
   seller: PublicKey,
+  evoId: number,
 ): TransactionInstruction {
   return new TransactionInstruction({
     programId: PROGRAM,
     keys: [
       { pubkey: evoPda, isSigner: false, isWritable: true },
+      { pubkey: collectionPda, isSigner: false, isWritable: false },
       { pubkey: seller, isSigner: true, isWritable: true },
     ],
-    data: disc('delist'),
+    data: Buffer.concat([disc('delist'), writeU32(evoId)]),
   });
 }
 
@@ -379,14 +390,17 @@ export function createShatterIx(
 /** Transfer an EVO to a new owner (no SOL exchange, just ownership). */
 export function createTransferIx(
   evoPda: PublicKey,
+  collectionPda: PublicKey,
   currentOwner: PublicKey,
+  evoId: number,
   newOwner: PublicKey,
 ): TransactionInstruction {
-  const data = Buffer.concat([disc('transfer'), writePubkey(newOwner)]);
+  const data = Buffer.concat([disc('transfer'), writeU32(evoId), writePubkey(newOwner)]);
   return new TransactionInstruction({
     programId: PROGRAM,
     keys: [
       { pubkey: evoPda, isSigner: false, isWritable: true },
+      { pubkey: collectionPda, isSigner: false, isWritable: false },
       { pubkey: currentOwner, isSigner: true, isWritable: true },
     ],
     data,

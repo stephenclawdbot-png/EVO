@@ -75,19 +75,19 @@ pub mod evo {
 
     /// Feed more SOL into an existing EVO. Increases the floor price.
     /// Only the owner can feed.
-    pub fn feed(ctx: Context<Feed>, additional_lamports: u64) -> Result<()> {
-        instructions::feed::feed(ctx, additional_lamports)
+    pub fn feed(ctx: Context<Feed>, evo_id: u32, additional_lamports: u64) -> Result<()> {
+        instructions::feed::feed(ctx, evo_id, additional_lamports)
     }
 
     /// List an EVO for sale at a specified price.
     /// Only the owner can list.
-    pub fn list(ctx: Context<List>, price_lamports: u64) -> Result<()> {
-        instructions::list::list(ctx, price_lamports)
+    pub fn list(ctx: Context<List>, evo_id: u32, price_lamports: u64) -> Result<()> {
+        instructions::list::list(ctx, evo_id, price_lamports)
     }
 
     /// Remove a listing. Only the owner can delist.
-    pub fn delist(ctx: Context<Delist>) -> Result<()> {
-        instructions::delist::delist(ctx)
+    pub fn delist(ctx: Context<Delist>, evo_id: u32) -> Result<()> {
+        instructions::delist::delist(ctx, evo_id)
     }
 
     /// Buy a listed EVO. Transfers ownership and splits the payment:
@@ -108,8 +108,8 @@ pub mod evo {
 
     /// Transfer an EVO to a new owner. No payment involved.
     /// Only the current owner can transfer.
-    pub fn transfer(ctx: Context<Transfer>, new_owner: Pubkey) -> Result<()> {
-        instructions::transfer::transfer(ctx, new_owner)
+    pub fn transfer(ctx: Context<Transfer>, evo_id: u32, new_owner: Pubkey) -> Result<()> {
+        instructions::transfer::transfer(ctx, evo_id, new_owner)
     }
 
     /// Close an empty collection and refund rent to the creator.

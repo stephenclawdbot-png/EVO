@@ -459,17 +459,21 @@ export function createForgeIx(
 
 export function createFeedIx(
   evoPda: PublicKey,
+  collectionPda: PublicKey,
   feeder: PublicKey,
+  evoId: number,
   additionalLamports: number,
 ): TransactionInstruction {
   const data = Buffer.concat([
     DISC.feed,
+    writeU32(evoId),
     writeU64(additionalLamports),
   ]);
   return new TransactionInstruction({
     programId: PROGRAM_ID,
     keys: [
       { pubkey: evoPda, isSigner: false, isWritable: true },
+      { pubkey: collectionPda, isSigner: false, isWritable: false },
       { pubkey: feeder, isSigner: true, isWritable: true },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     ],
@@ -479,17 +483,21 @@ export function createFeedIx(
 
 export function createListIx(
   evoPda: PublicKey,
+  collectionPda: PublicKey,
   seller: PublicKey,
+  evoId: number,
   priceLamports: number,
 ): TransactionInstruction {
   const data = Buffer.concat([
     DISC.list,
+    writeU32(evoId),
     writeU64(priceLamports),
   ]);
   return new TransactionInstruction({
     programId: PROGRAM_ID,
     keys: [
       { pubkey: evoPda, isSigner: false, isWritable: true },
+      { pubkey: collectionPda, isSigner: false, isWritable: false },
       { pubkey: seller, isSigner: true, isWritable: true },
     ],
     data,
@@ -498,13 +506,16 @@ export function createListIx(
 
 export function createDelistIx(
   evoPda: PublicKey,
+  collectionPda: PublicKey,
   seller: PublicKey,
+  evoId: number,
 ): TransactionInstruction {
-  const data = DISC.delist;
+  const data = Buffer.concat([DISC.delist, writeU32(evoId)]);
   return new TransactionInstruction({
     programId: PROGRAM_ID,
     keys: [
       { pubkey: evoPda, isSigner: false, isWritable: true },
+      { pubkey: collectionPda, isSigner: false, isWritable: false },
       { pubkey: seller, isSigner: true, isWritable: true },
     ],
     data,
@@ -578,14 +589,17 @@ export function createShatterIx(
 
 export function createTransferIx(
   evoPda: PublicKey,
+  collectionPda: PublicKey,
   currentOwner: PublicKey,
+  evoId: number,
   newOwner: PublicKey,
 ): TransactionInstruction {
-  const data = Buffer.concat([DISC.transfer, writePubkey(newOwner)]);
+  const data = Buffer.concat([DISC.transfer, writeU32(evoId), writePubkey(newOwner)]);
   return new TransactionInstruction({
     programId: PROGRAM_ID,
     keys: [
       { pubkey: evoPda, isSigner: false, isWritable: true },
+      { pubkey: collectionPda, isSigner: false, isWritable: false },
       { pubkey: currentOwner, isSigner: true, isWritable: true },
     ],
     data,

@@ -144,10 +144,11 @@ export async function readCollectionTradeHistory(
           evoId: resolveEvoId(data, 'buy'),
         });
       } else if (ixMatches(data, DISC_FEED)) {
-        const lamports = data.length >= 16 ? readU64LE(data, 8) : 0;
+        const lamports = data.length >= 16 ? readU64LE(data, 12) : 0;
+        const evoId = data.length >= 12 ? data.readUInt32LE(8) : null;
         events.push({
           signature: s.signature, kind: 'feed', timestamp: blockTime,
-          priceSol: 0, amountSol: lamports / 1e9, evoId: null,
+          priceSol: 0, amountSol: lamports / 1e9, evoId,
         });
       } else if (ixMatches(data, DISC_SHATT)) {
         events.push({
@@ -155,15 +156,17 @@ export async function readCollectionTradeHistory(
           priceSol: 0, amountSol: 0, evoId: resolveEvoId(data, 'shatter'),
         });
       } else if (ixMatches(data, DISC_LIST)) {
-        const lamports = data.length >= 16 ? readU64LE(data, 8) : 0;
+        const lamports = data.length >= 16 ? readU64LE(data, 12) : 0;
+        const evoId = data.length >= 12 ? data.readUInt32LE(8) : null;
         events.push({
           signature: s.signature, kind: 'list', timestamp: blockTime,
-          priceSol: lamports / 1e9, amountSol: 0, evoId: null,
+          priceSol: lamports / 1e9, amountSol: 0, evoId,
         });
       } else if (ixMatches(data, DISC_DELIST)) {
+        const evoId = data.length >= 12 ? data.readUInt32LE(8) : null;
         events.push({
           signature: s.signature, kind: 'delist', timestamp: blockTime,
-          priceSol: 0, amountSol: 0, evoId: null,
+          priceSol: 0, amountSol: 0, evoId,
         });
       }
     }

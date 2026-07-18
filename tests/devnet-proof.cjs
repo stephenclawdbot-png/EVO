@@ -499,8 +499,8 @@ async function main() {
 
     // Feed
     const feedSig = await program.methods
-      .feed(new anchor.BN(FEED_THRESHOLD))
-      .accounts({ evo: evo1Pk, feeder: buyer.publicKey })
+      .feed(1, new anchor.BN(FEED_THRESHOLD))
+      .accounts({ evo: evo1Pk, collectionConfig: collPk, feeder: buyer.publicKey })
       .signers([buyer])
       .rpc();
     await sleep(2000);
@@ -545,8 +545,8 @@ async function main() {
 
     // List
     const listSig = await program.methods
-      .list(new anchor.BN(TRADE_PRICE))
-      .accounts({ evo: evo0Pk, seller: buyer.publicKey })
+      .list(0, new anchor.BN(TRADE_PRICE))
+      .accounts({ evo: evo0Pk, collectionConfig: collPk, seller: buyer.publicKey })
       .signers([buyer])
       .rpc();
     await sleep(2000);

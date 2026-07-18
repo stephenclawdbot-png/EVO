@@ -239,8 +239,8 @@ describe("EVO", () => {
       const prevFeedCount = evoBefore.feedCount;
 
       await program.methods
-        .feed(FEED)
-        .accounts({ evo: evoPk, feeder: other.publicKey })
+        .feed(EVO_ID, FEED)
+        .accounts({ evo: evoPk, collectionConfig: collectionPk, feeder: other.publicKey })
         .signers([other])
         .rpc();
 
@@ -258,8 +258,8 @@ describe("EVO", () => {
     it("rejects feed by non-owner", async () => {
       try {
         await program.methods
-          .feed(SOL(0.001))
-          .accounts({ evo: evoPk, feeder: buyer.publicKey })
+          .feed(EVO_ID, SOL(0.001))
+          .accounts({ evo: evoPk, collectionConfig: collectionPk, feeder: buyer.publicKey })
           .signers([buyer])
           .rpc();
         assert.fail("non-owner should not feed");
@@ -273,8 +273,8 @@ describe("EVO", () => {
       const lockedBefore = (await program.account.evoAccount.fetch(evoPk)).lockedLamports;
 
       await program.methods
-        .transfer(buyer.publicKey)
-        .accounts({ evo: evoPk, currentOwner: other.publicKey })
+        .transfer(EVO_ID, buyer.publicKey)
+        .accounts({ evo: evoPk, collectionConfig: collectionPk, currentOwner: other.publicKey })
         .signers([other])
         .rpc();
 
@@ -289,8 +289,8 @@ describe("EVO", () => {
     it("rejects transfer by non-owner", async () => {
       try {
         await program.methods
-          .transfer(other.publicKey)
-          .accounts({ evo: evoPk, currentOwner: other.publicKey })
+          .transfer(EVO_ID, other.publicKey)
+          .accounts({ evo: evoPk, collectionConfig: collectionPk, currentOwner: other.publicKey })
           .signers([other])
           .rpc();
         assert.fail("non-owner should not transfer");
@@ -302,8 +302,8 @@ describe("EVO", () => {
     it("lists the EVO for sale", async () => {
       const PRICE = SOL(0.01);
       await program.methods
-        .list(PRICE)
-        .accounts({ evo: evoPk, seller: buyer.publicKey })
+        .list(EVO_ID, PRICE)
+        .accounts({ evo: evoPk, collectionConfig: collectionPk, seller: buyer.publicKey })
         .signers([buyer])
         .rpc();
       const evo = await program.account.evoAccount.fetch(evoPk);
@@ -314,8 +314,8 @@ describe("EVO", () => {
     it("rejects double listing", async () => {
       try {
         await program.methods
-          .list(SOL(0.02))
-          .accounts({ evo: evoPk, seller: buyer.publicKey })
+          .list(EVO_ID, SOL(0.02))
+          .accounts({ evo: evoPk, collectionConfig: collectionPk, seller: buyer.publicKey })
           .signers([buyer])
           .rpc();
         assert.fail("should not double-list");
@@ -700,8 +700,8 @@ describe("EVO", () => {
 
     it("evolves to state 1 after feeding the threshold", async () => {
       await program.methods
-        .feed(FEED_THRESHOLD)
-        .accounts({ evo: evoPk, feeder: buyer.publicKey })
+        .feed(EVO_ID, FEED_THRESHOLD)
+        .accounts({ evo: evoPk, collectionConfig: collectionPk, feeder: buyer.publicKey })
         .signers([buyer])
         .rpc();
       await program.methods
@@ -727,8 +727,8 @@ describe("EVO", () => {
 
     it("evolves to state 2 after feeding enough cumulative total", async () => {
       await program.methods
-        .feed(FEED_THRESHOLD)
-        .accounts({ evo: evoPk, feeder: buyer.publicKey })
+        .feed(EVO_ID, FEED_THRESHOLD)
+        .accounts({ evo: evoPk, collectionConfig: collectionPk, feeder: buyer.publicKey })
         .signers([buyer])
         .rpc();
       await program.methods
@@ -742,8 +742,8 @@ describe("EVO", () => {
     it("rejects evolve at max state (maxStates=3, state 2 is final)", async () => {
       // Feed enough to satisfy the threshold, but should still be blocked
       await program.methods
-        .feed(FEED_THRESHOLD)
-        .accounts({ evo: evoPk, feeder: buyer.publicKey })
+        .feed(EVO_ID, FEED_THRESHOLD)
+        .accounts({ evo: evoPk, collectionConfig: collectionPk, feeder: buyer.publicKey })
         .signers([buyer])
         .rpc();
       try {
@@ -1221,8 +1221,8 @@ describe("EVO", () => {
     // --- Owner account mismatch ---
     it("rejects buy with wrong seller (not actual owner)", async () => {
       await program.methods
-        .list(SOL(0.01))
-        .accounts({ evo: evoPk, seller: buyer.publicKey })
+        .list(EVO_ID, SOL(0.01))
+        .accounts({ evo: evoPk, collectionConfig: collectionPk, seller: buyer.publicKey })
         .signers([buyer])
         .rpc();
 
@@ -1248,8 +1248,8 @@ describe("EVO", () => {
 
       // cleanup: delist
       await program.methods
-        .delist()
-        .accounts({ evo: evoPk, seller: buyer.publicKey })
+        .delist(EVO_ID)
+        .accounts({ evo: evoPk, collectionConfig: collectionPk, seller: buyer.publicKey })
         .signers([buyer])
         .rpc();
     });
@@ -1272,8 +1272,8 @@ describe("EVO", () => {
 
       // List the EVO
       await program.methods
-        .list(SOL(0.01))
-        .accounts({ evo: pk, seller: buyer.publicKey })
+        .list(evoId, SOL(0.01))
+        .accounts({ evo: pk, collectionConfig: collectionPk, seller: buyer.publicKey })
         .signers([buyer])
         .rpc();
 
@@ -1324,15 +1324,15 @@ describe("EVO", () => {
 
       // List it
       await program.methods
-        .list(SOL(0.01))
-        .accounts({ evo: evoPk2, seller: buyer.publicKey })
+        .list(EVO_ID2, SOL(0.01))
+        .accounts({ evo: evoPk2, collectionConfig: collectionPk, seller: buyer.publicKey })
         .signers([buyer])
         .rpc();
 
       // Transfer clears the listing
       await program.methods
-        .transfer(other.publicKey)
-        .accounts({ evo: evoPk2, currentOwner: buyer.publicKey })
+        .transfer(EVO_ID2, other.publicKey)
+        .accounts({ evo: evoPk2, collectionConfig: collectionPk, currentOwner: buyer.publicKey })
         .signers([buyer])
         .rpc();
 
@@ -1455,8 +1455,8 @@ describe("EVO", () => {
 
       const PRICE = SOL(0.01);
       await program.methods
-        .list(PRICE)
-        .accounts({ evo: evoPk0, seller: buyer.publicKey })
+        .list(EVO_ID, PRICE)
+        .accounts({ evo: evoPk0, collectionConfig: zeroRoyCol, seller: buyer.publicKey })
         .signers([buyer])
         .rpc();
 
@@ -1549,8 +1549,8 @@ describe("EVO", () => {
 
       try {
         await program.methods
-          .list(new BN(0))
-          .accounts({ evo: evoPk3, seller: buyer.publicKey })
+          .list(2, new BN(0))
+          .accounts({ evo: evoPk3, collectionConfig: collectionPk, seller: buyer.publicKey })
           .signers([buyer])
           .rpc();
         assert.fail("should reject zero price");
@@ -1574,8 +1574,8 @@ describe("EVO", () => {
 
       const MAX_U64 = new BN("18446744073709551615");
       await program.methods
-        .list(MAX_U64)
-        .accounts({ evo: evoPk4, seller: buyer.publicKey })
+        .list(3, MAX_U64)
+        .accounts({ evo: evoPk4, collectionConfig: collectionPk, seller: buyer.publicKey })
         .signers([buyer])
         .rpc();
 
@@ -1586,7 +1586,7 @@ describe("EVO", () => {
       // Buy should fail — no one has u64::MAX lamports
       try {
         await program.methods
-          .buy(EVO_ID)
+          .buy(3)
           .accounts({
             evo: evoPk4,
             collectionConfig: collectionPk,
@@ -1642,8 +1642,8 @@ describe("EVO", () => {
       const FEED = SOL(0.001);
 
       await program.methods
-        .feed(FEED)
-        .accounts({ evo: evoPk5, feeder: buyer.publicKey })
+        .feed(4, FEED)
+        .accounts({ evo: evoPk5, collectionConfig: collectionPk, feeder: buyer.publicKey })
         .signers([buyer])
         .rpc();
 
