@@ -185,7 +185,7 @@ export default function CreateCollectionPage() {
         manifestRoot;
       const lifecycle = {
         lifecycleType,
-        maxStates: parseInt(maxStates) || 1,
+        maxStates: lifecycleType === 'Static' ? 1 : (parseInt(maxStates) || 1),
         revealAuthority: revealAuthority.trim() ? new PublicKey(revealAuthority.trim()) : wallet.publicKey!,
         randomnessPolicy,
         manifestRoot: parseHex32(effectiveManifestRoot),
@@ -426,9 +426,15 @@ export default function CreateCollectionPage() {
                     <p className="mt-1 text-[10px] leading-relaxed text-dim">{LIFECYCLE_INFO[lifecycleType].desc}</p>
                   </div>
                   <div>
-                    <label className={labelCls}>Max States</label>
-                    <input type="number" className={inputCls} value={maxStates} onChange={e => setMaxStates(e.target.value)} />
-                    <p className="mt-1 text-[10px] text-dim">Number of visual stages (1 = no evolution).</p>
+                    <label className={labelCls}>Max States{lifecycleType === 'Static' ? ' (locked)' : ''}</label>
+                    <input
+                      type="number"
+                      className={inputCls}
+                      value={lifecycleType === 'Static' ? '1' : maxStates}
+                      onChange={e => setMaxStates(e.target.value)}
+                      readOnly={lifecycleType === 'Static'}
+                    />
+                    <p className="mt-1 text-[10px] text-dim">{lifecycleType === 'Static' ? 'Static EVOs have 1 state — no evolution.' : 'Number of visual stages (1 = no evolution).'}</p>
                   </div>
                 </div>
 
