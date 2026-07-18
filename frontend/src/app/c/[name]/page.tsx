@@ -6,12 +6,14 @@ import { useParams } from 'next/navigation';
 import { EvoCard } from '@/components/EvoCard';
 import { EvoDetail } from '@/components/EvoDetail';
 import { Nav } from '@/components/Nav';
+import { TradeChart } from '@/components/TradeChart';
 import { EVOData, CollectionData, evoAccountToData, collectionConfigToData } from '@/lib/evo-data';
 import {
   readCollectionConfig,
   readAllEVOs,
   getCollectionPDA,
 } from '@/lib/evo-program';
+import { readCollectionTradeHistory, TradeEvent } from '@/lib/evo-chart';
 import Link from 'next/link';
 import { IconSearch, IconArrowRight, IconHammer } from '@/components/Icons';
 
@@ -30,6 +32,8 @@ export default function CollectionPage() {
   const [collection, setCollection] = useState<CollectionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [trades, setTrades] = useState<TradeEvent[]>([]);
+  const [tradesLoading, setTradesLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -37,7 +41,8 @@ export default function CollectionPage() {
     try {
       const cfg = await readCollectionConfig(connection, collectionName);
       if (!cfg) { setNotFound(true); setEvos([]); setCollection(null); return; }
-      setCollection(collectionConfigToData(cfg));
+      const colData = collectionConfigToData(cfg);
+      setCollection(colData);
       const [collectionPda] = getCollectionPDA(collectionName);
       const onChainEvos = await readAllEVOs(connection, collectionPda, cfg.supplyCap);
       const display: EVOData[] = [];
@@ -46,6 +51,13 @@ export default function CollectionPage() {
         if (d) display.push(d);
       }
       setEvos(display);
+
+      // trade history for the chart (non-blocking)
+      setTradesLoading(true);
+      readCollectionTradeHistory(connection, collectionName, Math.round(colData.mintPriceSol * 1e9))
+        .then(setTrades)
+        .catch(() => setTrades([]))
+        .finally(() => setTradesLoading(false));
     } catch (err) {
       console.error('Failed to fetch EVOs:', err);
     } finally {
@@ -196,6 +208,11 @@ export default function CollectionPage() {
             </select>
           </div>
         </div>
+      </section>
+
+      {/* Trade chart — internal, from on-chain EVO trades */}
+      <section className="mx-auto max-w-7xl px-3 pt-3 lg:px-4">
+        <TradeChart events={trades} loading={tradesLoading} currentFloorSol={parseFloat(stats.floorPrice)} />
       </section>
 
       {/* Gallery */}
