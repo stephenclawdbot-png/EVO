@@ -76,6 +76,10 @@ pub fn create_collection(
         );
     }
 
+    // Save PDA keys before mutable borrow to satisfy borrow checker
+    let collection_pda_key = ctx.accounts.collection_config.key();
+    let protocol_pda_key = ctx.accounts.protocol_config.key();
+
     let config = &mut ctx.accounts.collection_config;
 
     config.name = name.clone();
@@ -118,11 +122,11 @@ pub fn create_collection(
             EvoError::InvalidBurnDestination
         );
         require!(
-            lifecycle.burn_destination != ctx.accounts.collection_config.key(),
+            lifecycle.burn_destination != collection_pda_key,
             EvoError::BurnDestinationIsProgramPda
         );
         require!(
-            lifecycle.burn_destination != ctx.accounts.protocol_config.key(),
+            lifecycle.burn_destination != protocol_pda_key,
             EvoError::BurnDestinationIsProgramPda
         );
     }

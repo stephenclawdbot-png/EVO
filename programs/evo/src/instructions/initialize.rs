@@ -9,7 +9,7 @@ use anchor_lang::prelude::*;
 ///
 /// Set to `Pubkey::default()` to allow anyone to initialize (testing mode).
 /// **For mainnet: update this to the real deployer pubkey before deploying.**
-pub const REQUIRED_DEPLOYER: Pubkey = Pubkey::default(); // TODO: set to deployer pubkey for mainnet
+pub const REQUIRED_DEPLOYER: Pubkey = Pubkey::new_from_array([0u8; 32]); // TODO: set to deployer pubkey for mainnet
 
 #[derive(Accounts)]
 pub struct InitializeProtocol<'info> {
