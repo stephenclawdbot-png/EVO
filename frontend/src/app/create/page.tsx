@@ -8,6 +8,7 @@ import { Transaction, PublicKey } from '@solana/web3.js';
 import Link from 'next/link';
 import {
   readProtocolConfig,
+  readAllCollections,
   createInitializeProtocolIx,
   createCreateCollectionIx,
   INCINERATOR,
@@ -15,6 +16,7 @@ import {
   type LifecycleType,
   type RandomnessPolicy,
   type ProtocolConfig,
+  type CollectionDiscovery,
 } from '@/lib/evo-program';
 import { IconCheck, IconAlertTriangle, IconExternalLink, IconHammer, IconSparkle } from '@/components/Icons';
 import { BulkArtworkUploader, type BulkArtworkResult } from '@/components/BulkArtworkUploader';
@@ -66,6 +68,8 @@ export default function CreateCollectionPage() {
 
   const [protocol, setProtocol] = useState<ProtocolConfig | null>(null);
   const [loadingProto, setLoadingProto] = useState(true);
+  const [existingCollection, setExistingCollection] = useState<CollectionDiscovery | null>(null);
+  const [checkingExisting, setCheckingExisting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [initSubmitting, setInitSubmitting] = useState(false);
   const [txSig, setTxSig] = useState<string | null>(null);
@@ -119,6 +123,32 @@ export default function CreateCollectionPage() {
   }, [connection]);
 
   useEffect(() => { fetchProtocol(); }, [fetchProtocol]);
+
+  // Off-chain enforcement: one wallet = one collection.
+  // When the wallet connects, scan all collections and block the form
+  // if this wallet already created one. (On-chain still allows multiple;
+  // this gate prevents it through the marketplace UI.)
+  useEffect(() => {
+    if (!wallet.connected || !wallet.publicKey) {
+      setExistingCollection(null);
+      return;
+    }
+    let cancelled = false;
+    setCheckingExisting(true);
+    readAllCollections(connection)
+      .then((cols) => {
+        if (cancelled) return;
+        const found = cols.find((c) => c.config.creator.equals(wallet.publicKey!));
+        setExistingCollection(found ?? null);
+      })
+      .catch((err) => {
+        console.error('Failed to check existing collections:', err);
+      })
+      .finally(() => {
+        if (!cancelled) setCheckingExisting(false);
+      });
+    return () => { cancelled = true; };
+  }, [wallet.connected, wallet.publicKey, connection]);
 
   const needsLifecycle = lifecycleType !== 'Static';
 
@@ -248,6 +278,22 @@ export default function CreateCollectionPage() {
             <p className="text-sm font-semibold text-text-strong">Connect a wallet to create a collection</p>
             <p className="max-w-sm text-xs text-muted">Creation requires a signed on-chain transaction. Connect your Solana wallet to continue.</p>
             <WalletMultiButton />
+          </div>
+        ) : checkingExisting ? (
+          <div className="mt-8 text-center text-xs text-muted">Checking existing collections…</div>
+        ) : existingCollection ? (
+          <div className="mt-8 rounded-lg border border-border bg-surface p-6">
+            <div className="flex items-center gap-2">
+              <IconAlertTriangle className="h-5 w-5 text-negative" />
+              <h2 className="text-sm font-bold text-text-strong">One collection per wallet</h2>
+            </div>
+            <p className="mt-2 text-xs text-muted">
+              This wallet already created the collection <span className="font-semibold text-text-strong">{existingCollection.config.name}</span>.
+              The marketplace allows one collection per wallet to prevent spam and keep the gallery clean.
+            </p>
+            <Link href={`/c/${existingCollection.config.name}`} className="mt-4 inline-flex items-center gap-2 rounded border border-accent bg-accent px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-accent-hover">
+              <IconExternalLink className="h-3 w-3" /> View your collection
+            </Link>
           </div>
         ) : loadingProto ? (
           <div className="mt-8 text-center text-xs text-muted">Reading protocol config…</div>
