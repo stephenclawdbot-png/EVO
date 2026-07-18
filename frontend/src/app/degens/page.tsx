@@ -1,181 +1,225 @@
 import { Nav } from '@/components/Nav';
 import Link from 'next/link';
+import {
+  IconLock, IconHammer, IconShatter, IconTrendingUp,
+  IconEvolve, IconSparkle, IconArrowRight, IconCheck, IconX,
+} from '@/components/Icons';
 
-const gamblingPoints = [
-  { emoji: '🎲', text: 'You lose → money gone. Poof. Nothing to show.' },
-  { emoji: '💸', text: 'House always wins. Negative EV by design.' },
-  { emoji: '👻', text: 'Zero transparency. Trust me bro.' },
-  { emoji: '🕳️', text: 'No exit liquidity. You lose, you leave empty-handed.' },
-  { emoji: '🤡', text: 'RNG black box. Was it fair? Who knows.' },
+const principles = [
+  {
+    icon: IconLock,
+    title: 'SOL-backed floor',
+    body: 'Every EVO locks real SOL inside a PDA. You always own that value. It cannot go to zero.',
+  },
+  {
+    icon: IconEvolve,
+    title: 'It evolves',
+    body: 'On-chain feeds trigger state changes over time. The asset is alive, not a static dice roll.',
+  },
+  {
+    icon: IconTrendingUp,
+    title: 'Trade it',
+    body: 'List, buy, flip. Markets create price discovery above the floor. You set the price.',
+  },
+  {
+    icon: IconShatter,
+    title: 'Shatter for value',
+    body: 'Don\'t want to sell? Shatter it and reclaim the locked SOL. The exit is built in.',
+  },
+  {
+    icon: IconSparkle,
+    title: 'Fully on-chain',
+    body: 'Every lock, evolution, transfer, and shatter is a Solana transaction. Verify it yourself.',
+  },
+  {
+    icon: IconHammer,
+    title: 'Not zero-sum',
+    body: 'The floor is guaranteed by code. Speculation adds upside. You are never left with nothing.',
+  },
 ];
 
-const evoPoints = [
-  { emoji: '🔒', title: 'SOL-BACKED FLOOR', text: 'Every EVO locks real SOL inside a PDA. You always own the locked value. It can never go to zero.' },
-  { emoji: '🧬', title: 'IT EVOLVES', text: 'Your asset changes over time through on-chain feeds. It is alive, not a static dice roll.' },
-  { emoji: '💸', title: 'TRADE IT', text: 'List it, buy it, flip it. Markets create price discovery above the floor. You set the price.' },
-  { emoji: '🔨', title: 'SHATTER FOR VALUE', text: 'Don\'t want to sell? Shatter it and reclaim the locked SOL. The exit is built in.' },
-  { emoji: '📜', title: '100% ON-CHAIN', text: 'Every lock, evolution, transfer, and shatter is a Solana transaction. Verify it yourself.' },
-  { emoji: '⚖️', title: 'NOT ZERO-SUM', text: 'The floor is guaranteed by code. Speculation adds upside. You are never left with nothing.' },
-];
-
-const comparison = [
-  { label: 'Money goes where?', gamble: 'House pocket 💀', evo: 'Locked in PDA 🔒' },
-  { label: 'Asset you own?', gamble: 'Nothing 🚫', evo: 'Evolving on-chain asset 🧬' },
-  { label: 'Worst case?', gamble: 'Total loss 🔴', evo: 'Reclaim locked SOL 🟢' },
-  { label: 'Transparent?', gamble: 'No 🤡', evo: 'Every tx on-chain 📜' },
-  { label: 'Exit liquidity?', gamble: 'Hope you cashed out 🙏', evo: 'Shatter or sell anytime 🔨' },
-  { label: 'House edge?', gamble: 'Built in, always against you 📉', evo: 'No house. 0.009 fee on transfers only ⚖️' },
+const comparison: { label: string; gamble: string; evo: string }[] = [
+  { label: 'Where does the money go?', gamble: 'House pocket', evo: 'Locked in a PDA' },
+  { label: 'Do you own anything?', gamble: 'No', evo: 'An evolving on-chain asset' },
+  { label: 'Worst case?', gamble: 'Total loss', evo: 'Reclaim locked SOL' },
+  { label: 'Transparent?', gamble: 'No', evo: 'Every transaction on-chain' },
+  { label: 'Exit liquidity?', gamble: 'Hope you cashed out', evo: 'Shatter or sell anytime' },
+  { label: 'House edge?', gamble: 'Built in, always against you', evo: 'No house. Flat fee on transfers.' },
 ];
 
 const steps = [
-  { n: '1', title: 'Lock SOL', desc: 'Send SOL into the EVO program. It is locked inside a PDA — a smart contract wallet nobody can raid.', icon: '🔒' },
-  { n: '2', title: 'Get an EVO', desc: 'You receive a unique evolving on-chain asset. It has a floor value equal to the locked SOL.', icon: '🧬' },
-  { n: '3', title: 'It Evolves', desc: 'On-chain feeds trigger evolution. Your asset changes. The story writes itself on-chain.', icon: '✨' },
-  { n: '4', title: 'Trade or Shatter', desc: 'List it for sale at any price above floor. Or shatter it to reclaim the locked SOL. Your call.', icon: '🔨' },
+  { icon: IconLock, title: 'Lock SOL', desc: 'Send SOL into the EVO program. It is locked inside a PDA — a smart contract wallet nobody can raid.' },
+  { icon: IconHammer, title: 'Get an EVO', desc: 'You receive a unique evolving on-chain asset. It has a floor value equal to the locked SOL.' },
+  { icon: IconEvolve, title: 'It evolves', desc: 'On-chain feeds trigger evolution. The asset changes. The story writes itself on-chain.' },
+  { icon: IconShatter, title: 'Trade or shatter', desc: 'List it for sale at any price above floor. Or shatter it to reclaim the locked SOL. Your call.' },
 ];
 
 export default function DegensPage() {
   return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden">
+    <div className="min-h-screen bg-bg text-text">
       <Nav />
 
       {/* Hero */}
-      <section className="relative flex flex-col items-center justify-center text-center px-4 pt-24 pb-16">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(168,85,247,0.15),_transparent_70%)] pointer-events-none" />
-        <div className="relative z-10 max-w-3xl">
-          <span className="inline-block mb-4 px-4 py-1.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 text-sm font-bold tracking-wider uppercase">
-            Not a Casino
+      <section className="relative overflow-hidden border-b border-border">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+            style={{ background: 'radial-gradient(circle, #818cf810, transparent 65%)' }} />
+        </div>
+        <div className="relative mx-auto flex max-w-3xl flex-col items-center px-4 py-24 text-center lg:py-32">
+          <span className="mb-6 inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-surface px-3 py-1 text-[11px] text-muted">
+            <IconSparkle className="h-3 w-3 text-accent" />
+            Not a casino
           </span>
-          <h1 className="text-5xl sm:text-7xl font-black leading-tight bg-gradient-to-r from-purple-400 via-pink-400 to-yellow-400 bg-clip-text text-transparent">
-            EVO FOR DEGENS
+          <h1 className="text-4xl font-bold leading-[1.05] tracking-tight text-text-strong sm:text-5xl lg:text-6xl">
+            EVO for degens
           </h1>
-          <p className="mt-6 text-xl sm:text-2xl text-gray-300 font-bold">
+          <p className="mt-6 max-w-lg text-sm text-muted sm:text-base">
             You lock SOL. You get an evolving on-chain asset. You own it.
+            Not a bet. Not a spin. A backed primitive with a floor and an exit.
           </p>
-          <p className="mt-3 text-lg text-gray-400">
-            Not a bet. Not a spin. A <span className="text-pink-400 font-bold">backed primitive</span> with a floor and an exit.
-          </p>
-          <div className="mt-8 flex gap-4 justify-center flex-wrap">
-            <Link
-              href="/"
-              className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg hover:scale-105 transition-transform shadow-lg shadow-purple-500/30"
-            >
-              🔥 Explore EVOs
+          <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
+            <Link href="/"
+              className="inline-flex items-center gap-2 rounded bg-accent px-6 py-2.5 text-sm font-semibold text-[#0a0a0c] transition-colors hover:bg-accent-hover">
+              Explore EVOs <IconArrowRight className="h-4 w-4" />
             </Link>
-            <Link
-              href="/create"
-              className="px-8 py-3 rounded-xl border-2 border-purple-500/50 text-purple-300 font-bold text-lg hover:bg-purple-500/10 transition-colors"
-            >
-              ⚒️ Forge One
+            <Link href="/create"
+              className="inline-flex items-center gap-2 rounded border border-border-strong px-6 py-2.5 text-sm font-semibold text-text transition-colors hover:bg-surface-2">
+              Forge one
             </Link>
           </div>
         </div>
       </section>
 
-      {/* The Problem: Gambling */}
-      <section className="px-4 py-16 max-w-4xl mx-auto">
-        <h2 className="text-3xl sm:text-4xl font-black text-center mb-2 text-red-400">
-          💀 Pure Gambling Sucks
-        </h2>
-        <p className="text-center text-gray-400 mb-10">Here is what happens when you roll the dice:</p>
-        <div className="grid sm:grid-cols-2 gap-4">
-          {gamblingPoints.map((p, i) => (
-            <div key={i} className="flex items-start gap-3 p-4 rounded-xl bg-red-950/30 border border-red-900/40">
-              <span className="text-2xl shrink-0">{p.emoji}</span>
-              <span className="text-gray-300 font-medium">{p.text}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* The Solution: EVO */}
-      <section className="px-4 py-16 max-w-5xl mx-auto">
-        <h2 className="text-3xl sm:text-4xl font-black text-center mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-          🧬 EVO Is Different
-        </h2>
-        <p className="text-center text-gray-400 mb-10">You are not betting. You are minting a backed asset:</p>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {evoPoints.map((p, i) => (
-            <div key={i} className="p-5 rounded-2xl bg-gradient-to-b from-purple-950/40 to-black border border-purple-800/30 hover:border-purple-600/50 transition-colors">
-              <span className="text-3xl block mb-2">{p.emoji}</span>
-              <h3 className="font-black text-purple-300 text-sm tracking-wider mb-1">{p.title}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{p.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Comparison Table */}
-      <section className="px-4 py-16 max-w-3xl mx-auto">
-        <h2 className="text-3xl sm:text-4xl font-black text-center mb-10 text-white">⚡ Head-to-Head</h2>
-        <div className="overflow-hidden rounded-2xl border border-gray-800">
-          <div className="grid grid-cols-3 gap-px bg-gray-800">
-            <div className="bg-black p-4 font-black text-gray-500 text-sm">&nbsp;</div>
-            <div className="bg-red-950/40 p-4 font-black text-red-400 text-sm text-center">🎰 GAMBLING</div>
-            <div className="bg-purple-950/40 p-4 font-black text-purple-300 text-sm text-center">🧬 EVO</div>
-          </div>
-          {comparison.map((row, i) => (
-            <div key={i} className="grid grid-cols-3 gap-px bg-gray-800">
-              <div className="bg-black p-3 text-gray-400 text-xs font-bold uppercase tracking-wide">{row.label}</div>
-              <div className="bg-black p-3 text-red-300/70 text-sm text-center">{row.gamble}</div>
-              <div className="bg-black p-3 text-purple-200 text-sm text-center font-medium">{row.evo}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="px-4 py-16 max-w-3xl mx-auto">
-        <h2 className="text-3xl sm:text-4xl font-black text-center mb-10 text-white">🔥 How It Works</h2>
-        <div className="space-y-4">
-          {steps.map((step) => (
-            <div key={step.n} className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-r from-purple-950/30 to-transparent border border-purple-900/30">
-              <div className="shrink-0 w-12 h-12 rounded-full bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-2xl">
-                {step.icon}
-              </div>
-              <div>
-                <h3 className="font-black text-lg text-purple-300">
-                  <span className="text-purple-500 mr-2">{step.n}.</span>{step.title}
-                </h3>
-                <p className="text-gray-400 text-sm mt-1 leading-relaxed">{step.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Bottom Line */}
-      <section className="px-4 py-20 max-w-3xl mx-auto text-center">
-        <div className="p-8 rounded-3xl bg-gradient-to-br from-purple-900/30 to-pink-900/20 border border-purple-700/30">
-          <h2 className="text-3xl sm:text-4xl font-black mb-4">
-            <span className="text-gray-500">Gambling: </span>
-            <span className="text-red-400">lose everything</span>
-            <span className="text-gray-600"> → </span>
-            <span className="text-gray-500">EVO: </span>
-            <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">own something</span>
+      {/* Why gambling is worse */}
+      <section className="border-b border-border bg-surface">
+        <div className="mx-auto max-w-3xl px-4 py-16 lg:py-20">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-dim">The problem</p>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight text-text-strong sm:text-2xl">
+            Pure gambling is negative EV by design.
           </h2>
-          <p className="text-gray-400 text-lg">
-            One gives you a dice roll. The other gives you a backed asset you control.
-            <br />
-            <span className="text-purple-300 font-bold">That is the difference.</span>
+          <p className="mt-3 text-sm text-muted">
+            You lose, the money is gone. The house always wins. There is no asset, no
+            transparency, no exit. You are trusting a black box with your SOL.
           </p>
-          <Link
-            href="/"
-            className="inline-block mt-8 px-10 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black text-xl hover:scale-105 transition-transform shadow-lg shadow-purple-500/30"
-          >
-            🚀 GET STARTED
+        </div>
+      </section>
+
+      {/* Why EVO is different */}
+      <section className="border-b border-border">
+        <div className="mx-auto max-w-5xl px-4 py-16 lg:py-20">
+          <div className="mb-12 text-center">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-dim">The difference</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-text-strong sm:text-2xl">
+              EVO is not a bet. It is a backed asset.
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 gap-px overflow-hidden rounded border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
+            {principles.map((p, i) => (
+              <div key={i} className="bg-bg p-6">
+                <p.icon className="h-5 w-5 text-accent" />
+                <h3 className="mt-3 text-sm font-semibold text-text-strong">{p.title}</h3>
+                <p className="mt-1.5 text-xs leading-relaxed text-muted">{p.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Comparison table */}
+      <section className="border-b border-border bg-surface">
+        <div className="mx-auto max-w-3xl px-4 py-16 lg:py-20">
+          <div className="mb-10 text-center">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-dim">Head to head</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-text-strong sm:text-2xl">
+              Gambling vs EVO
+            </h2>
+          </div>
+          <div className="overflow-hidden rounded border border-border">
+            <div className="grid grid-cols-3 gap-px bg-border">
+              <div className="bg-surface p-3" />
+              <div className="bg-surface p-3 text-center text-[11px] font-semibold uppercase tracking-wide text-dim">
+                Gambling
+              </div>
+              <div className="bg-surface p-3 text-center text-[11px] font-semibold uppercase tracking-wide text-accent">
+                EVO
+              </div>
+            </div>
+            {comparison.map((row, i) => (
+              <div key={i} className="grid grid-cols-3 gap-px bg-border">
+                <div className="bg-bg p-3 text-xs font-medium text-muted">{row.label}</div>
+                <div className="bg-bg p-3 text-center">
+                  <span className="inline-flex items-center gap-1.5 text-xs text-dim">
+                    <IconX className="h-3.5 w-3.5 shrink-0" />
+                    {row.gamble}
+                  </span>
+                </div>
+                <div className="bg-bg p-3 text-center">
+                  <span className="inline-flex items-center gap-1.5 text-xs text-text">
+                    <IconCheck className="h-3.5 w-3.5 shrink-0 text-accent" />
+                    {row.evo}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="border-b border-border">
+        <div className="mx-auto max-w-3xl px-4 py-16 lg:py-20">
+          <div className="mb-10 text-center">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-dim">How it works</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-text-strong sm:text-2xl">
+              Four steps. One asset.
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 gap-px overflow-hidden rounded border border-border bg-border sm:grid-cols-2">
+            {steps.map((step, i) => (
+              <div key={i} className="bg-bg p-6">
+                <div className="flex items-center gap-3">
+                  <step.icon className="h-5 w-5 text-accent" />
+                  <h3 className="text-sm font-semibold text-text-strong">
+                    <span className="mr-1.5 font-mono text-dim">{String(i + 1).padStart(2, '0')}</span>
+                    {step.title}
+                  </h3>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-muted">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Bottom line */}
+      <section className="border-b border-border bg-surface">
+        <div className="mx-auto max-w-3xl px-4 py-20 text-center lg:py-28">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-dim">The bottom line</p>
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-text-strong sm:text-3xl">
+            Gambling gives you a dice roll.
+            <br />
+            EVO gives you a backed asset you control.
+          </h2>
+          <p className="mx-auto mt-4 max-w-md text-sm text-muted">
+            One takes your money. The other locks it into something you own.
+            That is the entire difference.
+          </p>
+          <Link href="/"
+            className="mt-10 inline-flex items-center gap-2 rounded bg-accent px-8 py-3 text-sm font-semibold text-[#0a0a0c] transition-colors hover:bg-accent-hover">
+            Get started <IconArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="px-4 py-8 text-center text-gray-600 text-sm border-t border-gray-900">
-        <p>EVO Protocol — SOL locked. Assets evolved. Not financial advice, just better than a slot machine.</p>
-        <p className="mt-2">
-          <Link href="/" className="text-purple-400 hover:text-purple-300">← Back to app</Link>
-          {' · '}
-          <a href="https://github.com/stephenclawdbot-png/EVO" target="_blank" rel="noreferrer" className="text-purple-400 hover:text-purple-300">GitHub</a>
-        </p>
+      <footer className="border-t border-border">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-3 py-3 text-[11px] text-dim lg:px-4">
+          <span>EVO Protocol — Not financial advice, just better than a slot machine.</span>
+          <div className="flex items-center gap-4">
+            <Link href="/" className="transition-colors hover:text-text">Back to app</Link>
+            <a href="https://github.com/stephenclawdbot-png/EVO" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">GitHub</a>
+          </div>
+        </div>
       </footer>
     </div>
   );
