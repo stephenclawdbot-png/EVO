@@ -93,7 +93,6 @@ export default function CreateCollectionPage() {
   const [evolveFeedThreshold, setEvolveFeedThreshold] = useState('10000000');
   const [evolveHoldSeconds, setEvolveHoldSeconds] = useState('86400');
   const [evolveLockedThreshold, setEvolveLockedThreshold] = useState('10000000');
-  const [burnDest, setBurnDest] = useState('');
   const [manifestRoot, setManifestRoot] = useState('');
   const [transitionPolicyHash, setTransitionPolicyHash] = useState('');
   const [artworkManifestHash, setArtworkManifestHash] = useState('');
@@ -189,7 +188,7 @@ export default function CreateCollectionPage() {
         evolveHoldSeconds: parseInt(evolveHoldSeconds) || 0,
         evolveLockedThreshold: parseInt(evolveLockedThreshold) || 0,
         transitionPolicyHash: parseHex32(transitionPolicyHash),
-        burnDestination: burnDest.trim() ? new PublicKey(burnDest.trim()) : INCINERATOR,
+        burnDestination: INCINERATOR,
         artworkManifestHash: parseHex32(artworkManifestHash),
       };
       const ix = createCreateCollectionIx(
@@ -480,11 +479,7 @@ export default function CreateCollectionPage() {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className={labelCls}>Burn Destination</label>
-                        <input className={inputCls} value={burnDest} onChange={e => setBurnDest(e.target.value)} placeholder="(defaults to incinerator)" />
-                      </div>
+                    <div className="space-y-3">
                       <div>
                         <label className={labelCls}>Artwork Manifest Hash (hex)</label>
                         <input
