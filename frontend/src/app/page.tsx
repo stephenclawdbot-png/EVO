@@ -24,6 +24,8 @@ export default function Home() {
   const { connection } = useConnection();
   const [collections, setCollections] = useState<CollectionSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -79,6 +81,21 @@ export default function Home() {
     const totalListed = collections.reduce((s, c) => s + c.listedCount, 0);
     return { totalCollections: collections.length, totalEVOs, totalLocked, totalListed };
   }, [collections]);
+
+  // Search results for dropdown
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return collections
+      .filter(c => c.data.name.toLowerCase().includes(q))
+      .slice(0, 6);
+  }, [searchQuery, collections]);
+
+  const filteredCollections = useMemo(() => {
+    if (!searchQuery.trim()) return collections;
+    const q = searchQuery.toLowerCase();
+    return collections.filter(c => c.data.name.toLowerCase().includes(q));
+  }, [searchQuery, collections]);
 
   const ticker = [
     { label: 'Collections', value: loading ? '--' : String(globalStats.totalCollections) },
@@ -155,6 +172,61 @@ export default function Home() {
           {collections.length > 0 && (
             <span className="font-mono text-[11px] text-dim">{collections.length}</span>
           )}
+
+          {/* Search */}
+          {collections.length > 0 && (
+            <div className="relative ml-auto">
+              <div className="relative">
+                <svg className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-dim" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+                </svg>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => { setSearchQuery(e.target.value); setShowDropdown(true); }}
+                  onFocus={() => setShowDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && searchResults.length > 0) {
+                      window.location.href = `/c/${searchResults[0].data.name}`;
+                    }
+                  }}
+                  placeholder="Search collections…"
+                  className="w-40 rounded border border-border bg-surface py-1 pl-7 pr-3 text-xs text-text placeholder:text-dim focus:border-accent focus:outline-none sm:w-56"
+                />
+              </div>
+
+              {/* Dropdown results */}
+              {showDropdown && searchResults.length > 0 && (
+                <div className="absolute right-0 top-full z-20 mt-1 w-64 overflow-hidden rounded border border-border-strong bg-surface shadow-lg">
+                  {searchResults.map(c => {
+                    const logoUri = (() => {
+                      try { return new URL(c.data.metadataUri).searchParams.get('logo') || ''; }
+                      catch { return ''; }
+                    })();
+                    return (
+                      <Link
+                        key={c.discovery.pda.toBase58()}
+                        href={`/c/${c.data.name}`}
+                        className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-surface-2"
+                        onClick={() => { setShowDropdown(false); setSearchQuery(''); }}
+                      >
+                        {logoUri ? (
+                          <img src={logoUri} alt="" className="h-5 w-5 rounded-full border border-border object-cover" />
+                        ) : (
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full border border-border bg-bg text-[9px] font-bold text-dim">
+                            {c.data.name.charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                        <span className="text-xs font-semibold text-text">{c.data.name}</span>
+                        <span className="ml-auto font-mono text-[10px] text-dim">{c.evoCount} EVOs</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {loading ? (
@@ -177,9 +249,13 @@ export default function Home() {
               <IconHammer className="h-4 w-4" /> Create Collection
             </Link>
           </div>
+        ) : filteredCollections.length === 0 ? (
+          <div className="py-12 text-center">
+            <p className="text-xs text-muted">No collections match &quot;{searchQuery}&quot;</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {collections.map(c => (
+            {filteredCollections.map(c => (
               <CollectionCard key={c.discovery.pda.toBase58()} summary={c} />
             ))}
           </div>
