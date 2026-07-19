@@ -151,7 +151,17 @@ const ix = createForgeInstruction({
 
 ### Visual Resolution
 
-For wallets and marketplaces that need to render EVOs, the visual resolver at `frontend/src/lib/evo-visuals.ts` reads on-chain `current_state` and `isRevealed` fields and maps them to visual stages. No off-chain indexing required. The program is the source of truth.
+For wallets and marketplaces that need to render EVOs, the visual resolver at `frontend/src/lib/evo-visuals.ts` fetches the collection's visual manifest from the `metadata_uri` (which can use `http://`, `https://`, `ipfs://`, or `arweave://` schemes). The on-chain `current_state` and `isRevealed` fields are the source of truth for the visual stage. The manifest maps stages to actual images. Two image modes: per-stage (one image per stage, shared by all EVOs) or per-EVO (URL template with `{id}` and `{stage}` patterns).
+
+### Image Upload Pipeline
+
+The MELD terminal includes a full upload pipeline:
+- `artwork-upload.ts`: IPFS CID computation, base64 previews, manifest generation
+- `arweave-upload.ts`: Irys/Arweave upload with Solana wallet signing, concurrent sliding-window workers, resume support
+- `BulkArtworkUploader`: bulk upload of per-EVO images (supports 10k+ images, ZIP files)
+- `ArtworkDropzone`: small upload with auto-manifest generation
+
+Creators choose between bulk upload (images stored on Arweave via Irys, permanent, costs SOL) or pointing to an existing metadata URI (for creators who host their own art).
 
 If you are building a wallet or explorer, read `current_state` from the EVOAccount. That integer is the visual stage. Map it to your rendering pipeline. For Reveal and CommitReveal collections, check `isRevealed` first. Stage 0 means unrevealed.
 

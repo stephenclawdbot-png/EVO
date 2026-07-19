@@ -54,7 +54,7 @@ If you trade your EVO, it gets fracture lines. Every trade leaves a mark on the 
 
 If the collection supports evolution, your EVO can advance through visual stages. It starts as one thing and becomes another. The program tracks the stage on-chain. The art updates.
 
-All of this is computed from on-chain data. No image stored. No IPFS pin. The art is the chain state, rendered in your browser. Same data, same art, every time.
+All of this is driven by on-chain state plus the collection's visual manifest. The manifest is stored on IPFS or Arweave and linked to the on-chain collection via the metadata_uri. The terminal fetches the manifest, resolves the image for the current stage, and renders it with real-time effects.
 
 ---
 
@@ -101,7 +101,7 @@ MELD is the terminal where you actually use EVOs. It is the website where you br
 
 Think of MELD as the marketplace. EVO is the standard. MELD is where the standard comes to life. You go to MELD, you find a collection you like, you mint an EVO, and now you hold an asset with a real floor.
 
-MELD renders the art from on-chain data. No images to load. The art is computed from the chain state in your browser. Bigger EVOs have more SOL. Traded EVOs have fracture lines. Evolved EVOs show their stage. It is all real-time, all on-chain.
+MELD renders the art using on-chain state plus the collection's visual manifest. The manifest is stored on IPFS or Arweave and linked to the on-chain collection. Bigger EVOs can have more SOL. Traded EVOs can have fracture lines. Evolved EVOs show their stage. It is all real-time, driven by the chain.
 
 ---
 

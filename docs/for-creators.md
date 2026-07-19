@@ -101,21 +101,38 @@ For CommitReveal, the creator commits a keccak256 hash of the secret before mint
 
 ## The Art System
 
-EVO art is hybrid. There are three layers:
+EVO supports two art modes. You choose when creating your collection.
 
-### Layer 1: Your Base Design (Static)
+### Mode 1: Bulk Upload (Arweave via Irys)
 
-You design the base visual identity. The shape language, the color palettes, the facet geometry, the fracture line style. This is your brand. This is what makes your collection recognizable.
+Upload your images directly through the MELD terminal. Images are stored permanently on Arweave via Irys. You pay a small SOL cost for storage. The terminal auto-generates the visual manifest with per-EVO image templates.
 
-### Layer 2: Algorithmic Generation (Dynamic)
+This is the easiest path. You design your art, upload the files, and the terminal handles the rest: CID computation, manifest generation, Arweave upload, and linking the manifest URI to your on-chain collection.
 
-The protocol generates per-EVO variations from on-chain data. More locked SOL makes the EVO bigger. Older EVOs get more intricate. Traded EVOs get fracture lines. The resonance seed (set at forge) drives color and shape tendencies. No two EVOs look exactly the same.
+Supports: 10k+ images, ZIP files, resume if upload fails, concurrent upload workers.
 
-### Layer 3: Real-Time Effects (Client-Side)
+### Mode 2: External URI (IPFS / Arweave / Your Own Host)
 
-Listed EVOs pulse. Recently fed EVOs flash. Facets shimmer. Inner glow breathes. These are cosmetic and do not affect on-chain data. They make the collection feel alive.
+If you already host your art elsewhere, point the collection's metadata_uri to your existing manifest. No upload needed. The URI can use `ipfs://`, `arweave://`, `https://`, or `http://` schemes.
 
-You do not need to build any of this. The rendering happens client-side from on-chain state. Your job is to provide the base design and the palette mappings. The protocol and frontend handle the rest.
+This is for creators who have their own hosting pipeline or who use IPFS pinning services. You provide the manifest JSON in the evo-visual-manifest-v1 format and the terminal reads from it.
+
+### The Visual Manifest (evo-visual-manifest-v1)
+
+The manifest maps on-chain visual stages to actual images. It supports:
+
+- **Per-stage images:** one image per stage, shared by all EVOs. Good for simple collections where every EVO looks the same at each stage.
+- **Per-EVO image templates:** URL pattern with `{id}` (mint index) and `{stage}` (lifecycle stage). e.g. `arweave.net/{id}.png` or `arweave.net/{id}/stage{stage}.png`. Good for collections where every EVO has unique art.
+- **Provenance:** per-EVO SHA-256 image hashes or a Merkle root of all hashes. Lets buyers verify that the image matches what was committed.
+- **Fallback image:** shown if a stage image fails to load.
+
+### On-Chain Visual State
+
+The program tracks the visual stage on-chain via `current_state` and `is_revealed`. This is the source of truth. The manifest only maps stages to images. The program does not store images. It stores the stage number, and the manifest provides the image for that stage.
+
+### Real-Time Effects
+
+Listed EVOs pulse. Recently fed EVOs flash. Facets shimmer. Inner glow breathes. These are cosmetic, client-side effects that do not affect on-chain data. They make the collection feel alive.
 
 ### The Manifest Hash
 

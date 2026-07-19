@@ -57,7 +57,7 @@ The floor is not a number on a dashboard. It is actual SOL in an actual account.
 
 ### 2.3 The Visual Layer
 
-EVOs are not just value. They are visual. The art is computed from on-chain data. More SOL means bigger art. More trades mean fracture lines. Older EVOs are more intricate. The visual state evolves through lifecycle stages.
+EVOs are not just value. They are visual. The on-chain state drives the visual stage. Images are stored on IPFS or Arweave and linked via the metadata_uri. More SOL can mean bigger art. More trades can mean fracture lines. Older EVOs can be more intricate. The visual state evolves through lifecycle stages.
 
 This means an EVO is both a financial asset and a collectible. You can trade it for the floor. You can trade it for the premium. You can hold it for the art. You can feed it to flex. It serves multiple audiences simultaneously.
 

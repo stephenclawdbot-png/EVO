@@ -25,7 +25,7 @@ MELD provides that experience. Without a terminal, EVO is infrastructure that on
 
 ### The Problem With Existing Marketplaces
 
-Existing NFT marketplaces (Magic Eden, Tensor, OpenSea) are built for pointer-based assets. They display images from IPFS, read metadata from Metaplex, and facilitate trades. They do not understand floors, feeding, shattering, or evolution. They cannot render EVOs because EVO art is computed from on-chain data, not stored as images.
+Existing NFT marketplaces (Magic Eden, Tensor, OpenSea) are built for pointer-based assets. They display images from IPFS, read metadata from Metaplex, and facilitate trades. They do not understand floors, feeding, shattering, or evolution. They cannot render EVOs because EVO's hybrid art system (on-chain stage state plus IPFS/Arweave manifest) is not compatible with their rendering pipeline.
 
 MELD is built specifically for EVO. It reads on-chain visual state, renders art from the protocol data, and exposes all EVO operations (forge, feed, list, buy, shatter, evolve, transfer) through a clean interface.
 
@@ -67,18 +67,15 @@ Track all your EVOs in one place. See their floors, visual stages, trade histori
 
 ## 4. The Visual Layer
 
-MELD renders EVO art from on-chain data. This is the most technically interesting part of the terminal.
+No external image hosting dependency for the protocol itself. The protocol stores the stage on-chain. Images are resolved from the metadata_uri manifest (IPFS or Arweave). MELD renders art from the manifest in real-time.
 
 ### How It Works
 
 1. MELD reads the EVOAccount from the Solana program
 2. It extracts: locked_lamports, forged_at, trade_count, resonance_seed, current_state, is_listed
-3. It passes these to the visual resolver (evo-visuals.ts)
-4. The resolver maps the data to visual parameters: size, color palette, facet geometry, fracture lines, glow
-5. The renderer draws the art client-side, in the browser
-6. Real-time effects (pulse, shimmer, glow) are applied via animation
-
-No image download. No IPFS fetch. No Arweave lookup. The art is computed from the chain state. Same data, same art, every time.
+3. It fetches the visual manifest from the collection's metadata_uri (IPFS, Arweave, or HTTPS)
+4. The manifest maps the current_state to an image URL (per-stage or per-EVO template with {id} and {stage})
+5. The renderer loads the image and applies real-time effects (pulse, shimmer, glow)
 
 ### The Visual Resolver
 

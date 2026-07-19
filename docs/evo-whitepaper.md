@@ -134,20 +134,37 @@ For RevealAndEvolve collections, the owner can call `evolve()` when conditions a
 
 ## 6. Visual System
 
-EVO art is computed from on-chain data. No image stored. No IPFS pin. No Arweave upload. The art is deterministic: same data, same art, every time, for everyone.
+EVO uses a hybrid art model. The on-chain protocol state (current_state, is_revealed) is the source of truth for the visual stage. The collection's metadata_uri (which can use http://, https://, ipfs://, or arweave:// schemes) points to a visual manifest JSON that maps stages to actual images.
 
-### Parameters
+### Two Art Modes
+
+1. **Bulk upload (Arweave via Irys):** Creators upload per-EVO images directly through the MELD terminal. Images are stored permanently on Arweave via Irys. The manifest auto-generates with per-EVO image templates using {id} and {stage} URL patterns.
+
+2. **Generative / external URI:** Creators point to an existing metadata manifest URI. No upload needed. For creators who already host their art on IPFS, Arweave, or their own servers.
+
+### Manifest Schema (evo-visual-manifest-v1)
+
+The manifest supports:
+- **Per-stage images:** one image per stage, shared by all EVOs
+- **Per-EVO image templates:** URL pattern with {id} (mint index) and {stage} (lifecycle stage)
+  - e.g. `arweave.net/{id}.png` for per-EVO static art
+  - e.g. `arweave.net/{id}/stage{stage}.png` for per-EVO multi-stage art
+- **Provenance verification:** per-EVO SHA-256 image hashes or a Merkle root of all hashes
+- **Fallback image:** shown if the stage image fails to load
+
+### On-Chain Parameters
 
 | Parameter | Source | Visual Effect |
 |---|---|---|
-| locked_lamports | SOL inside | Size |
+| locked_lamports | SOL inside | Drives generative art size |
 | forged_at | Timestamp | Age, intricacy |
 | trade_count | Trade history | Fracture lines |
 | resonance_seed | Set at forge | Color palette, shape |
-| current_state | Lifecycle stage | Visual stage |
+| current_state | Lifecycle stage | Maps to stage image in manifest |
+| is_revealed | Reveal status | Hidden vs revealed stage |
 | is_listed | Listing status | Glow (listed EVOs pulse) |
 
-The art system is hybrid: artist defines the base (shapes, palettes, templates), algorithm generates per-EVO variations, client renders real-time effects (pulse, shimmer, glow).
+The art system is hybrid: on-chain state drives the stage, the manifest (stored on IPFS or Arweave) maps stages to images, and the client renders real-time effects (pulse, shimmer, glow).
 
 ---
 
