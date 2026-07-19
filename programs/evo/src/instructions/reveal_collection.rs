@@ -55,10 +55,12 @@ pub fn reveal_collection(ctx: Context<RevealCollection>, secret: [u8; 32]) -> Re
         );
     }
 
-    // Derive the reveal entropy from the secret via keccak256.
-    // This prevents the authority from directly choosing the entropy —
-    // they must provide a secret that matches the pre-committed hash.
-    collection.reveal_entropy = keccak::hashv(&[&secret]).0;
+    // Derive the reveal entropy from the secret via a domain-separated hash.
+    // The commitment is keccak256(secret), but the entropy uses a different
+    // domain tag + collection key, so knowing the commitment alone does NOT
+    // reveal the entropy. This preserves the "hiding" property of commit-reveal.
+    let collection_key = collection.key();
+    collection.reveal_entropy = keccak::hashv(&[&secret, b"entropy", collection_key.as_ref()]).0;
     collection.is_revealed = true;
 
     Ok(())

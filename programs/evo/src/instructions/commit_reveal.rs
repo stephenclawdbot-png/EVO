@@ -9,7 +9,9 @@ use anchor_lang::prelude::*;
 /// after seeing who minted which index.
 ///
 /// Later, `reveal_collection(secret)` verifies `keccak256(secret) == commitment_hash`
-/// and derives the reveal entropy as `keccak256(secret)`.
+/// and derives the reveal entropy as `keccak256(secret || "entropy" || collection_key)`.
+/// The domain separation ensures the public commitment alone does not reveal
+/// the entropy, preserving the "hiding" property of the commit-reveal scheme.
 #[derive(Accounts)]
 pub struct CommitReveal<'info> {
     #[account(
@@ -36,9 +38,12 @@ pub fn commit_reveal(ctx: Context<CommitReveal>, commitment_hash: [u8; 32]) -> R
         EvoError::CommitmentAlreadySet
     );
 
-    // Must commit before minting starts
+    // Must commit before any minting starts.
+    // Use total_minted (monotonic, never decremented) instead of current_supply
+    // (which is decremented by shatter), so a mint-and-shatter cycle can't
+    // reset the guard and allow committing after observing minting activity.
     require!(
-        collection.current_supply == 0,
+        collection.total_minted == 0,
         EvoError::CommitmentAfterMintStarted
     );
 

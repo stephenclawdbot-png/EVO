@@ -675,7 +675,13 @@ describe("EVO", () => {
     });
 
     it("reveals the collection with the committed secret", async () => {
-      const expectedEntropy = Buffer.from(keccak_256(revealSecret), 'hex');
+      // Entropy is keccak256(secret || "entropy" || collection_key) — domain-separated
+      // from the commitment (keccak256(secret)) so the commitment alone doesn't
+      // reveal the entropy.
+      const expectedEntropy = Buffer.from(
+        keccak_256(Buffer.concat([revealSecret, Buffer.from("entropy"), collectionPk.toBuffer()])),
+        'hex'
+      );
 
       await program.methods
         .revealCollection(revealSecret)
@@ -684,13 +690,14 @@ describe("EVO", () => {
         .rpc();
       const cfg = await program.account.collectionConfig.fetch(collectionPk);
       assert.isTrue(cfg.isRevealed);
-      // The reveal entropy is keccak256(secret), NOT the raw secret.
-      // This proves the authority cannot freely choose the entropy —
-      // it is deterministically derived from the pre-committed secret.
+      // The reveal entropy is keccak256(secret || "entropy" || collection_key),
+      // domain-separated from the commitment. This proves the authority cannot
+      // freely choose the entropy — it is deterministically derived from the
+      // pre-committed secret, and the commitment alone doesn't reveal it.
       assert.deepEqual(
         Array.from(cfg.revealEntropy),
         Array.from(expectedEntropy),
-        "reveal entropy = keccak256(secret)"
+        "reveal entropy = keccak256(secret || 'entropy' || collection_key)"
       );
     });
 
