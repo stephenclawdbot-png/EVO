@@ -17,15 +17,18 @@ pub mod evo {
     use super::*;
 
     /// Initialize the EVO protocol. Called once by the deployer.
-    /// Sets the treasury wallet and collection creation fee.
+    /// Sets the treasury wallet, treasury authority (who can change treasury),
+    /// and collection creation fee.
     pub fn initialize_protocol(
         ctx: Context<InitializeProtocol>,
         treasury: Pubkey,
+        treasury_authority: Pubkey,
         creation_fee_lamports: u64,
     ) -> Result<()> {
         instructions::initialize::initialize_protocol(
             ctx,
             treasury,
+            treasury_authority,
             creation_fee_lamports,
         )
     }
@@ -174,5 +177,16 @@ pub mod evo {
         proof: Vec<[u8; 32]>,
     ) -> Result<()> {
         instructions::verify_merkle_proof::verify_merkle_proof(ctx, evo_id, leaf_hash, proof)
+    }
+
+    /// Update the protocol treasury address.
+    /// Only the treasury authority (set during initialize_protocol) can call this.
+    /// This separates "where fees go" from "who controls changes" so
+    /// compromising the treasury hot wallet doesn't allow redirecting fees.
+    pub fn update_treasury(
+        ctx: Context<UpdateTreasury>,
+        new_treasury: Pubkey,
+    ) -> Result<()> {
+        instructions::update_treasury::update_treasury(ctx, new_treasury)
     }
 }

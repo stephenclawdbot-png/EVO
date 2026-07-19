@@ -34,17 +34,26 @@ pub struct InitializeProtocol<'info> {
 pub fn initialize_protocol(
     ctx: Context<InitializeProtocol>,
     treasury: Pubkey,
+    treasury_authority: Pubkey,
     creation_fee_lamports: u64,
 ) -> Result<()> {
     let config = &mut ctx.accounts.protocol_config;
 
     require!(!config.initialized, EvoError::ProtocolAlreadyInitialized);
+    require!(
+        treasury_authority != Pubkey::default(),
+        EvoError::InvalidTreasuryAuthority
+    );
 
     config.treasury = treasury;
+    config.treasury_authority = treasury_authority;
     config.creation_fee_lamports = creation_fee_lamports;
     config.initialized = true;
     config.bump = ctx.bumps.protocol_config;
 
-    msg!("EVO Protocol initialized. Treasury: {}, Creation fee: {} lamports", treasury, creation_fee_lamports);
+    msg!(
+        "EVO Protocol initialized. Treasury: {}, Treasury authority: {}, Creation fee: {} lamports",
+        treasury, treasury_authority, creation_fee_lamports
+    );
     Ok(())
 }

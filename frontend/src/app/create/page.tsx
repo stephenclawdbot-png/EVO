@@ -193,7 +193,7 @@ export default function CreateCollectionPage() {
     if (!wallet.connected || !wallet.publicKey) { setError('Connect wallet first'); return; }
     setInitSubmitting(true); setError(null); setTxSig(null);
     try {
-      const ix = createInitializeProtocolIx(wallet.publicKey, wallet.publicKey, 0);
+      const ix = createInitializeProtocolIx(wallet.publicKey, wallet.publicKey, wallet.publicKey, 0);
       const sig = await sendTx(ix);
       if (sig) {
         setTxSig(sig);

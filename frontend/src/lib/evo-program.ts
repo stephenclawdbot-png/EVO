@@ -33,6 +33,7 @@ const DISC = {
   commitReveal: Buffer.from([30, 139, 34, 56, 94, 246, 114, 243]),
   evolve: Buffer.from([139, 139, 160, 98, 252, 226, 106, 81]),
   setVisualStage: Buffer.from([44, 218, 23, 167, 61, 241, 78, 244]),
+  updateTreasury: Buffer.from([60, 16, 243, 66, 96, 59, 254, 131]),
 };
 
 // Account discriminators (first 8 bytes of sha256("account:<Name>"))
@@ -88,6 +89,7 @@ const RANDOMNESS_MAP: RandomnessPolicy[] = ['None', 'Predetermined', 'BatchRevea
 
 export interface ProtocolConfig {
   treasury: PublicKey;
+  treasuryAuthority: PublicKey;
   creationFeeLamports: number;
   initialized: boolean;
   bump: number;
@@ -284,14 +286,15 @@ function writeLifecycleParams(val: LifecycleParamsInput): Buffer {
 
 // ─── Account Parsers ─────────────────────────────────────────
 export function parseProtocolConfig(data: Buffer): ProtocolConfig | null {
-  if (data.length < 50) return null;
+  if (data.length < 82) return null;
   if (!data.subarray(0, 8).equals(ACCT_DISC.ProtocolConfig)) return null;
   let off = 8;
   const [treasury, o1] = readPubkey(data, off); off = o1;
+  const [treasuryAuthority, o1b] = readPubkey(data, off); off = o1b;
   const [creationFeeLamports, o2] = readU64(data, off); off = o2;
   const [initialized, o3] = readBool(data, off); off = o3;
   const [bump, o4] = [data[off], off + 1]; off = o4;
-  return { treasury, creationFeeLamports, initialized, bump };
+  return { treasury, treasuryAuthority, creationFeeLamports, initialized, bump };
 }
 
 export function parseCollectionConfig(data: Buffer): CollectionConfig | null {
@@ -755,11 +758,13 @@ export async function readProtocolConfig(conn: Connection): Promise<ProtocolConf
 export function createInitializeProtocolIx(
   payer: PublicKey,
   treasury: PublicKey,
+  treasuryAuthority: PublicKey,
   creationFeeLamports: number,
 ): TransactionInstruction {
   const data = Buffer.concat([
     DISC.initializeProtocol,
     writePubkey(treasury),
+    writePubkey(treasuryAuthority),
     writeU64(creationFeeLamports),
   ]);
   return new TransactionInstruction({
@@ -768,6 +773,24 @@ export function createInitializeProtocolIx(
       { pubkey: PROTOCOL_PDA, isSigner: false, isWritable: true },
       { pubkey: payer, isSigner: true, isWritable: true },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data,
+  });
+}
+
+export function createUpdateTreasuryIx(
+  treasuryAuthority: PublicKey,
+  newTreasury: PublicKey,
+): TransactionInstruction {
+  const data = Buffer.concat([
+    DISC.updateTreasury,
+    writePubkey(newTreasury),
+  ]);
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys: [
+      { pubkey: PROTOCOL_PDA, isSigner: false, isWritable: true },
+      { pubkey: treasuryAuthority, isSigner: true, isWritable: true },
     ],
     data,
   });

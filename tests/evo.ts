@@ -19,6 +19,7 @@ describe("EVO", () => {
 
   // --- Roles ---
   let treasury: Keypair;
+  let treasuryAuthority: Keypair;
   let creator: Keypair;
   let buyer: Keypair;
   let other: Keypair;
@@ -100,15 +101,17 @@ describe("EVO", () => {
   describe("Protocol initialization", () => {
     it("initializes the protocol with treasury + creation fee", async () => {
       treasury = Keypair.generate();
+      treasuryAuthority = Keypair.generate();
       await airdrop(wallet.payer, 5);
 
       await program.methods
-        .initializeProtocol(treasury.publicKey, CREATION_FEE)
+        .initializeProtocol(treasury.publicKey, treasuryAuthority.publicKey, CREATION_FEE)
         .accounts({ payer: wallet.publicKey })
         .rpc();
 
       const proto = await program.account.protocolConfig.fetch(protocolPda);
       assert.equal(proto.treasury.toBase58(), treasury.publicKey.toBase58());
+      assert.equal(proto.treasuryAuthority.toBase58(), treasuryAuthority.publicKey.toBase58());
       assert.isTrue(proto.initialized);
       assert.equal(proto.creationFeeLamports.toNumber(), CREATION_FEE.toNumber());
     });
@@ -116,12 +119,67 @@ describe("EVO", () => {
     it("rejects double initialization", async () => {
       try {
         await program.methods
-          .initializeProtocol(treasury.publicKey, CREATION_FEE)
+          .initializeProtocol(treasury.publicKey, treasuryAuthority.publicKey, CREATION_FEE)
           .accounts({ payer: wallet.publicKey })
           .rpc();
         assert.fail("should have rejected double init");
       } catch (e) {
         expect(e.message).to.match(/already initialized|0x0/i);
+      }
+    });
+  });
+
+  // ============================================================
+  // TREASURY AUTHORITY: update_treasury
+  // ============================================================
+  describe("Treasury authority", () => {
+    it("allows treasury authority to update treasury", async () => {
+      const newTreasury = Keypair.generate().publicKey;
+      await program.methods
+        .updateTreasury(newTreasury)
+        .accounts({
+          protocolConfig: protocolPda,
+          treasuryAuthority: treasuryAuthority.publicKey,
+        })
+        .signers([treasuryAuthority])
+        .rpc();
+
+      const proto = await program.account.protocolConfig.fetch(protocolPda);
+      assert.equal(proto.treasury.toBase58(), newTreasury.toBase58());
+      assert.equal(proto.treasuryAuthority.toBase58(), treasuryAuthority.publicKey.toBase58());
+    });
+
+    it("rejects update from non-authority", async () => {
+      const fakeAuthority = Keypair.generate();
+      await airdrop(fakeAuthority, 0.1);
+      try {
+        await program.methods
+          .updateTreasury(Keypair.generate().publicKey)
+          .accounts({
+            protocolConfig: protocolPda,
+            treasuryAuthority: fakeAuthority.publicKey,
+          })
+          .signers([fakeAuthority])
+          .rpc();
+        assert.fail("should have rejected non-authority update");
+      } catch (e) {
+        expect(e.message).to.match(/treasury_authority|constraint|0x1/i);
+      }
+    });
+
+    it("rejects update to default pubkey", async () => {
+      try {
+        await program.methods
+          .updateTreasury(PublicKey.default)
+          .accounts({
+            protocolConfig: protocolPda,
+            treasuryAuthority: treasuryAuthority.publicKey,
+          })
+          .signers([treasuryAuthority])
+          .rpc();
+        assert.fail("should have rejected default pubkey");
+      } catch (e) {
+        expect(e.message).to.match(/invalid.*authority|0x9/i);
       }
     });
   });

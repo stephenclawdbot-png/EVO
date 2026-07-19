@@ -154,4 +154,10 @@ pub enum EvoError {
 
     #[msg("Metadata URI must use http://, https://, ipfs://, or arweave:// scheme")]
     InvalidMetadataUriScheme,
+
+    #[msg("Treasury authority cannot be the zero address")]
+    InvalidTreasuryAuthority,
+
+    #[msg("Only the treasury authority can call this instruction")]
+    NotTreasuryAuthority,
 }
