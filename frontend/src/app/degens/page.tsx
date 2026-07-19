@@ -214,10 +214,11 @@ export default function DegensPage() {
       {/* Footer */}
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-3 py-3 text-[11px] text-dim lg:px-4">
-          <span>Meld Protocol — Not financial advice, just better than a slot machine.</span>
+          <span>Meld — EVO Protocol — Not financial advice, just better than a slot machine.</span>
           <div className="flex items-center gap-4">
             <Link href="/" className="transition-colors hover:text-text">Back to app</Link>
             <a href="https://github.com/stephenclawdbot-png/EVO" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">GitHub</a>
+            <span>Powered by <a href="https://www.helius.dev/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Helius</a> · <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Supabase</a> · <a href="https://solana.com/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Solana</a></span>
           </div>
         </div>
       </footer>
