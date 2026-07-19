@@ -182,6 +182,18 @@ describe("EVO", () => {
         expect(e.message).to.match(/invalid.*authority|0x9/i);
       }
     });
+
+    // Restore treasury to original so subsequent tests work
+    after(async () => {
+      await program.methods
+        .updateTreasury(treasury.publicKey)
+        .accounts({
+          protocolConfig: protocolPda,
+          treasuryAuthority: treasuryAuthority.publicKey,
+        })
+        .signers([treasuryAuthority])
+        .rpc();
+    });
   });
 
   // ============================================================
