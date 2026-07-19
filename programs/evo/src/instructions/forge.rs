@@ -79,8 +79,11 @@ pub fn forge(
     evo.feed_count = 0;
     evo.total_fed_lamports = 0;
 
-    // Increment live supply and total minted
-    collection.current_supply += 1;
+    // Increment live supply and total minted (both use checked_add for consistency)
+    collection.current_supply = collection
+        .current_supply
+        .checked_add(1)
+        .ok_or(EvoError::MathOverflow)?;
     collection.total_minted = collection
         .total_minted
         .checked_add(1)
