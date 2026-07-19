@@ -1945,5 +1945,352 @@ describe("EVO", () => {
         expect(e.message).to.match(/SupplyCapReached|0xf/i);
       }
     });
+
+    // ============================================================
+    // AUDIT COVERAGE GAP TESTS (devnet-test-coverage-audit findings)
+    // ============================================================
+
+    // --- Alert 3: Non-owner list/delist + buy-after-delist ---
+
+    it("rejects list by non-owner (security boundary)", async () => {
+      const evoPk6 = evoPda(collectionPk, 6);
+      await program.methods
+        .forge(6, Buffer.from(Array(32).fill(66)))
+        .accounts({
+          collectionConfig: collectionPk,
+          protocolConfig: protocolPda,
+          creator: creator.publicKey,
+          owner: buyer.publicKey,
+        })
+        .signers([buyer])
+        .rpc();
+
+      try {
+        await program.methods
+          .list(6, SOL(0.01))
+          .accounts({ evo: evoPk6, collectionConfig: collectionPk, listing: listingPda(evoPk6), seller: other.publicKey, systemProgram: SystemProgram.programId })
+          .signers([other])
+          .rpc();
+        assert.fail("should reject list by non-owner");
+      } catch (e) {
+        // evo.owner == seller.key() constraint fails
+        expect(e.message).to.match(/NotEvoOwner|Constraint|0x[0-9a-f]+|Error/i);
+      }
+    });
+
+    it("rejects delist by non-owner (security boundary)", async () => {
+      const listingPk6 = listingPda(evoPda(collectionPk, 6));
+      // buyer (owner) lists it
+      await program.methods
+        .list(6, SOL(0.01))
+        .accounts({ evo: evoPda(collectionPk, 6), collectionConfig: collectionPk, listing: listingPk6, seller: buyer.publicKey, systemProgram: SystemProgram.programId })
+        .signers([buyer])
+        .rpc();
+
+      try {
+        await program.methods
+          .delist(6)
+          .accounts({ evo: evoPda(collectionPk, 6), collectionConfig: collectionPk, listing: listingPk6, seller: other.publicKey, systemProgram: SystemProgram.programId })
+          .signers([other])
+          .rpc();
+        assert.fail("should reject delist by non-owner");
+      } catch (e) {
+        expect(e.message).to.match(/NotEvoOwner|Constraint|0x[0-9a-f]+|Error/i);
+      }
+
+      // cleanup: owner delists
+      await program.methods
+        .delist(6)
+        .accounts({ evo: evoPda(collectionPk, 6), collectionConfig: collectionPk, listing: listingPk6, seller: buyer.publicKey, systemProgram: SystemProgram.programId })
+        .signers([buyer])
+        .rpc();
+    });
+
+    it("rejects buy after delist (listing closed)", async () => {
+      const evoPk7 = evoPda(collectionPk, 7);
+      const listingPk7 = listingPda(evoPk7);
+      await program.methods
+        .forge(7, Buffer.from(Array(32).fill(77)))
+        .accounts({ collectionConfig: collectionPk, protocolConfig: protocolPda, creator: creator.publicKey, owner: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
+      await program.methods
+        .list(7, SOL(0.01))
+        .accounts({ evo: evoPk7, collectionConfig: collectionPk, listing: listingPk7, seller: buyer.publicKey, systemProgram: SystemProgram.programId })
+        .signers([buyer])
+        .rpc();
+      // Delist (closes listing PDA)
+      await program.methods
+        .delist(7)
+        .accounts({ evo: evoPk7, collectionConfig: collectionPk, listing: listingPk7, seller: buyer.publicKey, systemProgram: SystemProgram.programId })
+        .signers([buyer])
+        .rpc();
+
+      // Buy should fail — listing account is closed
+      try {
+        await program.methods
+          .buy(7)
+          .accounts({ evo: evoPk7, collectionConfig: collectionPk, listing: listingPk7, seller: buyer.publicKey, creator: creator.publicKey, treasury: treasury.publicKey, incinerator: INCINERATOR, buyer: other.publicKey, systemProgram: SystemProgram.programId })
+          .signers([other])
+          .rpc();
+        assert.fail("should reject buy after delist");
+      } catch (e) {
+        // AccountNotInitialized or discriminator mismatch on closed listing
+        expect(e.message).to.match(/AccountNotInitialized|discriminator|EvoNotListed|0x[0-9a-f]+|Error/i);
+      }
+    });
+
+    // --- Alert 4: Listing account size matches LISTING_ACCOUNT_SPACE (81 bytes) ---
+
+    it("listing account data length matches LISTING_ACCOUNT_SPACE (81 bytes)", async () => {
+      const evoPk8 = evoPda(collectionPk, 8);
+      const listingPk8 = listingPda(evoPk8);
+      await program.methods
+        .forge(8, Buffer.from(Array(32).fill(88)))
+        .accounts({ collectionConfig: collectionPk, protocolConfig: protocolPda, creator: creator.publicKey, owner: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
+      await program.methods
+        .list(8, SOL(0.01))
+        .accounts({ evo: evoPk8, collectionConfig: collectionPk, listing: listingPk8, seller: buyer.publicKey, systemProgram: SystemProgram.programId })
+        .signers([buyer])
+        .rpc();
+
+      const listingInfo = await connection.getAccountInfo(listingPk8);
+      assert.isNotNull(listingInfo, "listing exists");
+      // Listing::SPACE = 8 (disc) + 32 (evo) + 32 (seller) + 8 (price) + 1 (bump) = 81
+      assert.equal(listingInfo!.data.length, 81, "listing account size = LISTING_ACCOUNT_SPACE");
+
+      // cleanup
+      await program.methods
+        .delist(8)
+        .accounts({ evo: evoPk8, collectionConfig: collectionPk, listing: listingPk8, seller: buyer.publicKey, systemProgram: SystemProgram.programId })
+        .signers([buyer])
+        .rpc();
+    });
+
+    // --- Alert 7: list → shatter → buy must assert buy fails ---
+
+    it("rejects buy after shatter of listed EVO (evo account closed)", async () => {
+      const evoId9 = 9;
+      const evoPk9 = evoPda(collectionPk, evoId9);
+      const listingPk9 = listingPda(evoPk9);
+      await program.methods
+        .forge(evoId9, Buffer.from(Array(32).fill(99)))
+        .accounts({ collectionConfig: collectionPk, protocolConfig: protocolPda, creator: creator.publicKey, owner: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
+      await program.methods
+        .list(evoId9, SOL(0.01))
+        .accounts({ evo: evoPk9, collectionConfig: collectionPk, listing: listingPk9, seller: buyer.publicKey, systemProgram: SystemProgram.programId })
+        .signers([buyer])
+        .rpc();
+      // Shatter — closes evo PDA, listing becomes stale
+      await program.methods
+        .shatter(evoId9)
+        .accounts({ evo: evoPk9, collectionConfig: collectionPk, owner: buyer.publicKey, creator: creator.publicKey, treasury: treasury.publicKey, incinerator: INCINERATOR, systemProgram: SystemProgram.programId })
+        .signers([buyer])
+        .rpc();
+
+      // Buy must fail — evo account is closed, can't load Account<EVOAccount>
+      try {
+        await program.methods
+          .buy(evoId9)
+          .accounts({ evo: evoPk9, collectionConfig: collectionPk, listing: listingPk9, seller: buyer.publicKey, creator: creator.publicKey, treasury: treasury.publicKey, incinerator: INCINERATOR, buyer: other.publicKey, systemProgram: SystemProgram.programId })
+          .signers([other])
+          .rpc();
+        assert.fail("should reject buy of shattered EVO");
+      } catch (e) {
+        expect(e.message).to.match(/AccountNotInitialized|discriminator|EvoNotListed|0x[0-9a-f]+|Error/i);
+      }
+    });
+
+    // --- Alert 5: update_metadata + close_collection + verify_merkle_proof ---
+
+    it("update_metadata: creator updates metadata URI", async () => {
+      const metaName = "meta1";
+      const metaCol = collectionPda(metaName);
+      await program.methods
+        .createCollection(metaName, 5, SHATTER_FEE_BPS, { creator: {} }, ROYALTY_BPS, { creator: {} }, MINT_PRICE, LOCK_AMOUNT, "https://example.com/orig.json", defaultLifecycle())
+        .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+        .signers([creator])
+        .rpc();
+
+      const before = await program.account.collectionConfig.fetch(metaCol);
+      assert.equal(before.metadataUri, "https://example.com/orig.json");
+
+      await program.methods
+        .updateMetadata("https://example.com/updated.json")
+        .accounts({ collectionConfig: metaCol, creator: creator.publicKey })
+        .signers([creator])
+        .rpc();
+
+      const after = await program.account.collectionConfig.fetch(metaCol);
+      assert.equal(after.metadataUri, "https://example.com/updated.json");
+    });
+
+    it("update_metadata: rejects non-creator", async () => {
+      const metaCol = collectionPda("meta1"); // reuse collection from previous test
+      try {
+        await program.methods
+          .updateMetadata("https://example.com/hacked.json")
+          .accounts({ collectionConfig: metaCol, creator: other.publicKey })
+          .signers([other])
+          .rpc();
+        assert.fail("should reject update_metadata by non-creator");
+      } catch (e) {
+        // has_one = creator constraint fails
+        expect(e.message).to.match(/Constraint|has_one|0x[0-9a-f]+|Error/i);
+      }
+    });
+
+    it("close_collection: creator closes empty collection, rent reclaimed", async () => {
+      const closeName = "close1";
+      const closeCol = collectionPda(closeName);
+      await program.methods
+        .createCollection(closeName, 5, SHATTER_FEE_BPS, { creator: {} }, ROYALTY_BPS, { creator: {} }, MINT_PRICE, LOCK_AMOUNT, "https://example.com/close.json", defaultLifecycle())
+        .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+        .signers([creator])
+        .rpc();
+
+      // Collection is empty (currentSupply=0) — close should work
+      const balanceBefore = await lamportsOf(creator.publicKey);
+
+      await program.methods
+        .closeCollection(closeName)
+        .accounts({ collectionConfig: closeCol, creator: creator.publicKey, systemProgram: SystemProgram.programId })
+        .signers([creator])
+        .rpc();
+
+      const balanceAfter = await lamportsOf(creator.publicKey);
+      assert.isAbove(balanceAfter, balanceBefore, "creator received rent refund");
+
+      // Collection PDA is gone
+      const info = await connection.getAccountInfo(closeCol);
+      assert.isNull(info, "collection PDA closed");
+    });
+
+    it("close_collection: rejects non-creator", async () => {
+      const closeName2 = "close2";
+      const closeCol2 = collectionPda(closeName2);
+      await program.methods
+        .createCollection(closeName2, 5, SHATTER_FEE_BPS, { creator: {} }, ROYALTY_BPS, { creator: {} }, MINT_PRICE, LOCK_AMOUNT, "https://example.com/close2.json", defaultLifecycle())
+        .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+        .signers([creator])
+        .rpc();
+
+      try {
+        await program.methods
+          .closeCollection(closeName2)
+          .accounts({ collectionConfig: closeCol2, creator: other.publicKey, systemProgram: SystemProgram.programId })
+          .signers([other])
+          .rpc();
+        assert.fail("should reject close_collection by non-creator");
+      } catch (e) {
+        expect(e.message).to.match(/NotCollectionCreator|0x[0-9a-f]+|Error/i);
+      }
+    });
+
+    it("verify_merkle_proof: valid proof sets manifest_verified=true", async () => {
+      // Create collection with a manifest root
+      const merkName = "merk1";
+      const merkCol = collectionPda(merkName);
+
+      // Forge an EVO to get its resonance_seed
+      const evoIdM = 0;
+      const evoPkM = evoPda(merkCol, evoIdM);
+
+      // We need the resonance_seed first, so create collection + forge, then
+      // compute the leaf and set the manifest root by recreating collection.
+      // Since we can't update manifest_root after creation, we compute the leaf
+      // from the forged EVO's resonance_seed, then create a new collection with
+      // that root and forge a matching EVO.
+
+      // Step 1: Create collection with zero root, forge, get resonance_seed
+      await program.methods
+        .createCollection(merkName, 5, SHATTER_FEE_BPS, { creator: {} }, ROYALTY_BPS, { creator: {} }, MINT_PRICE, LOCK_AMOUNT, "https://example.com/merk.json",
+          defaultLifecycle({ manifestRoot: Array(32).fill(0) }))
+        .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+        .signers([creator])
+        .rpc();
+
+      await program.methods
+        .forge(evoIdM, Buffer.from(Array(32).fill(0)))
+        .accounts({ collectionConfig: merkCol, protocolConfig: protocolPda, creator: creator.publicKey, owner: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
+
+      const evoAccount = await program.account.evoAccount.fetch(evoPkM);
+      const resonanceSeed = Buffer.from(evoAccount.resonanceSeed);
+
+      // Compute leaf = keccak256(evo_id_le || resonance_seed)
+      const evoIdLe = Buffer.alloc(4);
+      evoIdLe.writeUInt32LE(evoIdM, 0);
+      const leafHash = Buffer.from(keccak_256.arrayBuffer(Buffer.concat([evoIdLe, resonanceSeed])));
+
+      // For a single-leaf tree, root = leaf, proof = []
+      const manifestRoot = Array.from(leafHash);
+
+      // Step 2: Create a NEW collection with this manifest root + forge matching EVO
+      const merkName2 = "merk2";
+      const merkCol2 = collectionPda(merkName2);
+      const evoIdM2 = 0;
+      const evoPkM2 = evoPda(merkCol2, evoIdM2);
+
+      await program.methods
+        .createCollection(merkName2, 5, SHATTER_FEE_BPS, { creator: {} }, ROYALTY_BPS, { creator: {} }, MINT_PRICE, LOCK_AMOUNT, "https://example.com/merk2.json",
+          defaultLifecycle({ manifestRoot }))
+        .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+        .signers([creator])
+        .rpc();
+
+      await program.methods
+        .forge(evoIdM2, Buffer.from(Array(32).fill(0)))
+        .accounts({ collectionConfig: merkCol2, protocolConfig: protocolPda, creator: creator.publicKey, owner: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
+
+      // Verify the new EVO has the same resonance_seed (deterministic from evo_id + seed)
+      const evoAccount2 = await program.account.evoAccount.fetch(evoPkM2);
+      const resonanceSeed2 = Buffer.from(evoAccount2.resonanceSeed);
+
+      // Recompute leaf for this EVO (should match if resonance_seed is deterministic)
+      const leafHash2 = Buffer.from(keccak_256.arrayBuffer(Buffer.concat([evoIdLe, resonanceSeed2])));
+      const manifestRoot2 = Array.from(leafHash2);
+
+      // If resonance_seed differs, update manifestRoot. But first try with the computed leaf.
+      // The leaf hash we pass must equal keccak256(evo_id_le || evo.resonance_seed)
+      await program.methods
+        .verifyMerkleProof(evoIdM2, Array.from(leafHash2), [])
+        .accounts({ evo: evoPkM2, collectionConfig: merkCol2 })
+        .rpc();
+
+      const verified = await program.account.evoAccount.fetch(evoPkM2);
+      assert.equal(verified.manifestVerified, true, "manifest_verified set to true");
+    });
+
+    it("verify_merkle_proof: rejects invalid proof", async () => {
+      const merkCol2 = collectionPda("merk2"); // reuse from previous test
+      const evoIdM2 = 1; // forge a new EVO in the same collection
+      const evoPkM2b = evoPda(merkCol2, evoIdM2);
+
+      await program.methods
+        .forge(evoIdM2, Buffer.from(Array(32).fill(1)))
+        .accounts({ collectionConfig: merkCol2, protocolConfig: protocolPda, creator: creator.publicKey, owner: buyer.publicKey })
+        .signers([buyer])
+        .rpc();
+
+      // Wrong leaf hash — should fail
+      const wrongLeaf = Array(32).fill(255);
+      try {
+        await program.methods
+          .verifyMerkleProof(evoIdM2, wrongLeaf, [])
+          .accounts({ evo: evoPkM2b, collectionConfig: merkCol2 })
+          .rpc();
+        assert.fail("should reject invalid merkle proof");
+      } catch (e) {
+        expect(e.message).to.match(/MerkleProofInvalid|0x[0-9a-f]+|Error/i);
+      }
+    });
   });
 });
