@@ -141,7 +141,7 @@ export const IconLayers = ({ className }: IconProps) => (
   </svg>
 );
 
-// EVO brand mark — hexagonal badge.
+// Meld brand mark — hexagonal badge.
 export const IconEvoMark = ({ className }: IconProps) => (
   <svg className={className ?? 'h-8 w-8'} viewBox="0 0 32 32" fill="none">
     <path d="M16 2 28 9v14L16 30 4 23V9L16 2Z" fill="currentColor" opacity="0.12" />

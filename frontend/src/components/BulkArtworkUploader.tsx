@@ -293,7 +293,7 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
       setPhase('Building manifest…');
       const manifest = buildBulkManifest(
         collectionName || 'Unnamed',
-        `${collectionName} — evolving EVO collection`,
+        `${collectionName} — evolving Meld collection`,
         stateNames,
         items,
       );

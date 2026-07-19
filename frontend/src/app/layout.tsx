@@ -16,11 +16,11 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EVO — Assets that don't stay the same.",
-  description: "EVOs hold locked SOL, evolve over time, and can be shattered to recover their value. Not a token. Not an NFT. A new on-chain primitive on Solana.",
+  title: "Meld — Assets that don't stay the same.",
+  description: "Melds hold locked SOL, evolve over time, and can be shattered to recover their value. Not a token. Not an NFT. A new on-chain primitive on Solana.",
   openGraph: {
-    title: "EVO — Assets that don't stay the same.",
-    description: "EVOs hold locked SOL, evolve over time, and can be shattered to recover their value. A new on-chain primitive on Solana.",
+    title: "Meld — Assets that don't stay the same.",
+    description: "Melds hold locked SOL, evolve over time, and can be shattered to recover their value. A new on-chain primitive on Solana.",
     type: "website",
   },
 };

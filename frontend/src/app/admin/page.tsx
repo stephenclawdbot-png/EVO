@@ -97,7 +97,7 @@ function AdminContent() {
     setAction('evolve'); setError(null); setTxResult(null);
     try {
       const evoId = parseInt(evolveEvoId, 10);
-      if (isNaN(evoId)) throw new Error('Enter a valid EVO ID');
+      if (isNaN(evoId)) throw new Error('Enter a valid Meld ID');
       const [collectionPda] = getCollectionPDA(COLLECTION_NAME);
       const [evoPda] = getEvoPDA(collectionPda, evoId);
       const sig = await sendTx(createEvolveIx(evoPda, collectionPda, evoId));
@@ -114,7 +114,7 @@ function AdminContent() {
     try {
       const evoId = parseInt(customEvoId, 10);
       const stage = parseInt(customStage, 10);
-      if (isNaN(evoId)) throw new Error('Enter a valid EVO ID');
+      if (isNaN(evoId)) throw new Error('Enter a valid Meld ID');
       if (isNaN(stage)) throw new Error('Enter a valid stage number');
       const [collectionPda] = getCollectionPDA(COLLECTION_NAME);
       const [evoPda] = getEvoPDA(collectionPda, evoId);
@@ -198,7 +198,7 @@ function AdminContent() {
               <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-3">
                 <Overview label="Supply" value={`${collection.currentSupply}/${collection.supplyCap}`} />
                 <Overview label="Mint Price" value={`${collection.mintPriceSol} SOL`} />
-                <Overview label="Locked / EVO" value={`${collection.lockAmountSol} SOL`} />
+                <Overview label="Locked / Meld" value={`${collection.lockAmountSol} SOL`} />
                 <Overview label="Shatter Fee" value={`${collection.shatterFeeBps / 100}% → ${collection.shatterFeeDestination}`} />
                 <Overview label="Trade Royalty" value={`${collection.tradeRoyaltyBps / 100}% → ${collection.royaltyDestination}`} />
                 <Overview label="Creator" value={`${collection.creator.slice(0, 6)}…${collection.creator.slice(-4)}`} />
@@ -268,18 +268,18 @@ function AdminContent() {
 
             {(collection.lifecycleType === 'reveal_and_evolve' || collection.lifecycleType === 'custom') && (
               <div className="mt-5">
-                <p className="text-[10px] uppercase tracking-wide text-dim">Evolve EVO (Permissionless)</p>
+                <p className="text-[10px] uppercase tracking-wide text-dim">Evolve Meld (Permissionless)</p>
                 <p className="mt-1 text-[11px] text-dim">
-                  Calls <code className="text-accent">evolve</code> — anyone can call it, but the EVO only
+                  Calls <code className="text-accent">evolve</code> — anyone can call it, but the Meld only
                   advances if all threshold conditions are met.
                   {collection.lifecycleType === 'reveal_and_evolve' && ' Collection must be revealed first.'}
                 </p>
-                <input type="number" placeholder="EVO ID (e.g. 0)" value={evolveEvoId}
+                <input type="number" placeholder="Meld ID (e.g. 0)" value={evolveEvoId}
                   onChange={(e) => setEvolveEvoId(e.target.value)}
                   className="t-input mt-2 w-full px-3 py-2 text-xs" />
                 <button onClick={handleEvolve} disabled={action !== null}
                   className="mt-2 w-full rounded border border-border-strong bg-surface py-2.5 text-sm font-semibold text-text transition-colors hover:border-accent disabled:opacity-40">
-                  {action === 'evolve' ? 'Evolving...' : 'Evolve EVO'}
+                  {action === 'evolve' ? 'Evolving...' : 'Evolve Meld'}
                 </button>
               </div>
             )}
@@ -288,11 +288,11 @@ function AdminContent() {
               <div className="mt-5">
                 <p className="text-[10px] uppercase tracking-wide text-dim">Set Visual Stage (Authority Only)</p>
                 <p className="mt-1 text-[11px] text-dim">
-                  Calls <code className="text-accent">set_visual_stage</code> — override an EVO&apos;s stage
+                  Calls <code className="text-accent">set_visual_stage</code> — override a Meld&apos;s stage
                   without threshold checks. Only works on Custom lifecycle collections.
                 </p>
                 <div className="mt-2 flex gap-2">
-                  <input type="number" placeholder="EVO ID" value={customEvoId}
+                  <input type="number" placeholder="Meld ID" value={customEvoId}
                     onChange={(e) => setCustomEvoId(e.target.value)}
                     className="t-input flex-1 px-3 py-2 text-xs" />
                   <input type="number" placeholder="Stage" value={customStage}

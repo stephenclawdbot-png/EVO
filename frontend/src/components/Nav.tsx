@@ -40,8 +40,9 @@ export function Nav({ onRefresh, ticker = [] }: NavProps) {
       <div className="flex h-11 items-center justify-between px-3">
         <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center gap-2">
-            <IconEvoMark className="h-6 w-6 text-accent" />
-            <span className="text-sm font-semibold tracking-tight text-text-strong">EVO</span>
+            <img src="/meld-dark.png" alt="Meld" className="h-6 w-6 dark:hidden" />
+            <img src="/meld-light.png" alt="Meld" className="hidden h-6 w-6 dark:block" />
+            <span className="text-sm font-semibold tracking-tight text-text-strong">Meld</span>
             <span className="hidden text-[10px] uppercase tracking-[0.15em] text-dim md:inline">Terminal</span>
           </Link>
           {connected && (

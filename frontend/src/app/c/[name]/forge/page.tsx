@@ -106,7 +106,7 @@ export default function CollectionForgePage() {
 
       <div className="mx-auto max-w-lg px-3 py-6 lg:px-4">
         <h1 className="text-xl font-bold tracking-tight text-text-strong">Forge a {collectionName}</h1>
-        <p className="mt-1 text-xs text-muted">Mint a new EVO with SOL locked inside.</p>
+        <p className="mt-1 text-xs text-muted">Mint a new Meld with SOL locked inside.</p>
 
         {loading ? (
           <div className="mt-10 flex justify-center">
@@ -168,7 +168,7 @@ export default function CollectionForgePage() {
             {txSig && (
               <div className="mt-4 flex items-center gap-2 rounded border border-positive/30 bg-positive-soft px-3 py-2.5 text-xs">
                 <IconCheck className="h-4 w-4 text-positive" />
-                <span className="text-positive font-medium">EVO forged</span>
+                <span className="text-positive font-medium">Meld forged</span>
                 <a href={`https://solscan.io/tx/${txSig}`} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-accent hover:underline">
                   Solscan <IconExternalLink className="h-3 w-3" />
                 </a>

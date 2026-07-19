@@ -90,7 +90,7 @@ export default function Home() {
     try {
       const discovered = await readAllCollections(connection);
 
-      // Parallelize EVO fetches in batches of 8 to avoid RPC rate limits
+      // Parallelize Meld fetches in batches of 8 to avoid RPC rate limits
       const batchSize = 8;
       const summaries: CollectionSummary[] = [];
 
@@ -174,7 +174,7 @@ export default function Home() {
 
   const ticker = [
     { label: 'Collections', value: loading ? '--' : String(globalStats.totalCollections) },
-    { label: 'EVOs', value: loading ? '--' : String(globalStats.totalEVOs) },
+    { label: 'Melds', value: loading ? '--' : String(globalStats.totalEVOs) },
     { label: 'Locked', value: loading ? '--' : `${globalStats.totalLocked.toFixed(2)} SOL`, tone: 'pos' as const },
     { label: 'Listed', value: loading ? '--' : String(globalStats.totalListed) },
   ];
@@ -198,7 +198,7 @@ export default function Home() {
             Assets that don't stay the same.
           </h1>
           <p className="mt-4 max-w-md text-sm text-muted">
-            EVOs hold locked SOL, evolve over time, and can be shattered to recover their value.
+            Melds hold locked SOL, evolve over time, and can be shattered to recover their value.
           </p>
           <p className="mt-3 max-w-lg text-[12px] font-mono leading-relaxed text-dim">
             Lock SOL. Mint evolving art. Trade on-chain. No admin keys.
@@ -261,7 +261,7 @@ export default function Home() {
                           </span>
                         )}
                         <span className="text-xs font-semibold text-text">{c.data.name}</span>
-                        <span className="ml-auto font-mono text-[10px] text-dim">{c.evoCount} EVOs</span>
+                        <span className="ml-auto font-mono text-[10px] text-dim">{c.evoCount} Melds</span>
                       </Link>
                     );
                   })}
@@ -284,7 +284,7 @@ export default function Home() {
             </div>
             <h3 className="text-sm font-semibold">No collections yet</h3>
             <p className="mx-auto mt-1 max-w-xs text-xs text-muted">
-              EVO is permissionless. Create the first collection from the website — no SDK required.
+              Meld is permissionless. Create the first collection from the website — no SDK required.
             </p>
             <Link href="/create"
               className="mt-5 inline-flex items-center gap-2 rounded border border-accent bg-accent px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-accent-hover">
@@ -329,11 +329,11 @@ export default function Home() {
             </h2>
           </div>
           <div className="grid grid-cols-1 gap-px overflow-hidden rounded border border-border bg-border sm:grid-cols-2 lg:grid-cols-5">
-            <OpCard icon={IconHammer} name="Forge" desc="Lock SOL into a PDA. A new EVO is born with a floor value." />
+            <OpCard icon={IconHammer} name="Forge" desc="Lock SOL into a PDA. A new Meld is born with a floor value." />
             <OpCard icon={IconTrendingUp} name="Trade" desc="Buy and sell on-chain. Royalties enforced. The floor travels." />
             <OpCard icon={IconFeed} name="Feed" desc="Add SOL to the lock. The object grows in value and form." />
             <OpCard icon={IconEvolve} name="Evolve" desc="Hit a threshold. The art changes. The state machine is the art." />
-            <OpCard icon={IconShatter} name="Shatter" desc="Destroy the EVO. Recover the locked SOL, minus a fee." />
+            <OpCard icon={IconShatter} name="Shatter" desc="Destroy the Meld. Recover the locked SOL, minus a fee." />
           </div>
           <div className="mt-8 flex items-center justify-center gap-2 text-center text-xs text-dim">
             <IconLock className="h-3.5 w-3.5 text-accent" />
@@ -345,7 +345,7 @@ export default function Home() {
       {/* ─── Footer ─── */}
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-3 py-3 text-[11px] text-dim lg:px-4">
-          <span>EVO Protocol — Assets that don't stay the same.</span>
+          <span>Meld Protocol — Assets that don't stay the same.</span>
           <div className="flex items-center gap-4">
             <a href="https://github.com/stephenclawdbot-png/EVO" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">GitHub</a>
             <a href="https://solscan.io/account/7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Program</a>
@@ -401,7 +401,7 @@ function CollectionCard({ summary }: { summary: CollectionSummary }) {
       </div>
 
       <div className="grid grid-cols-3 gap-px bg-border">
-        <Stat label="EVOs" value={String(evoCount)} />
+        <Stat label="Melds" value={String(evoCount)} />
         <Stat label="Listed" value={String(listedCount)} />
         <Stat label="Floor" value={floorPriceSol !== null ? `${floorPriceSol.toFixed(2)}` : '--'} />
       </div>

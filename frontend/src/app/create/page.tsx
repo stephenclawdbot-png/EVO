@@ -24,7 +24,7 @@ import { uploadFile } from '@/lib/arweave-upload';
 
 const FEE_DESTINATIONS: FeeDestination[] = ['Treasury', 'Creator', 'Burn', 'Split'];
 const FEE_DEST_LABELS: Record<FeeDestination, string> = {
-  Treasury: 'Protocol Treasury (EVO)',
+  Treasury: 'Protocol Treasury (Meld)',
   Creator: 'Creator',
   Burn: 'Burn (Incinerator)',
   Split: 'Split (Creator + Treasury)',
@@ -46,7 +46,7 @@ const LIFECYCLE_INFO: Record<LifecycleType, { label: string; desc: string }> = {
   },
   RevealAndEvolve: {
     label: 'Reveal & Evolve',
-    desc: 'After reveal, the EVO evolves through multiple visual stages. Each stage is triggered when ALL thresholds below are met. The art literally changes over time.',
+    desc: 'After reveal, the Meld evolves through multiple visual stages. Each stage is triggered when ALL thresholds below are met. The art literally changes over time.',
   },
   Custom: {
     label: 'Custom',
@@ -164,7 +164,7 @@ export default function CreateCollectionPage() {
     setLogoUploading(true); setError(null);
     try {
       const result = await uploadFile(file, wallet, [
-        { name: 'App-Name', value: 'EVO' },
+        { name: 'App-Name', value: 'Meld' },
         { name: 'Content-Type', value: file.type || 'image/png' },
         { name: 'Type', value: 'collection-logo' },
       ], true); // devnet Irys
@@ -293,7 +293,7 @@ export default function CreateCollectionPage() {
           <h1 className="text-xl font-bold tracking-tight text-text-strong">Create Collection</h1>
         </div>
         <p className="mt-1 text-xs text-muted">
-          Deploy a new EVO collection on-chain. You become the collection creator and gain lifecycle management authority.
+          Deploy a new Meld collection on-chain. You become the collection creator and gain lifecycle management authority.
         </p>
 
         {/* Wallet gate — connect first, then the form */}
@@ -329,7 +329,7 @@ export default function CreateCollectionPage() {
               <h2 className="text-sm font-bold text-text-strong">Protocol not initialized</h2>
             </div>
             <p className="mt-2 text-xs text-muted">
-              The EVO protocol must be initialized once before any collection can be created. This sets the protocol treasury
+              The Meld protocol must be initialized once before any collection can be created. This sets the protocol treasury
               and creation fee. On devnet/testnet you can initialize it yourself using your connected wallet as the treasury.
             </p>
             <button
@@ -415,7 +415,7 @@ export default function CreateCollectionPage() {
                     <input type="number" step="0.001" className={inputCls} value={mintPriceSol} onChange={e => setMintPriceSol(e.target.value)} />
                   </div>
                   <div>
-                    <label className={labelCls}>Locked SOL per EVO{lifecycleType === 'Static' ? ' (auto)' : ''}</label>
+                    <label className={labelCls}>Locked SOL per Meld{lifecycleType === 'Static' ? ' (auto)' : ''}</label>
                     <input
                       type="number"
                       step="0.001"
@@ -477,7 +477,7 @@ export default function CreateCollectionPage() {
                       onChange={e => setMaxStates(e.target.value)}
                       readOnly={lifecycleType === 'Static'}
                     />
-                    <p className="mt-1 text-[10px] text-dim">{lifecycleType === 'Static' ? 'Static EVOs have 1 state — no evolution.' : 'Number of visual stages (1 = no evolution).'}</p>
+                    <p className="mt-1 text-[10px] text-dim">{lifecycleType === 'Static' ? 'Static Melds have 1 state — no evolution.' : 'Number of visual stages (1 = no evolution).'}</p>
                   </div>
                 </div>
 
@@ -500,7 +500,7 @@ export default function CreateCollectionPage() {
                       <div className="rounded border border-border bg-bg p-3">
                         <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-dim">Evolution Rules</p>
                         <p className="mb-3 text-[10px] leading-relaxed text-muted">
-                          Choose what makes an EVO reach its next form. Evolution fires automatically once all enabled conditions are met.
+                          Choose what makes a Meld reach its next form. Evolution fires automatically once all enabled conditions are met.
                           Leave a field at 0 to ignore that condition. Each stage becomes progressively harder — stage 2 needs 2× the threshold, stage 3 needs 3×, etc.
                           Evolution is permissionless: anyone can trigger it, but it only fires if conditions are met.
                         </p>
@@ -522,7 +522,7 @@ export default function CreateCollectionPage() {
                               placeholder="0.01"
                             />
                             <p className="mt-1 text-[10px] leading-relaxed text-dim">
-                              Total SOL deposited into the EVO. Rewards owners for investing. 0.01 = 0.01 SOL for stage 1, 0.02 for stage 2…
+                              Total SOL deposited into the Meld. Rewards owners for investing. 0.01 = 0.01 SOL for stage 1, 0.02 for stage 2…
                             </p>
                           </div>
                           <div>

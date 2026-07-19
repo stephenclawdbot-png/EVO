@@ -120,7 +120,7 @@ export default function CollectionPage() {
         .catch(() => setTrades([]))
         .finally(() => setTradesLoading(false));
     } catch (err) {
-      console.error('Failed to fetch EVOs:', err);
+      console.error('Failed to fetch Melds:', err);
     } finally {
       setLoading(false);
     }
@@ -293,7 +293,7 @@ export default function CollectionPage() {
             <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded border border-border bg-surface text-accent">
               <IconHammer className="h-6 w-6" />
             </div>
-            <h3 className="text-sm font-semibold">No EVOs forged yet</h3>
+            <h3 className="text-sm font-semibold">No Melds forged yet</h3>
             <p className="mt-1 text-xs text-muted">Be the first to forge in this collection.</p>
             <Link href={`/c/${collectionName}/forge`} className="mt-5 inline-flex items-center gap-2 rounded border border-accent bg-accent px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover">
               Forge <IconArrowRight className="h-3.5 w-3.5" />
@@ -307,7 +307,7 @@ export default function CollectionPage() {
               ))}
             </div>
             {filteredEvos.length === 0 && (
-              <div className="py-16 text-center text-xs text-muted">No EVOs matching filters</div>
+              <div className="py-16 text-center text-xs text-muted">No Melds matching filters</div>
             )}
           </>
         )}

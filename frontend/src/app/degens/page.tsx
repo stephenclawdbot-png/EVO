@@ -9,7 +9,7 @@ const principles = [
   {
     icon: IconLock,
     title: 'SOL-backed floor',
-    body: 'Every EVO locks real SOL inside a PDA. You always own that value. It cannot go to zero.',
+    body: 'Every Meld locks real SOL inside a PDA. You always own that value. It cannot go to zero.',
   },
   {
     icon: IconEvolve,
@@ -48,8 +48,8 @@ const comparison: { label: string; gamble: string; evo: string }[] = [
 ];
 
 const steps = [
-  { icon: IconLock, title: 'Lock SOL', desc: 'Send SOL into the EVO program. It is locked inside a PDA — a smart contract wallet nobody can raid.' },
-  { icon: IconHammer, title: 'Get an EVO', desc: 'You receive a unique evolving on-chain asset. It has a floor value equal to the locked SOL.' },
+  { icon: IconLock, title: 'Lock SOL', desc: 'Send SOL into the Meld program. It is locked inside a PDA — a smart contract wallet nobody can raid.' },
+  { icon: IconHammer, title: 'Get a Meld', desc: 'You receive a unique evolving on-chain asset. It has a floor value equal to the locked SOL.' },
   { icon: IconEvolve, title: 'It evolves', desc: 'On-chain feeds trigger evolution. The asset changes. The story writes itself on-chain.' },
   { icon: IconShatter, title: 'Trade or shatter', desc: 'List it for sale at any price above floor. Or shatter it to reclaim the locked SOL. Your call.' },
 ];
@@ -71,7 +71,7 @@ export default function DegensPage() {
             Not a casino
           </span>
           <h1 className="text-4xl font-bold leading-[1.05] tracking-tight text-text-strong sm:text-5xl lg:text-6xl">
-            EVO for degens
+            Meld for degens
           </h1>
           <p className="mt-6 max-w-lg text-sm text-muted sm:text-base">
             You lock SOL. You get an evolving on-chain asset. You own it.
@@ -80,7 +80,7 @@ export default function DegensPage() {
           <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
             <Link href="/"
               className="inline-flex items-center gap-2 rounded bg-accent px-6 py-2.5 text-sm font-semibold text-[#0a0a0c] transition-colors hover:bg-accent-hover">
-              Explore EVOs <IconArrowRight className="h-4 w-4" />
+              Explore Melds <IconArrowRight className="h-4 w-4" />
             </Link>
             <Link href="/create"
               className="inline-flex items-center gap-2 rounded border border-border-strong px-6 py-2.5 text-sm font-semibold text-text transition-colors hover:bg-surface-2">
@@ -104,13 +104,13 @@ export default function DegensPage() {
         </div>
       </section>
 
-      {/* Why EVO is different */}
+      {/* Why Meld is different */}
       <section className="border-b border-border">
         <div className="mx-auto max-w-5xl px-4 py-16 lg:py-20">
           <div className="mb-12 text-center">
             <p className="text-[11px] uppercase tracking-[0.2em] text-dim">The difference</p>
             <h2 className="mt-2 text-xl font-semibold tracking-tight text-text-strong sm:text-2xl">
-              EVO is not a bet. It is a backed asset.
+              Meld is not a bet. It is a backed asset.
             </h2>
           </div>
           <div className="grid grid-cols-1 gap-px overflow-hidden rounded border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
@@ -131,7 +131,7 @@ export default function DegensPage() {
           <div className="mb-10 text-center">
             <p className="text-[11px] uppercase tracking-[0.2em] text-dim">Head to head</p>
             <h2 className="mt-2 text-xl font-semibold tracking-tight text-text-strong sm:text-2xl">
-              Gambling vs EVO
+              Gambling vs Meld
             </h2>
           </div>
           <div className="overflow-hidden rounded border border-border">
@@ -141,7 +141,7 @@ export default function DegensPage() {
                 Gambling
               </div>
               <div className="bg-surface p-3 text-center text-[11px] font-semibold uppercase tracking-wide text-accent">
-                EVO
+                Meld
               </div>
             </div>
             {comparison.map((row, i) => (
@@ -198,7 +198,7 @@ export default function DegensPage() {
           <h2 className="mt-3 text-2xl font-semibold tracking-tight text-text-strong sm:text-3xl">
             Gambling gives you a dice roll.
             <br />
-            EVO gives you a backed asset you control.
+            Meld gives you a backed asset you control.
           </h2>
           <p className="mx-auto mt-4 max-w-md text-sm text-muted">
             One takes your money. The other locks it into something you own.
@@ -214,7 +214,7 @@ export default function DegensPage() {
       {/* Footer */}
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-3 py-3 text-[11px] text-dim lg:px-4">
-          <span>EVO Protocol — Not financial advice, just better than a slot machine.</span>
+          <span>Meld Protocol — Not financial advice, just better than a slot machine.</span>
           <div className="flex items-center gap-4">
             <Link href="/" className="transition-colors hover:text-text">Back to app</Link>
             <a href="https://github.com/stephenclawdbot-png/EVO" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">GitHub</a>

@@ -30,8 +30,8 @@ const KIND_COLOR: Record<string, string> = {
 /**
  * Tensor-style internal trade chart.
  * Price-over-time line built from priced events (forge/buy), with event dots
- * colored by kind, plus a volume bar strip below. Sourced from on-chain EVO
- * trade history — no external DEX, because EVOs trade inside the protocol.
+ * colored by kind, plus a volume bar strip below. Sourced from on-chain Meld
+ * trade history — no external DEX, because Melds trade inside the protocol.
  */
 export function TradeChart({ events, loading, currentFloorSol }: TradeChartProps) {
   const [range, setRange] = useState<Range>('all');

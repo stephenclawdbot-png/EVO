@@ -29,7 +29,7 @@ interface EvoDetailProps {
 export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
   const { connection } = useConnection();
   const wallet = useWallet();
-  const collectionName = evo.collectionName || 'EVO';
+  const collectionName = evo.collectionName || 'Meld';
   const [imgError, setImgError] = useState(false);
   const [resolvedImage, setResolvedImage] = useState<string | null>(null);
   const [action, setAction] = useState<string | null>(null);
@@ -174,7 +174,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
     if (!cfg) throw new Error('Collection not found');
     const feeBps = cfg.shatterFeeBps;
     const refundLamports = Math.floor(evo.lockedLamports * (10000 - feeBps) / 10000);
-    if (!confirm(`Shatter this EVO and recover ${refundLamports.toFixed(4)} SOL (after ${(feeBps / 100).toFixed(1)}% fee)? This cannot be undone.`)) return;
+    if (!confirm(`Shatter this Meld and recover ${refundLamports.toFixed(4)} SOL (after ${(feeBps / 100).toFixed(1)}% fee)? This cannot be undone.`)) return;
     setAction('shatter'); setError(null); setTxResult(null);
     try {
       const collectionPda = new PublicKey(evo.collectionPda!);
@@ -460,7 +460,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
               <div className="mt-1 flex items-center gap-2 text-[11px] text-muted">
                 <span>{currentStageName}</span>
                 <span className="text-dim">|</span>
-                <span className="font-mono">{evo.collectionName || 'EVO'} #{evo.id}</span>
+                <span className="font-mono">{evo.collectionName || 'Meld'} #{evo.id}</span>
               </div>
               <p className="mt-1 font-mono text-[10px] text-dim">Owner {evo.owner.slice(0, 8)}...{evo.owner.slice(-4)}</p>
             </div>
@@ -599,7 +599,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
               })()}
               {manifest?.provenance?.items && manifest.provenance.items.length > 0 && (
                 <p className="mt-1 text-[10px] text-dim">
-                  Per-EVO provenance: {manifest.provenance.items.length} entries
+                  Per-Meld provenance: {manifest.provenance.items.length} entries
                 </p>
               )}
             </div>
@@ -649,7 +649,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
               <div className="rounded border border-border bg-surface px-3 py-3 text-center text-xs text-muted">Not listed for sale</div>
             )}
             {evo.isShattered && (
-              <div className="rounded border border-negative/20 bg-negative-soft px-3 py-3 text-center text-xs text-negative">This EVO has been shattered</div>
+              <div className="rounded border border-negative/20 bg-negative-soft px-3 py-3 text-center text-xs text-negative">This Meld has been shattered</div>
             )}
           </div>
         </div>

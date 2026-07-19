@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { IconHammer, IconTrendingUp, IconFeed, IconEvolve, IconShatter } from './Icons';
 
 /**
- * LivingEvo — a scroll-driven narrative of a single EVO object.
+ * LivingEvo — a scroll-driven narrative of a single Meld object.
  * A sticky visual on one side evolves as the reader scrolls past each stage:
  *   forged → traded → fed → evolved → shattered.
  * The locked SOL is the hero number throughout.
@@ -26,7 +26,7 @@ const STAGES: Stage[] = [
     id: 'forged',
     icon: IconHammer,
     title: 'Forged',
-    body: 'A new EVO is born. 0.10 SOL is locked inside a PDA — not held by anyone, not controlled by any team. The art is dormant, waiting.',
+    body: 'A new Meld is born. 0.10 SOL is locked inside a PDA — not held by anyone, not controlled by any team. The art is dormant, waiting.',
     lockedSol: 0.10,
     note: 'locked forever',
   },
@@ -42,7 +42,7 @@ const STAGES: Stage[] = [
     id: 'fed',
     icon: IconFeed,
     title: 'Fed',
-    body: '0.05 SOL added. The EVO grows. Its locked value rises, its form brightens. Feeding is how an owner invests in the object itself.',
+    body: '0.05 SOL added. The Meld grows. Its locked value rises, its form brightens. Feeding is how an owner invests in the object itself.',
     lockedSol: 0.15,
     note: 'it grows',
   },
@@ -58,7 +58,7 @@ const STAGES: Stage[] = [
     id: 'shattered',
     icon: IconShatter,
     title: 'Shattered',
-    body: 'The owner destroys the EVO and recovers the locked SOL, minus a fee. The object is gone. The value is not. That is the guarantee.',
+    body: 'The owner destroys the Meld and recovers the locked SOL, minus a fee. The object is gone. The value is not. That is the guarantee.',
     lockedSol: 0.15,
     note: 'recoverable forever',
   },
@@ -98,7 +98,7 @@ export function LivingEvo() {
         <div className="mb-8 text-center">
           <p className="text-[11px] uppercase tracking-[0.2em] text-dim">One object</p>
           <h2 className="mt-2 text-xl font-bold tracking-tight text-text-strong">
-            Follow a single EVO through its entire life.
+            Follow a single Meld through its entire life.
           </h2>
         </div>
 
@@ -148,7 +148,7 @@ export function LivingEvo() {
 
       {/* ─── Desktop: sticky-scroll narrative ─── */}
       <div className="mx-auto hidden max-w-6xl grid-cols-1 gap-0 lg:grid lg:grid-cols-2">
-        {/* Sticky visual — the one EVO */}
+        {/* Sticky visual — the one Meld */}
         <div className="sticky top-11 h-[calc(100vh-2.75rem)] items-center justify-center border-r border-border bg-bg lg:flex">
           <EvoVisual stage={active} lockedSol={stage.lockedSol} note={stage.note} stageId={stage.id} />
         </div>
@@ -158,7 +158,7 @@ export function LivingEvo() {
           <div className="mb-10 lg:mb-16">
             <p className="text-[11px] uppercase tracking-[0.2em] text-dim">One object</p>
             <h2 className="mt-2 text-xl font-bold tracking-tight text-text-strong sm:text-2xl">
-              Follow a single EVO through its entire life.
+              Follow a single Meld through its entire life.
             </h2>
           </div>
 
@@ -207,7 +207,7 @@ export function LivingEvo() {
   );
 }
 
-/** The single EVO visual — a hexagon that changes form per stage. */
+/** The single Meld visual — a hexagon that changes form per stage. */
 function EvoVisual({
   stage, lockedSol, note, stageId, compact,
 }: {
@@ -296,7 +296,7 @@ function EvoVisual({
       {/* hero number — locked SOL */}
       <div className="mt-6 text-center" style={{ transition: 'all 400ms ease' }}>
         <p className="text-[10px] uppercase tracking-[0.2em] text-dim">
-          {isShattered ? 'recovered' : 'this EVO contains'}
+          {isShattered ? 'recovered' : 'this Meld contains'}
         </p>
         <p
           className="mt-1 font-mono text-4xl font-bold tracking-tight sm:text-5xl"
