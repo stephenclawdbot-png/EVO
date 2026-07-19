@@ -23,6 +23,12 @@ on:
 # Rent reclaim: each run closes orphaned programs owned by the deployer (left over
 # from prior fresh-keypair runs) and returns their rent to the deployer.
 
+# Prevent concurrent runs from destroying each other's programs and fighting
+# over the same collection PDAs (schedule + push can overlap without this).
+concurrency:
+  group: devnet-test
+  cancel-in-progress: false
+
 jobs:
   devnet-test:
     runs-on: ubuntu-latest
@@ -108,12 +114,14 @@ jobs:
 
           # Close every program this deployer is the upgrade authority of, EXCEPT
           # the one we are about to deploy/upgrade. Returns rent to the deployer.
-          # Try --author flag first; fall back to --all + grep on the authority column.
+          # Try --author flag first; fall back to --all + awk on the Authority column
+          # (unanchored grep risks matching unrelated programs).
           echo "=== Listing programs with upgrade authority $DEPLOYER ==="
           PIDS=$(solana program show --author "$DEPLOYER" 2>&1 | awk 'NR>1{print $1}')
           if [ -z "$PIDS" ]; then
-            echo "--author flag may be unsupported; falling back to --all + grep"
-            PIDS=$(solana program show --all 2>/dev/null | grep "$DEPLOYER" | awk '{print $1}')
+            echo "--author flag may be unsupported; falling back to --all + awk column match"
+            # Match ONLY the Authority column (last field), not a substring anywhere in the row.
+            PIDS=$(solana program show --all 2>/dev/null | awk -v auth="$DEPLOYER" 'NR>1 && $NF == auth {print $1}')
           fi
           echo "Found program IDs:"; echo "$PIDS"
           for pid in $PIDS; do
@@ -196,3 +204,9 @@ jobs:
           echo "=== Devnet test output ==="
           cat /tmp/test-output.log 2>/dev/null || echo "No test output captured"
           echo "=== End ==="
+
+      - name: Cleanup keypairs
+        if: always()
+        run: |
+          rm -f ~/.config/solana/id.json target/deploy/evo-keypair.json
+          echo "✅ Keypairs removed from runner"
