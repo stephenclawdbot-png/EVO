@@ -108,11 +108,15 @@ jobs:
 
           # Close every program this deployer is the upgrade authority of, EXCEPT
           # the one we are about to deploy/upgrade. Returns rent to the deployer.
-          RECLAIMED=0
-          # `solana program show --author <pubkey>` lists programs where <pubkey> is
-          # the upgrade authority. Parse the program-id column (skip header lines).
-          solana program show --author "$DEPLOYER" 2>/dev/null | awk 'NR>1{print $1}' | while read pid; do
-            # skip empty lines and the current program
+          # Try --author flag first; fall back to --all + grep on the authority column.
+          echo "=== Listing programs with upgrade authority $DEPLOYER ==="
+          PIDS=$(solana program show --author "$DEPLOYER" 2>&1 | awk 'NR>1{print $1}')
+          if [ -z "$PIDS" ]; then
+            echo "--author flag may be unsupported; falling back to --all + grep"
+            PIDS=$(solana program show --all 2>/dev/null | grep "$DEPLOYER" | awk '{print $1}')
+          fi
+          echo "Found program IDs:"; echo "$PIDS"
+          for pid in $PIDS; do
             [ -z "$pid" ] && continue
             [ "$pid" = "$CURRENT_PID" ] && { echo "Keeping current program: $pid"; continue; }
             echo "Closing orphaned program: $pid"
