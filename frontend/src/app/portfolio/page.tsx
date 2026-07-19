@@ -33,7 +33,7 @@ export default function PortfolioPage() {
     if (!wallet.publicKey) { setGroups([]); return; }
     setLoading(true);
     try {
-      // 1. Fetch ALL Melds owned by this wallet (across all collections) in one RPC call
+      // 1. Fetch ALL EVOs owned by this wallet (across all collections) in one RPC call
       const allEvos = await readAllEVOsByOwner(connection, wallet.publicKey);
 
       // 2. Group by collection PDA
@@ -62,7 +62,7 @@ export default function PortfolioPage() {
           collectionData = collectionConfigToData(match.config);
         }
 
-        // Resolve Meld display data (generic, no per-collection creature data)
+        // Resolve EVO display data (generic, no per-collection creature data)
         const display: EVOData[] = [];
         for (const evo of evos) {
           const d = evoAccountToData(evo, collectionName);
@@ -133,7 +133,7 @@ export default function PortfolioPage() {
   }
 
   const ticker = wallet.publicKey ? [
-    { label: 'Melds', value: loading ? '--' : String(summary.total) },
+    { label: 'EVOs', value: loading ? '--' : String(summary.total) },
     { label: 'Locked', value: loading ? '--' : `${summary.totalLockedSol.toFixed(2)} SOL`, tone: 'pos' as const },
     { label: 'Listed', value: loading ? '--' : String(summary.totalListed) },
     { label: 'Collections', value: loading ? '--' : String(summary.collections) },
@@ -155,7 +155,7 @@ export default function PortfolioPage() {
               <IconPortfolio className="h-6 w-6" />
             </div>
             <h3 className="text-sm font-semibold">Connect your wallet</h3>
-            <p className="mt-1 text-xs text-muted">View your Melds across all collections.</p>
+            <p className="mt-1 text-xs text-muted">View your EVOs across all collections.</p>
             <div className="mt-5 flex justify-center"><WalletMultiButton /></div>
           </div>
         ) : loading ? (
@@ -164,8 +164,8 @@ export default function PortfolioPage() {
           </div>
         ) : groups.length === 0 ? (
           <div className="py-20 text-center">
-            <h3 className="text-sm font-semibold">No Melds yet</h3>
-            <p className="mt-1 text-xs text-muted">You don&apos;t own any Melds. Forge one to get started.</p>
+            <h3 className="text-sm font-semibold">No EVOs yet</h3>
+            <p className="mt-1 text-xs text-muted">You don&apos;t own any EVOs. Forge one to get started.</p>
             <Link href="/" className="mt-5 inline-flex items-center gap-2 rounded border border-accent bg-accent px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover">
               Browse collections <IconArrowRight className="h-3.5 w-3.5" />
             </Link>
@@ -178,7 +178,7 @@ export default function PortfolioPage() {
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-dim">Portfolio Summary</span>
               </div>
               <div className="grid grid-cols-2 gap-px bg-border sm:grid-cols-4">
-                <SummaryCell label="Total Melds" value={String(summary.total)} />
+                <SummaryCell label="Total EVOs" value={String(summary.total)} />
                 <SummaryCell label="Locked SOL" value={summary.totalLockedSol.toFixed(3)} tone="pos" />
                 <SummaryCell label="Recoverable" value={summary.recoverableSol.toFixed(3)} />
                 <SummaryCell label="List Value" value={summary.totalListValueSol > 0 ? `${summary.totalListValueSol.toFixed(3)}` : '--'} tone={summary.totalListValueSol > 0 ? 'pos' : undefined} />
@@ -189,7 +189,7 @@ export default function PortfolioPage() {
               </div>
             </div>
 
-            {/* Melds grouped by collection */}
+            {/* EVOs grouped by collection */}
             {groups.map(group => (
               <div key={group.name} className="mt-6">
                 <div className="mb-2 flex items-center justify-between border-b border-border pb-2">
@@ -198,7 +198,7 @@ export default function PortfolioPage() {
                       {group.name}
                     </Link>
                     <span className="ml-2 font-mono text-[11px] text-dim">
-                      {group.evos.length} Meld{group.evos.length !== 1 ? 's' : ''} ·
+                      {group.evos.length} EVO{group.evos.length !== 1 ? 's' : ''} ·
                       {' '}{group.evos.reduce((s, e) => s + e.lockedLamports, 0).toFixed(2)} SOL locked
                     </span>
                   </div>

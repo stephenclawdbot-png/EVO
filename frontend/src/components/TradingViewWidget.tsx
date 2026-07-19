@@ -22,7 +22,7 @@ const RANGE_MS: Record<Range, number> = {
 /**
  * Enhanced trade chart with candlestick-style visualization and timezone support.
  * Replaces the TradingView external widget with a custom on-chain data viz
- * that doesn't require an external ticker symbol (Melds trade inside the protocol).
+ * that doesn't require an external ticker symbol (EVOs trade inside the protocol).
  */
 export function TradingViewWidget({ events, loading, currentFloorSol, collectionName }: TradingViewWidgetProps) {
   const [range, setRange] = useState<Range>('24h');
@@ -134,7 +134,7 @@ export function TradingViewWidget({ events, loading, currentFloorSol, collection
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-text-strong">{collectionName || 'Meld'} Chart</span>
+          <span className="text-xs font-bold text-text-strong">{collectionName || 'EVO'} Chart</span>
           {currentFloorSol != null && currentFloorSol > 0 && (
             <span className="font-mono text-xs text-positive">◎ {currentFloorSol.toFixed(3)}</span>
           )}

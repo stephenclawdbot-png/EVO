@@ -88,7 +88,7 @@ export function ArtworkDropzone({ collectionName, maxStates, onArtworkReady }: P
     }
     const manifest = manifestOverride || await buildCollectionManifest(
       collectionName || 'unnamed',
-      'Meld collection',
+      'EVO collection',
       imgs,
     );
     const manifestCid = await computeManifestCid(manifest);

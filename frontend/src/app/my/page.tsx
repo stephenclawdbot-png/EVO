@@ -92,7 +92,7 @@ export default function MyCollectionsPage() {
               <IconCollection className="h-5 w-5" />
             </div>
             <p className="text-sm font-semibold text-text-strong">No collections yet</p>
-            <p className="mx-auto mt-1 max-w-sm text-xs text-muted">Create your first Meld collection. You&apos;ll become its creator and lifecycle authority.</p>
+            <p className="mx-auto mt-1 max-w-sm text-xs text-muted">Create your first EVO collection. You&apos;ll become its creator and lifecycle authority.</p>
             <Link href="/create"
               className="mt-5 inline-flex items-center gap-2 rounded border border-accent bg-accent px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-accent-hover">
               <IconHammer className="h-4 w-4" /> Create Collection
