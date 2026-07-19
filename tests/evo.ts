@@ -2292,5 +2292,35 @@ describe("EVO", () => {
         expect(e.message).to.match(/MerkleProofInvalid|0x[0-9a-f]+|Error/i);
       }
     });
+
+    // --- XSS prevention: metadata URI scheme validation ---
+
+    it("create_collection: rejects javascript: metadata URI", async () => {
+      const xssName = "xss1";
+      try {
+        await program.methods
+          .createCollection(xssName, 5, SHATTER_FEE_BPS, { creator: {} }, ROYALTY_BPS, { creator: {} }, MINT_PRICE, LOCK_AMOUNT, "javascript:alert(1)", defaultLifecycle())
+          .accounts({ payer: creator.publicKey, treasury: treasury.publicKey })
+          .signers([creator])
+          .rpc();
+        assert.fail("should reject javascript: metadata URI");
+      } catch (e) {
+        expect(e.message).to.match(/InvalidMetadataUriScheme|0x[0-9a-f]+|Error/i);
+      }
+    });
+
+    it("update_metadata: rejects javascript: metadata URI", async () => {
+      const metaCol = collectionPda("meta1"); // reuse from earlier test
+      try {
+        await program.methods
+          .updateMetadata("javascript:stealWallet()")
+          .accounts({ collectionConfig: metaCol, creator: creator.publicKey })
+          .signers([creator])
+          .rpc();
+        assert.fail("should reject javascript: metadata URI");
+      } catch (e) {
+        expect(e.message).to.match(/InvalidMetadataUriScheme|0x[0-9a-f]+|Error/i);
+      }
+    });
   });
 });

@@ -20,14 +20,25 @@ import { IconSearch, IconArrowRight, IconHammer } from '@/components/Icons';
 
 type SortKey = 'newest' | 'oldest' | 'most-sol' | 'most-facets' | 'most-trades' | 'price-low' | 'price-high';
 
+function safeExternalUrl(raw: string | null | undefined): string | undefined {
+  if (!raw) return undefined;
+  try {
+    const u = new URL(raw);
+    if (u.protocol === 'http:' || u.protocol === 'https:') return u.href;
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function parseSocialLinks(uri: string): { website?: string; twitter?: string; telegram?: string; logo?: string } {
   try {
     const url = new URL(uri);
     return {
-      website: url.searchParams.get('website') || undefined,
-      twitter: url.searchParams.get('twitter') || undefined,
-      telegram: url.searchParams.get('telegram') || undefined,
-      logo: url.searchParams.get('logo') || undefined,
+      website: safeExternalUrl(url.searchParams.get('website')),
+      twitter: safeExternalUrl(url.searchParams.get('twitter')),
+      telegram: safeExternalUrl(url.searchParams.get('telegram')),
+      logo: safeExternalUrl(url.searchParams.get('logo')),
     };
   } catch {
     return {};

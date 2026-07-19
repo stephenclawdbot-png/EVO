@@ -56,6 +56,7 @@ pub fn create_collection(
     require!(trade_royalty_bps <= MAX_ROYALTY_BPS, EvoError::RoyaltyTooHigh);
     require!(lock_amount_lamports > 0, EvoError::InsufficientLamports);
     require!(metadata_uri.len() <= MAX_METADATA_URI_LEN, EvoError::MetadataUriTooLong);
+    validate_metadata_uri(&metadata_uri)?;
 
     // Validate lifecycle config.
     // RevealAndEvolve/Custom must declare max_states > 0.

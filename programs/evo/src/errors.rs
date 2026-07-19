@@ -151,4 +151,7 @@ pub enum EvoError {
 
     #[msg("Cannot transfer EVO to the zero address")]
     InvalidNewOwner,
+
+    #[msg("Metadata URI must use http://, https://, ipfs://, or arweave:// scheme")]
+    InvalidMetadataUriScheme,
 }

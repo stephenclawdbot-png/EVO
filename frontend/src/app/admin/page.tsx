@@ -206,7 +206,10 @@ function AdminContent() {
               {collection.metadataUri && (
                 <div className="mt-3 border-t border-border pt-2.5 text-[11px] text-dim break-all">
                   <span className="font-semibold text-muted">Metadata URI:</span>{' '}
-                  <a href={collection.metadataUri} target="_blank" rel="noreferrer" className="text-accent hover:underline">{collection.metadataUri}</a>
+                  <a href={collection.metadataUri} target="_blank" rel="noreferrer" className="text-accent hover:underline"
+                     onClick={e => { try { if (!['http:','https:'].includes(new URL(collection.metadataUri).protocol)) { e.preventDefault(); } } catch { e.preventDefault(); } }}>
+                    {collection.metadataUri}
+                  </a>
                 </div>
               )}
               {collection.artworkManifestHash && collection.artworkManifestHash.some(b => b !== 0) && (

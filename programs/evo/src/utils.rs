@@ -48,6 +48,19 @@ pub fn verify_reserve_invariant<'info>(
     Ok(())
 }
 
+/// Validate that a metadata URI uses an allowed scheme (http, https, ipfs, arweave).
+/// Prevents `javascript:` and other dangerous schemes from being stored on-chain.
+pub fn validate_metadata_uri(uri: &str) -> Result<()> {
+    require!(
+        uri.starts_with("http://")
+            || uri.starts_with("https://")
+            || uri.starts_with("ipfs://")
+            || uri.starts_with("arweave://"),
+        EvoError::InvalidMetadataUriScheme
+    );
+    Ok(())
+}
+
 /// Route a fee to the configured destination.
 /// `from` must be a system-owned account (signer) — System Program transfer is used.
 /// `incinerator` is required when destination == Burn.

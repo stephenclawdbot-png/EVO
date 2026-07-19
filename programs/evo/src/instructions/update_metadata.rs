@@ -1,6 +1,7 @@
 use crate::constants::*;
 use crate::errors::EvoError;
 use crate::state::*;
+use crate::utils::validate_metadata_uri;
 use anchor_lang::prelude::*;
 
 /// Update the metadata URI for a collection.
@@ -24,6 +25,7 @@ pub fn update_metadata(ctx: Context<UpdateMetadata>, metadata_uri: String) -> Re
         metadata_uri.len() <= MAX_METADATA_URI_LEN,
         EvoError::MetadataUriTooLong
     );
+    validate_metadata_uri(&metadata_uri)?;
 
     let config = &mut ctx.accounts.collection_config;
     config.metadata_uri = metadata_uri;
