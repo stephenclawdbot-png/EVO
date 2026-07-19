@@ -65,8 +65,6 @@ pub fn forge(
     evo.trade_count = 0;
     evo.resonance_seed = resonance_seed;
     evo.fracture_lines = Vec::new();
-    evo.is_listed = false;
-    evo.list_price_lamports = 0;
     evo.is_shattered = false;
     evo.bump = ctx.bumps.evo;
     evo.manifest_verified = false;

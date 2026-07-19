@@ -8,7 +8,7 @@ import { EvoDetail } from '@/components/EvoDetail';
 import { Nav } from '@/components/Nav';
 import { TradeChart } from '@/components/TradeChart';
 import { TradingViewWidget } from '@/components/TradingViewWidget';
-import { EVOData, CollectionData, evoAccountToData, collectionConfigToData } from '@/lib/evo-data';
+import { EVOData, CollectionData, evoAccountToData, collectionConfigToData, mergeListingData } from '@/lib/evo-data';
 import {
   readCollectionConfig,
   readAllEVOs,
@@ -99,6 +99,7 @@ export default function CollectionPage() {
         const d = evoAccountToData(evo, collectionName);
         if (d) display.push(d);
       }
+      await mergeListingData(connection, display);
       setEvos(display);
 
       // trade history for the chart (non-blocking)

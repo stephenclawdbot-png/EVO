@@ -29,11 +29,8 @@ pub enum EvoError {
     #[msg("You are not the owner of this EVO")]
     NotEvoOwner,
 
-    #[msg("EVO is not listed for sale")]
+    #[msg("EVO is not listed for sale — no active listing found")]
     EvoNotListed,
-
-    #[msg("EVO is already listed")]
-    EvoAlreadyListed,
 
     #[msg("EVO has been shattered")]
     EvoShattered,
@@ -128,9 +125,6 @@ pub enum EvoError {
     #[msg("Only the reveal authority can set the visual stage")]
     NotStageAuthority,
 
-    #[msg("EVO is currently listed for sale — delist before shattering")]
-    EvoIsListed,
-
     #[msg("Static collections do not support stage transitions")]
     StaticNoTransitions,
 
@@ -154,9 +148,6 @@ pub enum EvoError {
 
     #[msg("Burn destination cannot be a program-derived address of this program")]
     BurnDestinationIsProgramPda,
-
-    #[msg("EVO is currently listed — delist before transferring")]
-    EvoIsListedForTransfer,
 
     #[msg("Cannot transfer EVO to the zero address")]
     InvalidNewOwner,

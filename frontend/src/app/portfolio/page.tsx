@@ -11,7 +11,7 @@ import {
   getCollectionPDA,
   EVOAccount,
 } from '@/lib/evo-program';
-import { evoAccountToData, EVOData, collectionConfigToData, CollectionData } from '@/lib/evo-data';
+import { evoAccountToData, EVOData, collectionConfigToData, CollectionData, mergeListingData } from '@/lib/evo-data';
 import { EvoCard } from '@/components/EvoCard';
 import { EvoDetail } from '@/components/EvoDetail';
 import { IconArrowRight, IconPortfolio } from '@/components/Icons';
@@ -68,6 +68,7 @@ export default function PortfolioPage() {
           const d = evoAccountToData(evo, collectionName);
           if (d) display.push(d);
         }
+        await mergeListingData(connection, display);
         display.sort((a, b) => a.id - b.id);
         collectionGroups.push({ name: collectionName, data: collectionData, evos: display });
       }

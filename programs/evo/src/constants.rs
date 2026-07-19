@@ -4,6 +4,7 @@ use anchor_lang::prelude::*;
 pub const PROTOCOL_SEED: &[u8] = b"protocol";
 pub const COLLECTION_SEED: &[u8] = b"collection";
 pub const EVO_SEED: &[u8] = b"evo";
+pub const LISTING_SEED: &[u8] = b"listing";
 
 // Default protocol values
 pub const DEFAULT_CREATION_FEE_LAMPORTS: u64 = 67_890_000; // 0.06789 SOL

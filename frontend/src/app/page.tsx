@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { Nav } from '@/components/Nav';
 import { CollectionDiscovery, readAllCollections, readAllEVOs, getCollectionPDA, lamportsToSol } from '@/lib/evo-program';
-import { CollectionData, collectionConfigToData } from '@/lib/evo-data';
+import { CollectionData, collectionConfigToData, evoAccountToData, mergeListingData, EVOData } from '@/lib/evo-data';
 import Link from 'next/link';
 import {
   IconArrowRight, IconHammer, IconCollection, IconTrendingUp,
@@ -101,11 +101,17 @@ export default function Home() {
             const data = collectionConfigToData(disc.config);
             const [collectionPda] = getCollectionPDA(disc.config.name);
             const evos = await readAllEVOs(connection, collectionPda, disc.config.supplyCap);
-            const active = evos.filter(e => !e.isShattered);
+            const display: EVOData[] = [];
+            for (const evo of evos) {
+              const d = evoAccountToData(evo, disc.config.name);
+              if (d) display.push(d);
+            }
+            await mergeListingData(connection, display);
+            const active = display.filter(e => !e.isShattered);
             const listed = active.filter(e => e.isListed);
             const totalLocked = active.reduce((sum, e) => sum + e.lockedLamports, 0);
             const floor = listed.length > 0
-              ? Math.min(...listed.map(e => e.listPriceLamports))
+              ? Math.min(...listed.map(e => e.listPriceLamports || Infinity))
               : null;
             return {
               discovery: disc,

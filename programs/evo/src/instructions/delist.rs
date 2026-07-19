@@ -7,11 +7,9 @@ use anchor_lang::prelude::*;
 #[instruction(evo_id: u32)]
 pub struct Delist<'info> {
     #[account(
-        mut,
         seeds = [EVO_SEED, collection_config.key().as_ref(), &evo_id.to_le_bytes()],
         bump = evo.bump,
         constraint = evo.owner == seller.key() @ EvoError::NotEvoOwner,
-        constraint = evo.is_listed @ EvoError::EvoNotListed,
         constraint = evo.collection == collection_config.key() @ EvoError::CollectionMismatch,
     )]
     pub evo: Account<'info, EVOAccount>,
@@ -22,15 +20,19 @@ pub struct Delist<'info> {
     )]
     pub collection_config: Account<'info, CollectionConfig>,
 
+    #[account(
+        mut,
+        seeds = [LISTING_SEED, evo.key().as_ref()],
+        bump = listing.bump,
+        close = seller,
+    )]
+    pub listing: Account<'info, Listing>,
+
     #[account(mut)]
     pub seller: Signer<'info>,
 }
 
-pub fn delist(ctx: Context<Delist>, evo_id: u32) -> Result<()> {
-    let evo = &mut ctx.accounts.evo;
-    evo.is_listed = false;
-    evo.list_price_lamports = 0;
-
+pub fn delist(_ctx: Context<Delist>, _evo_id: u32) -> Result<()> {
     msg!("EVO delisted");
     Ok(())
 }

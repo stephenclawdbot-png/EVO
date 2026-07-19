@@ -13,7 +13,6 @@ pub struct Transfer<'info> {
         bump = evo.bump,
         constraint = evo.owner == current_owner.key() @ EvoError::NotEvoOwner,
         constraint = !evo.is_shattered @ EvoError::EvoShattered,
-        constraint = !evo.is_listed @ EvoError::EvoIsListedForTransfer,
         constraint = evo.collection == collection_config.key() @ EvoError::CollectionMismatch,
     )]
     pub evo: Account<'info, EVOAccount>,
@@ -62,8 +61,6 @@ pub fn transfer(ctx: Context<Transfer>, evo_id: u32, new_owner: Pubkey) -> Resul
     system_transfer(cpi_ctx, fee)?;
 
     evo.owner = new_owner;
-    evo.is_listed = false;
-    evo.list_price_lamports = 0;
 
     msg!(
         "EVO transferred from {} to {} (transfer fee: {} lamports to treasury)",

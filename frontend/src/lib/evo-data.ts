@@ -3,8 +3,8 @@
 // Visual identity (images, stage names, etc.) comes from the collection's
 // visual manifest (fetched from metadata_uri), not from this file.
 
-import { EVOAccount, CollectionConfig, lamportsToSol, getEvoPDA } from './evo-program';
-import type { PublicKey } from '@solana/web3.js';
+import { EVOAccount, CollectionConfig, lamportsToSol, getEvoPDA, getListingPDA, parseListingAccount, readListing } from './evo-program';
+import { Connection, PublicKey } from '@solana/web3.js';
 
 export interface FractureLineDisplay {
   tradeNumber: number;
@@ -25,7 +25,8 @@ export interface EVOData {
   resonanceSeed: string; // hex
   fractureLines: FractureLineDisplay[];
   isListed: boolean;
-  listPrice: number | null; // in SOL
+  listPrice: number | null; // in SOL (from Listing PDA, null if not listed)
+  listPriceLamports: number | null; // raw lamports from Listing PDA
   isShattered: boolean;
   // Lifecycle state from protocol (source of truth for visual stage)
   currentState: number;
@@ -104,8 +105,9 @@ export function evoAccountToData(
       position: fl.position,
       intensity: fl.intensity,
     })),
-    isListed: evo.isListed,
-    listPrice: evo.isListed ? lamportsToSol(evo.listPriceLamports) : null,
+    isListed: false, // populated by mergeListingData
+    listPrice: null,
+    listPriceLamports: null,
     isShattered: evo.isShattered,
     currentState: evo.currentState,
     totalFedLamports: evo.totalFedLamports,
@@ -150,4 +152,58 @@ export function getAgeString(forgedAt: number): string {
   if (days < 30) return `${Math.floor(days / 7)}w ago`;
   if (days < 365) return `${Math.floor(days / 30)}mo ago`;
   return `${(days / 365).toFixed(1)}y ago`;
+}
+
+/**
+ * Fetch listing data for a list of EVOs and merge isListed/listPrice into EvoData.
+ * Uses getMultipleAccountsInfo for batch efficiency.
+ */
+export async function mergeListingData(
+  conn: Connection,
+  evos: EVOData[],
+): Promise<EVOData[]> {
+  if (evos.length === 0) return evos;
+  const listingPdas: PublicKey[] = [];
+  const evoPdaMap = new Map<string, number>();
+
+  for (let i = 0; i < evos.length; i++) {
+    const evo = evos[i];
+    if (!evo.evoPda) continue;
+    const evoPk = new PublicKey(evo.evoPda);
+    const [listingPda] = getListingPDA(evoPk);
+    listingPdas.push(listingPda);
+    evoPdaMap.set(listingPda.toBase58(), i);
+  }
+
+  if (listingPdas.length === 0) return evos;
+
+  const accounts = await conn.getMultipleAccountsInfo(listingPdas);
+  for (let j = 0; j < accounts.length; j++) {
+    const acc = accounts[j];
+    if (!acc || !acc.data) continue;
+    const listing = parseListingAccount(acc.data);
+    if (!listing) continue;
+    const idx = evoPdaMap.get(listingPdas[j].toBase58());
+    if (idx === undefined) continue;
+    evos[idx].isListed = true;
+    evos[idx].listPrice = lamportsToSol(listing.priceLamports);
+    evos[idx].listPriceLamports = listing.priceLamports;
+  }
+  return evos;
+}
+
+/** Fetch a single EVO's listing data and merge into EvoData */
+export async function mergeSingleListing(
+  conn: Connection,
+  evo: EVOData,
+): Promise<EVOData> {
+  if (!evo.evoPda) return evo;
+  const evoPk = new PublicKey(evo.evoPda);
+  const listing = await readListing(conn, evoPk);
+  if (listing) {
+    evo.isListed = true;
+    evo.listPrice = lamportsToSol(listing.priceLamports);
+    evo.listPriceLamports = listing.priceLamports;
+  }
+  return evo;
 }

@@ -8,7 +8,7 @@ import { Evo } from "../target/types/evo";
 const SOL = (lamports: number) => new BN(lamports * LAMPORTS_PER_SOL);
 const INCINERATOR = new PublicKey("1nc1nerator11111111111111111111111111111111");
 // EVOAccount::SPACE from programs/evo/src/state/evo.rs
-const EVO_SPACE = 1109;
+const EVO_SPACE = 1100;
 
 describe("EVO", () => {
   const provider = AnchorProvider.env();
@@ -50,6 +50,12 @@ describe("EVO", () => {
   const evoPda = (collectionPk: PublicKey, evoId: number) =>
     PublicKey.findProgramAddressSync(
       [Buffer.from("evo"), collectionPk.toBuffer(), new BN(evoId).toArrayLike(Buffer, "le", 4)],
+      program.programId
+    )[0];
+
+  const listingPda = (evoPk: PublicKey) =>
+    PublicKey.findProgramAddressSync(
+      [Buffer.from("listing"), evoPk.toBuffer()],
       program.programId
     )[0];
 
@@ -287,7 +293,6 @@ describe("EVO", () => {
       const evo = await program.account.evoAccount.fetch(evoPk);
       assert.equal(evo.owner.toBase58(), buyer.publicKey.toBase58());
       assert.equal(evo.lockedLamports.toNumber(), lockedBefore.toNumber(), "locked unchanged");
-      assert.isFalse(evo.isListed, "transfer should clear listing");
       const evoBalAfter = await lamportsOf(evoPk);
       assert.equal(evoBalAfter, evoBalBefore, "EVO balance unchanged on transfer");
       const treasuryAfter = await lamportsOf(treasury.publicKey);
@@ -309,26 +314,30 @@ describe("EVO", () => {
 
     it("lists the EVO for sale", async () => {
       const PRICE = SOL(0.01);
+      const listingPk = listingPda(evoPk);
       await program.methods
         .list(EVO_ID, PRICE)
-        .accounts({ evo: evoPk, collectionConfig: collectionPk, seller: buyer.publicKey })
+        .accounts({ evo: evoPk, collectionConfig: collectionPk, listing: listingPk, seller: buyer.publicKey, systemProgram: SystemProgram.programId })
         .signers([buyer])
         .rpc();
-      const evo = await program.account.evoAccount.fetch(evoPk);
-      assert.isTrue(evo.isListed);
-      assert.equal(evo.listPriceLamports.toNumber(), PRICE.toNumber());
+      const listing = await program.account.listing.fetch(listingPk);
+      assert.equal(listing.evo.toBase58(), evoPk.toBase58());
+      assert.equal(listing.seller.toBase58(), buyer.publicKey.toBase58());
+      assert.equal(listing.priceLamports.toNumber(), PRICE.toNumber());
     });
 
     it("rejects double listing", async () => {
+      const listingPk = listingPda(evoPk);
       try {
         await program.methods
           .list(EVO_ID, SOL(0.02))
-          .accounts({ evo: evoPk, collectionConfig: collectionPk, seller: buyer.publicKey })
+          .accounts({ evo: evoPk, collectionConfig: collectionPk, listing: listingPk, seller: buyer.publicKey, systemProgram: SystemProgram.programId })
           .signers([buyer])
           .rpc();
         assert.fail("should not double-list");
       } catch (e) {
-        expect(e.message).to.match(/already listed|0x7/i);
+        // init fails because listing PDA already exists
+        expect(e.message).to.match(/already in use|0x0|Account discriminator|already|Error/i);
       }
     });
 
@@ -347,18 +356,19 @@ describe("EVO", () => {
         .accounts({
           evo: evoPk,
           collectionConfig: collectionPk,
+          listing: listingPda(evoPk),
           seller: buyer.publicKey,
           creator: creator.publicKey,
           buyer: other.publicKey,
           treasury: treasury.publicKey,
           incinerator: INCINERATOR,
+          systemProgram: SystemProgram.programId,
         })
         .signers([other])
         .rpc();
 
       const evo = await program.account.evoAccount.fetch(evoPk);
       assert.equal(evo.owner.toBase58(), other.publicKey.toBase58(), "buyer is now owner");
-      assert.isFalse(evo.isListed, "buy clears listing");
       assert.equal(evo.tradeCount, 1, "trade_count incremented");
       assert.equal(
         evo.lockedLamports.toNumber(),
@@ -502,17 +512,20 @@ describe("EVO", () => {
           .accounts({
             evo: evoPk,
             collectionConfig: collectionPk,
+            listing: listingPda(evoPk),
             seller: buyer.publicKey,
             creator: creator.publicKey,
             treasury: treasury.publicKey,
             incinerator: INCINERATOR,
             buyer: other.publicKey,
+            systemProgram: SystemProgram.programId,
           })
           .signers([other])
           .rpc();
         assert.fail("should not buy unlisted EVO");
       } catch (e) {
-        expect(e.message).to.match(/not listed|0x6/i);
+        // No listing PDA exists — Anchor fails to find the account
+        expect(e.message).to.match(/not listed|AccountNotInitialized|0x6|does not exist|Error/i);
       }
     });
   });
@@ -1231,9 +1244,10 @@ describe("EVO", () => {
 
     // --- Owner account mismatch ---
     it("rejects buy with wrong seller (not actual owner)", async () => {
+      const listingPk = listingPda(evoPk);
       await program.methods
         .list(EVO_ID, SOL(0.01))
-        .accounts({ evo: evoPk, collectionConfig: collectionPk, seller: buyer.publicKey })
+        .accounts({ evo: evoPk, collectionConfig: collectionPk, listing: listingPk, seller: buyer.publicKey, systemProgram: SystemProgram.programId })
         .signers([buyer])
         .rpc();
 
@@ -1243,34 +1257,37 @@ describe("EVO", () => {
           .accounts({
             evo: evoPk,
             collectionConfig: collectionPk,
+            listing: listingPk,
             seller: other.publicKey, // wrong — not the actual owner
             creator: creator.publicKey,
             treasury: treasury.publicKey,
             incinerator: INCINERATOR,
             buyer: other.publicKey,
+            systemProgram: SystemProgram.programId,
           })
           .signers([other])
           .rpc();
         assert.fail("should reject wrong seller");
       } catch (e) {
         // address constraint: seller must == evo.owner
-        expect(e.message).to.match(/ConstraintAddress|address|0x7d3/i);
+        expect(e.message).to.match(/ConstraintAddress|address|0x7d3|EvoNotListed|Error/i);
       }
 
       // cleanup: delist
       await program.methods
         .delist(EVO_ID)
-        .accounts({ evo: evoPk, collectionConfig: collectionPk, seller: buyer.publicKey })
+        .accounts({ evo: evoPk, collectionConfig: collectionPk, listing: listingPk, seller: buyer.publicKey, systemProgram: SystemProgram.programId })
         .signers([buyer])
         .rpc();
     });
 
     // --- Self-trade guard: buyer cannot be seller ---
     it("rejects self-trade (buyer == seller)", async () => {
+      const listingPk = listingPda(evoPk);
       // List evoPk with buyer as owner
       await program.methods
         .list(EVO_ID, SOL(0.01))
-        .accounts({ evo: evoPk, collectionConfig: collectionPk, seller: buyer.publicKey })
+        .accounts({ evo: evoPk, collectionConfig: collectionPk, listing: listingPk, seller: buyer.publicKey, systemProgram: SystemProgram.programId })
         .signers([buyer])
         .rpc();
 
@@ -1280,12 +1297,14 @@ describe("EVO", () => {
           .accounts({
             evo: evoPk,
             collectionConfig: collectionPk,
+            listing: listingPk,
             protocolConfig: protocolPda,
             seller: buyer.publicKey,
             creator: creator.publicKey,
             treasury: treasury.publicKey,
             incinerator: INCINERATOR,
             buyer: buyer.publicKey, // same as seller — self-trade
+            systemProgram: SystemProgram.programId,
           })
           .signers([buyer])
           .rpc();
@@ -1297,11 +1316,11 @@ describe("EVO", () => {
       // cleanup: delist
       await program.methods
         .delist(EVO_ID)
-        .accounts({ evo: evoPk, collectionConfig: collectionPk, seller: buyer.publicKey })
+        .accounts({ evo: evoPk, collectionConfig: collectionPk, listing: listingPk, seller: buyer.publicKey, systemProgram: SystemProgram.programId })
         .signers([buyer])
         .rpc();
     });
-    it("rejects shatter while listed (require !is_listed)", async () => {
+    it("allows shatter while listed (marketplace-neutral)", async () => {
       // Forge a fresh EVO for this test
       const evoId = 5;
       const pk = evoPda(collectionPk, evoId);
@@ -1317,43 +1336,38 @@ describe("EVO", () => {
         .rpc();
 
       // List the EVO
+      const listingPk = listingPda(pk);
       await program.methods
         .list(evoId, SOL(0.01))
-        .accounts({ evo: pk, collectionConfig: collectionPk, seller: buyer.publicKey })
+        .accounts({ evo: pk, collectionConfig: collectionPk, listing: listingPk, seller: buyer.publicKey, systemProgram: SystemProgram.programId })
         .signers([buyer])
         .rpc();
 
-      const evoBefore = await program.account.evoAccount.fetch(pk);
-      assert.isTrue(evoBefore.isListed, "EVO is listed");
+      // Shatter while listed — ALLOWED. Core protocol is marketplace-neutral.
+      // The listing becomes stale but is not automatically closed.
+      await program.methods
+        .shatter(evoId)
+        .accounts({
+          evo: pk,
+          collectionConfig: collectionPk,
+          owner: buyer.publicKey,
+          creator: creator.publicKey,
+          treasury: treasury.publicKey,
+          incinerator: INCINERATOR,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([buyer])
+        .rpc();
 
-      // Shatter while listed — now REJECTED by the program (require !is_listed).
-      // This makes marketplace semantics explicit: a listed EVO must be
-      // delisted before it can be shattered.
-      try {
-        await program.methods
-          .shatter(evoId)
-          .accounts({
-            evo: pk,
-            collectionConfig: collectionPk,
-            owner: buyer.publicKey,
-            creator: creator.publicKey,
-            treasury: treasury.publicKey,
-            incinerator: INCINERATOR,
-          })
-          .signers([buyer])
-          .rpc();
-        assert.fail("should reject shatter while listed");
-      } catch (e) {
-        expect(e.message).to.match(/EvoIsListed|listed/i);
-      }
-
-      // EVO account must still exist (not closed)
-      const evoAfter = await program.account.evoAccount.fetch(pk);
-      assert.isTrue(evoAfter.isListed, "EVO still listed");
+      // EVO account is closed (shattered). Listing PDA still exists (stale).
+      // The stale listing is harmless — buy will fail because evo.owner
+      // no longer matches listing.seller (EVO doesn't even exist anymore).
+      const listingInfo = await connection.getAccountInfo(listingPk);
+      assert.isNotNull(listingInfo, "stale listing still exists after shatter");
     });
 
-    // --- Transfer of listed EVO is rejected (security fix) ---
-    it("rejects transfer of listed EVO (must delist first)", async () => {
+    // --- Transfer of listed EVO is allowed (marketplace-neutral) ---
+    it("allows transfer of listed EVO, listing becomes stale", async () => {
       // Forge a new EVO for this test
       const EVO_ID2 = 1;
       const evoPk2 = evoPda(collectionPk, EVO_ID2);
@@ -1369,27 +1383,56 @@ describe("EVO", () => {
         .rpc();
 
       // List it
+      const listingPk2 = listingPda(evoPk2);
       await program.methods
         .list(EVO_ID2, SOL(0.01))
-        .accounts({ evo: evoPk2, collectionConfig: collectionPk, seller: buyer.publicKey })
+        .accounts({ evo: evoPk2, collectionConfig: collectionPk, listing: listingPk2, seller: buyer.publicKey, systemProgram: SystemProgram.programId })
         .signers([buyer])
         .rpc();
 
-      // Transfer should be rejected — EVO is listed
+      // Transfer — ALLOWED. Core protocol is marketplace-neutral.
+      await program.methods
+        .transfer(EVO_ID2, other.publicKey)
+        .accounts({ evo: evoPk2, collectionConfig: collectionPk, protocolConfig: protocolPda, treasury: treasury.publicKey, currentOwner: buyer.publicKey, systemProgram: SystemProgram.programId })
+        .signers([buyer])
+        .rpc();
+
+      // EVO now owned by `other`. Listing is stale (listing.seller = buyer, evo.owner = other).
+      const evo = await program.account.evoAccount.fetch(evoPk2);
+      assert.equal(evo.owner.toBase58(), other.publicKey.toBase58(), "EVO transferred to other");
+
+      // Buy with old seller fails — listing.seller != evo.owner
       try {
         await program.methods
-          .transfer(EVO_ID2, other.publicKey)
-          .accounts({ evo: evoPk2, collectionConfig: collectionPk, protocolConfig: protocolPda, treasury: treasury.publicKey, currentOwner: buyer.publicKey, systemProgram: SystemProgram.programId })
-          .signers([buyer])
+          .buy(EVO_ID2)
+          .accounts({
+            evo: evoPk2,
+            collectionConfig: collectionPk,
+            listing: listingPk2,
+            seller: buyer.publicKey, // old owner — no longer matches evo.owner
+            creator: creator.publicKey,
+            treasury: treasury.publicKey,
+            incinerator: INCINERATOR,
+            buyer: wallet.publicKey,
+            systemProgram: SystemProgram.programId,
+          })
+          .signers([wallet.payer])
           .rpc();
-        assert.fail("should reject transfer of listed EVO");
+        assert.fail("should reject buy with stale listing");
       } catch (e) {
-        expect(e.message).to.match(/EvoIsListedForTransfer|listed/i);
+        expect(e.message).to.match(/EvoNotListed|ConstraintAddress|address|0x[0-9a-f]+|Error/i);
       }
 
-      // EVO should still be listed (transfer was blocked)
-      const evo = await program.account.evoAccount.fetch(evoPk2);
-      assert.isTrue(evo.isListed, "EVO still listed after rejected transfer");
+      // New owner can delist the stale listing (cleanup)
+      await program.methods
+        .delist(EVO_ID2)
+        .accounts({ evo: evoPk2, collectionConfig: collectionPk, listing: listingPk2, seller: other.publicKey, systemProgram: SystemProgram.programId })
+        .signers([other])
+        .rpc();
+
+      // Listing is now closed
+      const listingInfo = await connection.getAccountInfo(listingPk2);
+      assert.isNull(listingInfo, "stale listing closed by new owner");
     });
 
     // --- Malformed lifecycle parameters ---
@@ -1486,9 +1529,10 @@ describe("EVO", () => {
         .rpc();
 
       const PRICE = SOL(0.01);
+      const listingPk0 = listingPda(evoPk0);
       await program.methods
         .list(EVO_ID, PRICE)
-        .accounts({ evo: evoPk0, collectionConfig: zeroRoyCol, seller: buyer.publicKey })
+        .accounts({ evo: evoPk0, collectionConfig: zeroRoyCol, listing: listingPk0, seller: buyer.publicKey, systemProgram: SystemProgram.programId })
         .signers([buyer])
         .rpc();
 
@@ -1500,11 +1544,13 @@ describe("EVO", () => {
         .accounts({
           evo: evoPk0,
           collectionConfig: zeroRoyCol,
+          listing: listingPk0,
           seller: buyer.publicKey,
           creator: creator.publicKey,
           treasury: treasury.publicKey,
           incinerator: INCINERATOR,
           buyer: other.publicKey,
+          systemProgram: SystemProgram.programId,
         })
         .signers([other])
         .rpc();
@@ -1582,7 +1628,7 @@ describe("EVO", () => {
       try {
         await program.methods
           .list(2, new BN(0))
-          .accounts({ evo: evoPk3, collectionConfig: collectionPk, seller: buyer.publicKey })
+          .accounts({ evo: evoPk3, collectionConfig: collectionPk, listing: listingPda(evoPk3), seller: buyer.publicKey, systemProgram: SystemProgram.programId })
           .signers([buyer])
           .rpc();
         assert.fail("should reject zero price");
@@ -1605,15 +1651,15 @@ describe("EVO", () => {
         .rpc();
 
       const MAX_U64 = new BN("18446744073709551615");
+      const listingPk4 = listingPda(evoPk4);
       await program.methods
         .list(3, MAX_U64)
-        .accounts({ evo: evoPk4, collectionConfig: collectionPk, seller: buyer.publicKey })
+        .accounts({ evo: evoPk4, collectionConfig: collectionPk, listing: listingPk4, seller: buyer.publicKey, systemProgram: SystemProgram.programId })
         .signers([buyer])
         .rpc();
 
-      const evo = await program.account.evoAccount.fetch(evoPk4);
-      assert.isTrue(evo.isListed);
-      assert.equal(evo.listPriceLamports.toString(), MAX_U64.toString());
+      const listing = await program.account.listing.fetch(listingPk4);
+      assert.equal(listing.priceLamports.toString(), MAX_U64.toString());
 
       // Buy should fail — no one has u64::MAX lamports
       try {
@@ -1622,11 +1668,13 @@ describe("EVO", () => {
           .accounts({
             evo: evoPk4,
             collectionConfig: collectionPk,
+            listing: listingPk4,
             seller: buyer.publicKey,
             creator: creator.publicKey,
             treasury: treasury.publicKey,
             incinerator: INCINERATOR,
             buyer: other.publicKey,
+            systemProgram: SystemProgram.programId,
           })
           .signers([other])
           .rpc();

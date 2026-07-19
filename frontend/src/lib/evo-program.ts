@@ -1,4 +1,5 @@
 import { Buffer } from 'buffer';
+import { createHash } from 'crypto';
 import {
   PublicKey,
   Connection,
@@ -39,7 +40,13 @@ const ACCT_DISC = {
   ProtocolConfig: Buffer.from([207, 91, 250, 28, 152, 179, 215, 209]),
   CollectionConfig: Buffer.from([223, 110, 152, 160, 174, 157, 106, 255]),
   EVOAccount: Buffer.from([172, 52, 230, 55, 100, 187, 196, 167]),
+  Listing: Buffer.from([0, 0, 0, 0, 0, 0, 0, 0]), // placeholder, computed below
 };
+// Compute Listing discriminator: sha256("account:Listing")[0..8]
+{
+  const h = createHash('sha256').update('account:Listing').digest();
+  ACCT_DISC.Listing = Buffer.from(h.subarray(0, 8));
+}
 
 // ─── Types ───────────────────────────────────────────────────
 export type FeeDestination = 'Treasury' | 'Creator' | 'Burn' | 'Split';
@@ -129,8 +136,6 @@ export interface EVOAccount {
   tradeCount: number;
   resonanceSeed: Buffer;
   fractureLines: FractureLine[];
-  isListed: boolean;
-  listPriceLamports: number;
   isShattered: boolean;
   bump: number;
   // Lifecycle state
@@ -141,6 +146,14 @@ export interface EVOAccount {
   totalFedLamports: number;
   // Derived
   evoId?: number;
+  pda?: PublicKey;
+}
+
+export interface ListingData {
+  evo: PublicKey;
+  seller: PublicKey;
+  priceLamports: number;
+  bump: number;
   pda?: PublicKey;
 }
 
@@ -157,6 +170,13 @@ export function getEvoPDA(collectionPda: PublicKey, evoId: number): [PublicKey, 
   idBuf.writeUInt32LE(evoId);
   return PublicKey.findProgramAddressSync(
     [Buffer.from('evo'), collectionPda.toBuffer(), idBuf],
+    PROGRAM_ID
+  );
+}
+
+export function getListingPDA(evoPda: PublicKey): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('listing'), evoPda.toBuffer()],
     PROGRAM_ID
   );
 }
@@ -372,8 +392,6 @@ export function parseEVOAccount(data: Buffer): EVOAccount | null {
     const [intensity, f5] = [data[off], off + 1]; off = f5;
     fractureLines.push({ tradeNumber, previousOwner, timestamp, position, intensity });
   }
-  const [isListed, l1] = readBool(data, off); off = l1;
-  const [listPriceLamports, l2] = readU64(data, off); off = l2;
   const [isShattered, l3] = readBool(data, off); off = l3;
   const [bump, l4] = [data[off], off + 1]; off = l4;
 
@@ -402,9 +420,20 @@ export function parseEVOAccount(data: Buffer): EVOAccount | null {
 
   return {
     collection, owner, lockedLamports, forgedAt, facetCount, tradeCount,
-    resonanceSeed, fractureLines, isListed, listPriceLamports, isShattered, bump,
+    resonanceSeed, fractureLines, isShattered, bump,
     mintIndex, currentState, lastTransitionAt, feedCount, totalFedLamports,
   };
+}
+
+export function parseListingAccount(data: Buffer): ListingData | null {
+  if (data.length < 8) return null;
+  if (!data.subarray(0, 8).equals(ACCT_DISC.Listing)) return null;
+  let off = 8;
+  const [evo, o1] = readPubkey(data, off); off = o1;
+  const [seller, o2] = readPubkey(data, off); off = o2;
+  const [priceLamports, o3] = readU64(data, off); off = o3;
+  const bump = data[off];
+  return { evo, seller, priceLamports, bump };
 }
 
 // ─── Instruction Builders ────────────────────────────────────
@@ -507,6 +536,7 @@ export function createListIx(
   evoId: number,
   priceLamports: number,
 ): TransactionInstruction {
+  const [listingPda] = getListingPDA(evoPda);
   const data = Buffer.concat([
     DISC.list,
     writeU32(evoId),
@@ -515,9 +545,11 @@ export function createListIx(
   return new TransactionInstruction({
     programId: PROGRAM_ID,
     keys: [
-      { pubkey: evoPda, isSigner: false, isWritable: true },
+      { pubkey: evoPda, isSigner: false, isWritable: false },
       { pubkey: collectionPda, isSigner: false, isWritable: false },
+      { pubkey: listingPda, isSigner: false, isWritable: true },
       { pubkey: seller, isSigner: true, isWritable: true },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     ],
     data,
   });
@@ -529,12 +561,14 @@ export function createDelistIx(
   seller: PublicKey,
   evoId: number,
 ): TransactionInstruction {
+  const [listingPda] = getListingPDA(evoPda);
   const data = Buffer.concat([DISC.delist, writeU32(evoId)]);
   return new TransactionInstruction({
     programId: PROGRAM_ID,
     keys: [
-      { pubkey: evoPda, isSigner: false, isWritable: true },
+      { pubkey: evoPda, isSigner: false, isWritable: false },
       { pubkey: collectionPda, isSigner: false, isWritable: false },
+      { pubkey: listingPda, isSigner: false, isWritable: true },
       { pubkey: seller, isSigner: true, isWritable: true },
     ],
     data,
@@ -556,8 +590,11 @@ export function createBuyIx(
     ? (burnDestination.equals(PublicKey.default) ? INCINERATOR : burnDestination)
     : SystemProgram.programId;
 
+  const [listingPda] = getListingPDA(evoPda);
+
   const keys = [
     { pubkey: evoPda, isSigner: false, isWritable: true },
+    { pubkey: listingPda, isSigner: false, isWritable: true },
     { pubkey: collectionPda, isSigner: false, isWritable: false },
     { pubkey: PROTOCOL_PDA, isSigner: false, isWritable: false },
     { pubkey: seller, isSigner: false, isWritable: true },
@@ -755,6 +792,15 @@ export async function readEVO(conn: Connection, collectionPda: PublicKey, evoId:
   return evo;
 }
 
+export async function readListing(conn: Connection, evoPda: PublicKey): Promise<ListingData | null> {
+  const [pda] = getListingPDA(evoPda);
+  const acc = await conn.getAccountInfo(pda);
+  if (!acc || !acc.data) return null;
+  const listing = parseListingAccount(acc.data);
+  if (listing) listing.pda = pda;
+  return listing;
+}
+
 export async function readAllEVOs(conn: Connection, collectionPda: PublicKey, supplyCap: number): Promise<EVOAccount[]> {
   // Derive all possible EVO PDAs and fetch in batches
   const evos: EVOAccount[] = [];
@@ -787,7 +833,8 @@ export async function readAllEVOs(conn: Connection, collectionPda: PublicKey, su
 
 // Account sizes (from on-chain SPACE constants)
 export const COLLECTION_CONFIG_SPACE = 568;
-export const EVO_ACCOUNT_SPACE = 1109;
+export const EVO_ACCOUNT_SPACE = 1101;
+export const LISTING_ACCOUNT_SPACE = 81;
 
 export interface CollectionDiscovery {
   config: CollectionConfig;

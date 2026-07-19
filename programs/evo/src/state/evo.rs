@@ -22,8 +22,6 @@ pub struct EVOAccount {
     pub trade_count: u32,
     pub resonance_seed: [u8; 32],
     pub fracture_lines: Vec<FractureLine>,
-    pub is_listed: bool,
-    pub list_price_lamports: u64,
     pub is_shattered: bool,
     pub bump: u8,
 
@@ -50,8 +48,6 @@ impl EVOAccount {
         4 +      // trade_count
         32 +     // resonance_seed
         4 + (47 * 20) + // fracture_lines
-        1 +      // is_listed
-        8 +      // list_price_lamports
         1 +      // is_shattered
         1 +      // bump
         // Lifecycle state:

@@ -12,11 +12,19 @@ pub struct Buy<'info> {
         mut,
         seeds = [EVO_SEED, collection_config.key().as_ref(), &evo_id.to_le_bytes()],
         bump = evo.bump,
-        constraint = evo.is_listed @ EvoError::EvoNotListed,
         constraint = !evo.is_shattered @ EvoError::EvoShattered,
         constraint = evo.collection == collection_config.key() @ EvoError::CollectionMismatch,
     )]
     pub evo: Account<'info, EVOAccount>,
+
+    #[account(
+        mut,
+        seeds = [LISTING_SEED, evo.key().as_ref()],
+        bump = listing.bump,
+        constraint = listing.seller == seller.key() @ EvoError::EvoNotListed,
+        close = seller,
+    )]
+    pub listing: Account<'info, Listing>,
 
     #[account(
         seeds = [COLLECTION_SEED, collection_config.name.as_bytes()],
@@ -58,7 +66,7 @@ pub struct Buy<'info> {
 pub fn buy(ctx: Context<Buy>, evo_id: u32) -> Result<()> {
     let evo = &mut ctx.accounts.evo;
     let collection = &ctx.accounts.collection_config;
-    let price = evo.list_price_lamports;
+    let price = ctx.accounts.listing.price_lamports;
 
     require!(price > 0, EvoError::InsufficientLamports);
 
@@ -119,8 +127,6 @@ pub fn buy(ctx: Context<Buy>, evo_id: u32) -> Result<()> {
 
     evo.owner = ctx.accounts.buyer.key();
     evo.trade_count = trade_number;
-    evo.is_listed = false;
-    evo.list_price_lamports = 0;
 
     msg!("EVO sold for {} lamports. Royalty: {} lamports. Trade #{}", price, royalty, trade_number);
     Ok(())
