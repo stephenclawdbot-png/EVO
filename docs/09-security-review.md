@@ -186,7 +186,7 @@ redeemable = min(account.lamports() - rent_exempt, locked_lamports) - shatter_fe
 - [x] Devnet testing — full transaction suite with real RPC
 - [ ] Upgrade authority locked (post-audit)
 - [ ] SDK published
-- [x] Security audit (line-by-line manual + agent review, 10 findings fixed across 5 passes)
+- [x] Security audit (line-by-line manual + agent review, 10 findings fixed across 8 passes)
 - [ ] VRF integration for commit-reveal (Switchboard/ORAO)
 - [x] Deployer authority check on initialize_protocol
 - [x] Burn destination PDA validation
@@ -198,6 +198,26 @@ redeemable = min(account.lamports() - rent_exempt, locked_lamports) - shatter_fe
 - [x] Defense-in-depth: collection mismatch checks on feed/list/delist/shatter/transfer
 - [x] buy.rs trade_count checked_add
 - [ ] **Set REQUIRED_DEPLOYER to real deployer pubkey before mainnet**
+
+---
+
+## Audit Pass Log
+
+| Pass | Type | Findings | Notes |
+|------|------|----------|-------|
+| 1 | Agent (security-review) | 2 | Burn destination PDA, listed EVO transfer |
+| 2 | Agent (security-review) | 2 | close_collection panic, buy.rs seller type |
+| 3 | Agent (security-review) | 1 | mint_index collision (MEDIUM) → total_minted fix |
+| 4 | Manual | 2 | Transfer to zero address, defense-in-depth collection checks |
+| 5 | Manual | 0 | Full review of all 16 instructions, state, utils, constants |
+| 6 | Manual | 0 | Edge cases: close_collection re-creation, evo_id bounds, supply cap immutability |
+| 7 | Manual (adversarial) | 0 | Penetration mindset: SOL theft, account confusion, init/close attacks, re-entrancy, commit-reveal front-running, Merkle forgery, burn destination abuse — all blocked |
+| 8 | Agent (penetration test) | 0 | 20 attack vectors investigated. Only finding: REQUIRED_DEPLOYER (already known). All SOL paths verified sound. |
+
+**Total: 10 findings identified, 10 fixed. 8 audit passes (4 agent + 4 manual). 0 new findings in passes 5-8.**
+
+### Defense-in-Depth Fix (post-pass-8)
+- `forge.rs`: `current_supply += 1` changed to `checked_add(1)` for consistency with `total_minted` and the protocol's checked-math standard. Not exploitable (supply_cap ≤ 20,000 prevents u32 overflow), but aligns with defense-in-depth hardening.
 
 ---
 
