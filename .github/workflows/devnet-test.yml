@@ -12,10 +12,16 @@ on:
       - 'tests/**'
       - '.github/workflows/devnet-test.yml'
 
-# To use a pre-funded keypair (recommended), add a GitHub secret named
-# DEVNET_FUNDED_KEYPAIR containing the base64-encoded keypair JSON file.
-# Fund it by running: solana airdrop 2 --url devnet -k <keypair-path>
+# Secrets (all optional but recommended):
+#   DEVNET_FUNDED_KEYPAIR  - base64 or raw JSON of the deployer keypair (funded wallet)
+#   DEVNET_PROGRAM_KEYPAIR - base64 or raw JSON of the program keypair (persistent program ID)
+#     When set, the program is deployed once then UPGRADED on subsequent runs (no re-deploy rent).
+#     When absent, a fresh program keypair is generated each run (pays full deploy rent).
+# Fund the deployer by running: solana airdrop 2 --url devnet -k <keypair-path>
 # (wait 8h between airdrops due to rate limit, need ~5 SOL total)
+#
+# Rent reclaim: each run closes orphaned programs owned by the deployer (left over
+# from prior fresh-keypair runs) and returns their rent to the deployer.
 
 jobs:
   devnet-test:
@@ -48,10 +54,24 @@ jobs:
       - name: Generate keypairs and align program id
         env:
           DEVNET_FUNDED_KEYPAIR: ${{ secrets.DEVNET_FUNDED_KEYPAIR }}
+          DEVNET_PROGRAM_KEYPAIR: ${{ secrets.DEVNET_PROGRAM_KEYPAIR }}
         run: |
           mkdir -p target/deploy ~/.config/solana
-          # Program keypair (always generated fresh)
-          solana-keygen new -o target/deploy/evo-keypair.json --no-bip39-passphrase --silent --force
+          # Program keypair: use persistent secret if available (upgrades instead of re-deploys),
+          # otherwise generate fresh (pays full deploy rent each run).
+          if [ -n "$DEVNET_PROGRAM_KEYPAIR" ]; then
+            echo "Using persistent program keypair from secret"
+            CLEAN=$(printf '%s' "$DEVNET_PROGRAM_KEYPAIR" | tr -d ' \r\n\t')
+            if echo "$CLEAN" | grep -q '^\['; then
+              echo "$CLEAN" > target/deploy/evo-keypair.json
+            else
+              echo "$CLEAN" | base64 -d > target/deploy/evo-keypair.json
+            fi
+            solana-keygen pubkey target/deploy/evo-keypair.json >/dev/null 2>&1 || { echo "Program keypair secret is invalid"; exit 1; }
+          else
+            echo "No persistent program keypair — generating fresh (pays deploy rent)"
+            solana-keygen new -o target/deploy/evo-keypair.json --no-bip39-passphrase --silent --force
+          fi
 
           # Deployer keypair: use funded secret if available, else generate new
           if [ -n "$DEVNET_FUNDED_KEYPAIR" ]; then
@@ -75,6 +95,30 @@ jobs:
           echo "TEST_PID=$TEST_PID"
           sed -i "s/7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc/$TEST_PID/g" programs/evo/src/lib.rs Anchor.toml
           grep -n "$TEST_PID" programs/evo/src/lib.rs Anchor.toml
+
+      - name: Reclaim rent from orphaned programs
+        env:
+          DEVNET_FUNDED_KEYPAIR: ${{ secrets.DEVNET_FUNDED_KEYPAIR }}
+        run: |
+          solana config set --url devnet --keypair ~/.config/solana/id.json 2>/dev/null
+          DEPLOYER=$(solana-keygen pubkey ~/.config/solana/id.json)
+          CURRENT_PID=$(solana-keygen pubkey target/deploy/evo-keypair.json)
+          echo "Deployer: $DEPLOYER  |  Current program: $CURRENT_PID"
+          echo "Balance before reclaim: $(solana balance 2>/dev/null || echo '0 SOL')"
+
+          # Close every program this deployer is the upgrade authority of, EXCEPT
+          # the one we are about to deploy/upgrade. Returns rent to the deployer.
+          RECLAIMED=0
+          # `solana program show --author <pubkey>` lists programs where <pubkey> is
+          # the upgrade authority. Parse the program-id column (skip header lines).
+          solana program show --author "$DEPLOYER" 2>/dev/null | awk 'NR>1{print $1}' | while read pid; do
+            # skip empty lines and the current program
+            [ -z "$pid" ] && continue
+            [ "$pid" = "$CURRENT_PID" ] && { echo "Keeping current program: $pid"; continue; }
+            echo "Closing orphaned program: $pid"
+            solana program close "$pid" --bypass-warning 2>&1 || echo "⚠️ could not close $pid"
+          done
+          echo "Balance after reclaim: $(solana balance 2>/dev/null || echo '0 SOL')"
 
       - name: Fund wallet on devnet
         env:
