@@ -256,21 +256,34 @@ export default function DocsPage() {
                   </tr>
                   <tr>
                     <td className="py-2 pr-4 font-mono text-text-strong">Speculation</td>
-                    <td className="py-2 pr-4">Hype-driven, no floor guarantee</td>
-                    <td className="py-2 pr-4">Hype-driven, LP-dependent</td>
+                    <td className="py-2 pr-4">Hype + scarcity driven</td>
+                    <td className="py-2 pr-4">Viral + LP depth driven</td>
                     <td className="py-2 pr-4 text-accent">Market premium + locked floor. Speculate on top, not against the floor.</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-4 font-mono text-text-strong">Strength</td>
+                    <td className="py-2 pr-4 text-positive">Deep marketplaces, strong culture</td>
+                    <td className="py-2 pr-4 text-positive">Instant liquidity, viral reach</td>
+                    <td className="py-2 pr-4 text-positive">Guaranteed floor, evolving state</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-4 font-mono text-text-strong">Weakness</td>
+                    <td className="py-2 pr-4 text-negative">Floor can go to zero</td>
+                    <td className="py-2 pr-4 text-negative">LP can be pulled</td>
+                    <td className="py-2 pr-4 text-dim">Max 20% shatter fee, newer ecosystem</td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <p className="mt-4 text-xs leading-relaxed text-muted">
-              <span className="text-text-strong">NFTs</span> give you ownership of an image with no
-              guaranteed value. <span className="text-text-strong">Meme tokens</span> give you
-              fungible units that depend on liquidity pools that can vanish.
-              <span className="text-text-strong"> EVO</span> combines the uniqueness of an NFT with
-              the redeemability of a token — you own a non-fungible, evolving asset backed by real
-              SOL that you can exit at any time. The market sets the premium; the locked SOL sets
-              the floor.
+              <span className="text-text-strong">NFTs</span> built culture and community on art and
+              scarcity — they proved people will pay for digital ownership. <span className="text-text-strong">
+              Meme tokens</span> proved liquidity and virality can move real money at speed. Both have
+              real value drivers and real risks. <span className="text-text-strong">EVO</span> takes the
+              non-fungible ownership of NFTs, the liquidity option of tokens, and adds a guaranteed
+              floor backed by locked SOL. It is not better at everything — NFTs have deeper marketplaces
+              and meme tokens have stronger liquidity. EVO is a different tradeoff: you give up some
+              ecosystem maturity for a floor that cannot go to zero.
             </p>
           </div>
         </div>

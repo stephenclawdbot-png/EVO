@@ -206,6 +206,65 @@ export default function DegensPage() {
               </div>
             ))}
           </div>
+
+          {/* NFT vs Meme Token vs EVO -- balanced, fair */}
+          <div className="mt-10">
+            <h3 className="text-center text-xs font-semibold uppercase tracking-wider text-dim">
+              How EVO compares to NFTs and meme tokens
+            </h3>
+            <p className="mt-2 text-center text-xs text-muted">
+              Each has strengths. EVO borrows from both and adds a floor.
+            </p>
+            <div className="mt-6 overflow-x-auto rounded border border-border">
+              <div className="grid min-w-[560px] grid-cols-4 gap-px bg-border">
+                <div className="bg-bg p-3" />
+                <div className="bg-bg p-3 text-center text-[11px] font-semibold uppercase tracking-wide text-warn">NFT</div>
+                <div className="bg-bg p-3 text-center text-[11px] font-semibold uppercase tracking-wide text-negative">Meme Token</div>
+                <div className="bg-bg p-3 text-center text-[11px] font-semibold uppercase tracking-wide text-accent">EVO</div>
+
+                <div className="bg-bg p-3 text-xs font-medium text-muted">What backs it</div>
+                <div className="bg-bg p-3 text-center text-xs text-dim">Art + community</div>
+                <div className="bg-bg p-3 text-center text-xs text-dim">Liquidity pool</div>
+                <div className="bg-bg p-3 text-center text-xs text-accent">SOL locked in PDA</div>
+
+                <div className="bg-bg p-3 text-xs font-medium text-muted">Floor</div>
+                <div className="bg-bg p-3 text-center text-xs text-dim">Market sentiment</div>
+                <div className="bg-bg p-3 text-center text-xs text-dim">Pool depth</div>
+                <div className="bg-bg p-3 text-center text-xs text-accent">Locked SOL (guaranteed)</div>
+
+                <div className="bg-bg p-3 text-xs font-medium text-muted">Upside</div>
+                <div className="bg-bg p-3 text-center text-xs text-dim">Hype + scarcity</div>
+                <div className="bg-bg p-3 text-center text-xs text-dim">Viral + LP growth</div>
+                <div className="bg-bg p-3 text-center text-xs text-dim">Hype + floor + evolution</div>
+
+                <div className="bg-bg p-3 text-xs font-medium text-muted">Liquidity</div>
+                <div className="bg-bg p-3 text-center text-xs text-dim">Needs a buyer</div>
+                <div className="bg-bg p-3 text-center text-xs text-positive">Instant via LP</div>
+                <div className="bg-bg p-3 text-center text-xs text-positive">Shatter (instant) or sell</div>
+
+                <div className="bg-bg p-3 text-xs font-medium text-muted">Rug risk</div>
+                <div className="bg-bg p-3 text-center text-xs text-dim">Creator can abandon</div>
+                <div className="bg-bg p-3 text-center text-xs text-dim">Devs can pull LP</div>
+                <div className="bg-bg p-3 text-center text-xs text-accent">SOL is in PDA, not creator wallet</div>
+
+                <div className="bg-bg p-3 text-xs font-medium text-muted">Uniqueness</div>
+                <div className="bg-bg p-3 text-center text-xs text-positive">1-of-1 or limited set</div>
+                <div className="bg-bg p-3 text-center text-xs text-dim">Fungible (identical units)</div>
+                <div className="bg-bg p-3 text-center text-xs text-positive">Non-fungible, evolves</div>
+
+                <div className="bg-bg p-3 text-xs font-medium text-muted">Weakness</div>
+                <div className="bg-bg p-3 text-center text-xs text-negative">Floor can hit zero</div>
+                <div className="bg-bg p-3 text-center text-xs text-negative">LP can drain</div>
+                <div className="bg-bg p-3 text-center text-xs text-dim">Max 20% shatter fee on exit</div>
+              </div>
+            </div>
+            <p className="mt-4 text-center text-xs leading-relaxed text-muted">
+              NFTs built a massive culture on art and community. Meme tokens proved liquidity and
+              virality can move real money. EVO takes the non-fungible ownership of NFTs, the
+              liquidity option of tokens, and adds a guaranteed floor backed by locked SOL. It is
+              not better at everything -- it is a different tradeoff.
+            </p>
+          </div>
         </div>
       </section>
 
