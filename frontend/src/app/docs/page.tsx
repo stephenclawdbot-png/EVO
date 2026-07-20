@@ -111,7 +111,7 @@ export default function DocsPage() {
               <h3 className="text-xs font-semibold uppercase tracking-wider text-dim">Traditional NFT</h3>
               <div className="mt-4 flex flex-col items-center gap-2">
                 <div className="flex h-28 w-28 items-center justify-center rounded-lg border-2 border-dashed border-border-strong bg-surface-2">
-                  <span className="text-3xl">🖼️</span>
+                  <span className="text-xs font-mono text-dim">IMG</span>
                 </div>
                 <div className="text-center text-xs text-muted">
                   <p className="font-mono text-text-strong">image file</p>
@@ -161,7 +161,7 @@ export default function DocsPage() {
             </p>
           </div>
 
-          {/* ── Visual: EVO ↔ Meld relationship ── */}
+          {/* ── Visual: EVO <-> Meld relationship ── */}
           <div className="mt-10 rounded-lg border border-border bg-bg p-8">
             <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-center sm:gap-10">
               <div className="flex flex-col items-center">
@@ -193,21 +193,21 @@ export default function DocsPage() {
               <div className="rounded border border-border p-3">
                 <p className="font-semibold text-accent">Meld handles</p>
                 <ul className="mt-2 space-y-1 text-muted">
-                  <li>• Wallet connection (Phantom, Solflare)</li>
-                  <li>• Create / forge / trade UI</li>
-                  <li>• Collection browsing &amp; search</li>
-                  <li>• Portfolio &amp; admin views</li>
-                  <li>• Visual rendering of on-chain state</li>
+                  <li>- Wallet connection (Phantom, Solflare)</li>
+                  <li>- Create / forge / trade UI</li>
+                  <li>- Collection browsing &amp; search</li>
+                  <li>- Portfolio &amp; admin views</li>
+                  <li>- Visual rendering of on-chain state</li>
                 </ul>
               </div>
               <div className="rounded border border-border p-3">
                 <p className="font-semibold text-text-strong">EVO handles</p>
                 <ul className="mt-2 space-y-1 text-muted">
-                  <li>• SOL locking &amp; floor value</li>
-                  <li>• Lifecycle state machine</li>
-                  <li>• Marketplace escrow &amp; settlement</li>
-                  <li>• Shatter (burn → reclaim SOL)</li>
-                  <li>• Manifest verification (Merkle)</li>
+                  <li>- SOL locking &amp; floor value</li>
+                  <li>- Lifecycle state machine</li>
+                  <li>- Marketplace escrow &amp; settlement</li>
+                  <li>- Shatter (burn, reclaim SOL)</li>
+                  <li>- Manifest verification (Merkle)</li>
                 </ul>
               </div>
             </div>
@@ -291,7 +291,7 @@ export default function DocsPage() {
               </div>
               <div className="my-2 flex flex-col items-center text-dim">
                 <div className="h-6 w-px bg-border-strong" />
-                <span className="text-[10px]">↕</span>
+                <span className="text-[10px]">/\</span>
                 <div className="h-6 w-px bg-border-strong" />
               </div>
             </div>
@@ -300,7 +300,7 @@ export default function DocsPage() {
             <div className="flex flex-col items-center">
               <div className="rounded-lg border border-accent/40 bg-accent-soft px-6 py-4 text-center">
                 <p className="text-xs font-semibold text-accent">Meld Terminal (frontend)</p>
-                <p className="mt-1 text-[10px] text-dim">Next.js · wallet adapter · RPC calls</p>
+                <p className="mt-1 text-[10px] text-dim">Next.js | wallet adapter | RPC calls</p>
                 <p className="text-[10px] text-dim">meldterminal.io</p>
               </div>
               <div className="my-2 flex flex-col items-center text-dim">
@@ -328,7 +328,7 @@ export default function DocsPage() {
               <div className="rounded-lg border-2 border-text-strong bg-surface px-8 py-5 text-center">
                 <p className="text-sm font-bold text-text-strong">EVO Program</p>
                 <p className="mt-1 text-[10px] text-dim font-mono">HGLPG19Vkg3nNS1VJfPqY8Wtu2Ets4oKMTxAZRDRe3Ei</p>
-                <p className="mt-1 text-[10px] text-dim">17 instructions · Anchor framework</p>
+                <p className="mt-1 text-[10px] text-dim">17 instructions | Anchor framework</p>
               </div>
               <div className="my-2 flex flex-col items-center text-dim">
                 <div className="h-6 w-px bg-border-strong" />
@@ -340,10 +340,10 @@ export default function DocsPage() {
             {/* Layer 5: On-chain accounts */}
             <div className="grid gap-3 sm:grid-cols-4">
               {[
-                { name: 'Protocol Config', desc: 'treasury · fee · authority', icon: '⚙' },
-                { name: 'Collection', desc: 'config · lifecycle · supply', icon: '📦' },
-                { name: 'EVO Account', desc: 'owner · locked SOL · state', icon: '🔒' },
-                { name: 'Listing', desc: 'seller · price · EVO ref', icon: '🏷' },
+                { name: 'Protocol Config', desc: 'treasury / fee / authority', icon: 'CFG' },
+                { name: 'Collection', desc: 'config / lifecycle / supply', icon: 'COL' },
+                { name: 'EVO Account', desc: 'owner / locked SOL / state', icon: 'EVO' },
+                { name: 'Listing', desc: 'seller / price / EVO ref', icon: 'LST' },
               ].map((acct) => (
                 <div key={acct.name} className="rounded border border-border bg-surface-2 p-3 text-center">
                   <div className="text-lg">{acct.icon}</div>
@@ -362,24 +362,24 @@ export default function DocsPage() {
               <div className="rounded-lg border border-border bg-bg p-4">
                 <p className="text-xs font-semibold text-text-strong">Forge (mint)</p>
                 <div className="mt-3 space-y-1 text-[10px] text-muted">
-                  <p>→ SOL locked in <span className="font-mono text-accent">EVO PDA</span></p>
+                  <p>{'->'} SOL locked in <span className="font-mono text-accent">EVO PDA</span></p>
                   <p className="text-dim">This is the floor value. Belongs to holder.</p>
                 </div>
               </div>
               <div className="rounded-lg border border-border bg-bg p-4">
                 <p className="text-xs font-semibold text-text-strong">Buy (marketplace)</p>
                 <div className="mt-3 space-y-1 text-[10px] text-muted">
-                  <p>→ SOL to <span className="font-mono text-positive">seller</span></p>
-                  <p>→ Royalty to <span className="font-mono text-warn">creator</span></p>
-                  <p>→ Locked SOL stays in <span className="font-mono text-accent">PDA</span></p>
+                  <p>{'->'} SOL to <span className="font-mono text-positive">seller</span></p>
+                  <p>{'->'} Royalty to <span className="font-mono text-warn">creator</span></p>
+                  <p>{'->'} Locked SOL stays in <span className="font-mono text-accent">PDA</span></p>
                 </div>
               </div>
               <div className="rounded-lg border border-border bg-bg p-4">
                 <p className="text-xs font-semibold text-text-strong">Shatter (exit)</p>
                 <div className="mt-3 space-y-1 text-[10px] text-muted">
-                  <p>→ Locked SOL to <span className="font-mono text-positive">holder</span></p>
-                  <p>→ Shatter fee to <span className="font-mono text-warn">collection</span></p>
-                  <p>→ EVO burned. Account closed.</p>
+                  <p>{'->'} Locked SOL to <span className="font-mono text-positive">holder</span></p>
+                  <p>{'->'} Shatter fee to <span className="font-mono text-warn">collection</span></p>
+                  <p>{'->'} EVO burned. Account closed.</p>
                 </div>
               </div>
             </div>
@@ -539,7 +539,7 @@ export default function DocsPage() {
             <Link href="/degens" className="transition-colors hover:text-text">Degen Guide</Link>
             <a href="https://github.com/stephenclawdbot-png/EVO" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">GitHub</a>
             <a href="https://solscan.io/account/HGLPG19Vkg3nNS1VJfPqY8Wtu2Ets4oKMTxAZRDRe3Ei" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Program</a>
-            <span>Powered by <a href="https://www.helius.dev/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Helius</a> · <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Supabase</a> · <a href="https://solana.com/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Solana</a></span>
+            <span>Powered by <a href="https://www.helius.dev/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Helius</a> | <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Supabase</a> | <a href="https://solana.com/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Solana</a></span>
           </div>
         </div>
       </footer>
