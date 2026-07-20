@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* Class-based theme variants. The theme toggle adds/removes `.light` on <html>.
+   `dark:` matches when `.light` is NOT present (dark theme active).
+   `light:` matches when `.light` is present (light theme active).
+   This overrides Tailwind's default `prefers-color-scheme` behavior so the
+   logo and any `dark:`/`light:` utilities follow the toggle, not the OS. */
+@custom-variant light (&:where(.light, .light *));
+@custom-variant dark (&:where(:not(.light):not(.light *)));
+
 /* ===== Trading terminal theme =====
    Dark monochrome is default. Light is a clean institutional alternative.
    Tokens: bg, surface, surface-2, border, border-strong, text, text-strong,

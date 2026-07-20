@@ -97,8 +97,10 @@ pub mod evo {
     /// - Seller receives: price - royalty
     /// - Royalty destination receives: price * royalty_bps / 10000
     /// The EVO's trade count increments and a fracture line is recorded.
-    pub fn buy(ctx: Context<Buy>, evo_id: u32) -> Result<()> {
-        instructions::buy::buy(ctx, evo_id)
+    /// `max_price` is the buyer's slippage cap — reverts if the on-chain listing
+    /// price exceeds it (protects against delist+relist MEV front-running).
+    pub fn buy(ctx: Context<Buy>, evo_id: u32, max_price: u64) -> Result<()> {
+        instructions::buy::buy(ctx, evo_id, max_price)
     }
 
     /// Shatter an EVO to reclaim locked SOL.

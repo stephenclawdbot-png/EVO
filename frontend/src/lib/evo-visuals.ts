@@ -148,6 +148,52 @@ export function normalizeUri(uri: string): string {
   return uri;
 }
 
+/**
+ * Allowlist of gateway hosts permitted for client-side fetches of creator-supplied
+ * URIs (collection metadataUri, EVO image URLs). Prevents SSRF / IP-leak to
+ * attacker-controlled servers from malicious collections. Add gateways here only
+ * after review; never allow arbitrary `http(s)://` hosts.
+ */
+const ALLOWED_GATEWAY_HOSTS = new Set<string>([
+  'dweb.link',
+  'gateway.irys.xyz',
+  'arweave.net',
+  'nftstorage.link',
+  'cloudflare-ipfs.com',
+  'ipfs.io',
+]);
+
+/** Returns true if `uri` is an allowlisted gateway https URL (or an ipfs/arweave URI). */
+export function isAllowedGatewayUri(uri: string): boolean {
+  if (!uri) return false;
+  // Native decentralized schemes are safe — they always normalize to an allowlisted gateway.
+  if (uri.startsWith('ipfs://') || uri.startsWith('arweave://')) return true;
+  try {
+    const u = new URL(uri);
+    if (u.protocol !== 'https:') return false;
+    return ALLOWED_GATEWAY_HOSTS.has(u.host);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Fetch a creator-supplied URI safely. Returns null if the URI is not an allowlisted
+ * gateway (SSRF guard). Always uses normalizeUri first to expand ipfs/arweave schemes.
+ */
+export async function safeGatewayFetch(
+  uri: string,
+  init?: RequestInit,
+): Promise<Response | null> {
+  const expanded = normalizeUri(uri);
+  if (!isAllowedGatewayUri(expanded)) return null;
+  try {
+    return await fetch(expanded, init);
+  } catch {
+    return null;
+  }
+}
+
 // ─── Bulk Manifest Support ──────────────────────────────────
 /** Check if a raw object is a bulk manifest (from BulkArtworkUploader). */
 function isBulkManifest(raw: unknown): boolean {
@@ -256,8 +302,8 @@ export async function fetchVisualManifest(
   }
 
   try {
-    const res = await fetch(normalizeUri(metadataUri), { cache: 'no-store' });
-    if (!res.ok) return null;
+    const res = await safeGatewayFetch(metadataUri, { cache: 'no-store' });
+    if (!res || !res.ok) return null;
     const rawText = await res.text();
     const data = JSON.parse(rawText);
 
@@ -344,8 +390,8 @@ export async function verifyEvoImageHash(
   }
 
   try {
-    const res = await fetch(imageUrl, { cache: 'no-store' });
-    if (!res.ok) return { status: 'unchecked', expectedHash: entry.hash };
+    const res = await safeGatewayFetch(imageUrl, { cache: 'no-store' });
+    if (!res || !res.ok) return { status: 'unchecked', expectedHash: entry.hash };
     const buf = new Uint8Array(await res.arrayBuffer());
     const actualHash = await sha256Hex(buf);
     return {

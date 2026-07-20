@@ -38,7 +38,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
   const [listPrice, setListPrice] = useState('');
   const [feedAmount, setFeedAmount] = useState('');
   const [transferAddress, setTransferAddress] = useState('');
-  const [tab, setTab] = useState<'overview' | 'activity' | 'holders'>('overview');
+  const [tab, setTab] = useState<'overview' | 'state' | 'activity' | 'holders'>('overview');
   const [creator, setCreator] = useState<string | null>(null);
   const [metadataUri, setMetadataUri] = useState<string | null>(null);
   const [isRevealed, setIsRevealed] = useState<boolean | undefined>(undefined);
@@ -164,6 +164,10 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
         new PublicKey(evo.evoPda!), collectionPda,
         new PublicKey(evo.owner), cfg.creator, wallet.publicKey!, proto.treasury,
         cfg.royaltyDestination, cfg.burnDestination, evo.id,
+        // Slippage cap: buyer authorizes the exact listed price in lamports.
+        // The on-chain `buy` reverts if the seller front-runs with delist+relist
+        // at a higher price in the same slot.
+        BigInt(evo.listPriceLamports ?? 0),
       ));
       if (sig) { setTxResult(sig); onRefresh?.(); }
     } catch (err: any) { setError(err.message || 'Buy failed'); } finally { setAction(null); }
@@ -286,59 +290,10 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
               </div>
             )}
 
-            {/* Evolution progress */}
-            {evolveThresholds && (evolveThresholds.lifecycleType === 'RevealAndEvolve' || evolveThresholds.lifecycleType === 'Custom')
-              && evolveThresholds.maxStates > 1 && evo.currentState < evolveThresholds.maxStates - 1 && !evo.isShattered && (
-              <div className="mt-3 rounded border border-border bg-surface p-3">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-dim">
-                  Progress to stage {evo.currentState + 2}
-                </p>
-                <div className="space-y-2">
-                  {evolveThresholds.trade > 0 && (
-                    <EvoProgress
-                      label="Trades"
-                      current={evo.tradeCount}
-                      required={evolveThresholds.trade * (evo.currentState + 1)}
-                    />
-                  )}
-                  {evolveThresholds.feed > 0 && (
-                    <EvoProgress
-                      label="Fed"
-                      current={evo.totalFedLamports}
-                      required={evolveThresholds.feed * (evo.currentState + 1)}
-                      format={(lamports) => `${(lamports / 1_000_000_000).toFixed(4)} SOL`}
-                    />
-                  )}
-                  {evolveThresholds.hold > 0 && (
-                    <EvoProgress
-                      label="Hold time"
-                      current={Math.max(0, Math.floor(Date.now() / 1000) - Math.floor(evo.lastTransitionAt / 1000))}
-                      required={evolveThresholds.hold * (evo.currentState + 1)}
-                      format={(s) => {
-                        if (s < 3600) return `${Math.floor(s / 60)}m`;
-                        if (s < 86400) return `${(s / 3600).toFixed(1)}h`;
-                        return `${Math.floor(s / 86400)}d ${(s % 86400) / 3600 | 0}h`;
-                      }}
-                    />
-                  )}
-                  {evolveThresholds.locked > 0 && (
-                    <EvoProgress
-                      label="Locked"
-                      current={Math.round(evo.lockedLamports * 1_000_000_000)}
-                      required={evolveThresholds.locked * (evo.currentState + 1)}
-                      format={(lamports) => `${(lamports / 1_000_000_000).toFixed(4)} SOL`}
-                    />
-                  )}
-                </div>
-                <p className="mt-2 text-[10px] text-dim">
-                  All conditions must be met. Anyone can trigger evolution.
-                </p>
-              </div>
-            )}
-
             {/* Tabs */}
             <div className="mt-4 flex border-b border-border">
               <TabBtn active={tab === 'overview'} onClick={() => setTab('overview')}>Overview</TabBtn>
+              <TabBtn active={tab === 'state'} onClick={() => setTab('state')}>State</TabBtn>
               <TabBtn active={tab === 'activity'} onClick={() => setTab('activity')}>
                 Activity {evo.fractureLines.length > 0 && `(${evo.fractureLines.length})`}
               </TabBtn>
@@ -382,6 +337,138 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                     <p className="text-[10px] uppercase tracking-wide text-dim">Resonance Seed</p>
                     <p className="mt-1 break-all font-mono text-[11px] text-muted">{evo.resonanceSeed}</p>
                   </div>
+                </div>
+              )}
+
+              {tab === 'state' && (
+                <div className="space-y-3">
+                  {/* Lifecycle type */}
+                  <div className="rounded border border-border bg-surface px-3 py-2.5">
+                    <p className="text-[10px] uppercase tracking-wide text-dim">Lifecycle Type</p>
+                    <p className="mt-1 text-sm font-semibold text-text-strong">
+                      {evolveThresholds ? lifecycleLabel(evolveThresholds.lifecycleType) : '—'}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-muted">
+                      {evolveThresholds ? lifecycleDesc(evolveThresholds.lifecycleType) : 'Collection config not loaded.'}
+                    </p>
+                  </div>
+
+                  {/* Reveal + shatter fee + max states grid */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <Prop label="Reveal" value={isRevealed === undefined ? '—' : isRevealed ? 'Yes' : 'Hidden'} />
+                    <Prop label="Max Stages" value={evolveThresholds ? String(evolveThresholds.maxStates) : '—'} />
+                    <Prop label="Shatter Fee" value={`${(shatterFeeBps / 100).toFixed(1)}%`} />
+                  </div>
+
+                  {/* Backed SOL */}
+                  <div className="rounded border border-accent/30 bg-accent-soft px-3 py-2.5">
+                    <p className="text-[10px] uppercase tracking-wide text-accent">Backed SOL (locked)</p>
+                    <p className="mt-1 font-mono text-lg font-bold text-text-strong">
+                      {evo.lockedLamports} <span className="text-xs text-muted">SOL</span>
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-dim">
+                      Recoverable anytime via shatter (minus fee).
+                    </p>
+                  </div>
+
+                  {/* Evolution rules */}
+                  {evolveThresholds && evolveThresholds.maxStates > 1 && (
+                    <div className="rounded border border-border bg-surface px-3 py-2.5">
+                      <p className="mb-2 text-[10px] uppercase tracking-wide text-dim">Evolution Rules</p>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px]">
+                        {evolveThresholds.trade > 0 && (
+                          <div><span className="text-dim">Trades:</span> <span className="font-mono text-muted">{evolveThresholds.trade} per stage</span></div>
+                        )}
+                        {evolveThresholds.feed > 0 && (
+                          <div><span className="text-dim">Feed:</span> <span className="font-mono text-muted">{(evolveThresholds.feed / 1_000_000_000).toFixed(4)} SOL per stage</span></div>
+                        )}
+                        {evolveThresholds.hold > 0 && (
+                          <div><span className="text-dim">Hold:</span> <span className="font-mono text-muted">{evolveThresholds.hold < 3600 ? `${Math.floor(evolveThresholds.hold / 60)}m` : evolveThresholds.hold < 86400 ? `${(evolveThresholds.hold / 3600).toFixed(1)}h` : `${Math.floor(evolveThresholds.hold / 86400)}d`} per stage</span></div>
+                        )}
+                        {evolveThresholds.locked > 0 && (
+                          <div><span className="text-dim">Locked:</span> <span className="font-mono text-muted">{(evolveThresholds.locked / 1_000_000_000).toFixed(4)} SOL per stage</span></div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Evolution progress */}
+                  {evolveThresholds && (evolveThresholds.lifecycleType === 'RevealAndEvolve' || evolveThresholds.lifecycleType === 'Custom')
+                    && evolveThresholds.maxStates > 1 && evo.currentState < evolveThresholds.maxStates - 1 && !evo.isShattered && (
+                    <div className="rounded border border-border bg-surface p-3">
+                      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-dim">
+                        Progress to stage {evo.currentState + 2}
+                      </p>
+                      <div className="space-y-2">
+                        {evolveThresholds.trade > 0 && (
+                          <EvoProgress
+                            label="Trades"
+                            current={evo.tradeCount}
+                            required={evolveThresholds.trade * (evo.currentState + 1)}
+                          />
+                        )}
+                        {evolveThresholds.feed > 0 && (
+                          <EvoProgress
+                            label="Fed"
+                            current={evo.totalFedLamports}
+                            required={evolveThresholds.feed * (evo.currentState + 1)}
+                            format={(lamports) => `${(lamports / 1_000_000_000).toFixed(4)} SOL`}
+                          />
+                        )}
+                        {evolveThresholds.hold > 0 && (
+                          <EvoProgress
+                            label="Hold time"
+                            current={Math.max(0, Math.floor(Date.now() / 1000) - Math.floor(evo.lastTransitionAt / 1000))}
+                            required={evolveThresholds.hold * (evo.currentState + 1)}
+                            format={(s) => {
+                              if (s < 3600) return `${Math.floor(s / 60)}m`;
+                              if (s < 86400) return `${(s / 3600).toFixed(1)}h`;
+                              return `${Math.floor(s / 86400)}d ${(s % 86400) / 3600 | 0}h`;
+                            }}
+                          />
+                        )}
+                        {evolveThresholds.locked > 0 && (
+                          <EvoProgress
+                            label="Locked"
+                            current={Math.round(evo.lockedLamports * 1_000_000_000)}
+                            required={evolveThresholds.locked * (evo.currentState + 1)}
+                            format={(lamports) => `${(lamports / 1_000_000_000).toFixed(4)} SOL`}
+                          />
+                        )}
+                      </div>
+                      <p className="mt-2 text-[10px] text-dim">
+                        All conditions must be met. Anyone can trigger evolution.
+                      </p>
+                    </div>
+                  )}
+
+                  {evo.isShattered && (
+                    <div className="rounded border border-negative/30 bg-negative-soft px-3 py-2.5">
+                      <p className="text-sm font-semibold text-negative">Shattered</p>
+                      <p className="mt-0.5 text-[11px] text-muted">This EVO has been shattered. Locked SOL was recovered. The art remains as a permanent record.</p>
+                    </div>
+                  )}
+
+                  {/* Manifest verification */}
+                  {manifestVerification && (
+                    <div className="rounded border border-border bg-surface px-3 py-2.5">
+                      <p className="text-[10px] uppercase tracking-wide text-dim">Artwork Manifest</p>
+                      <div className="mt-1.5 flex items-center gap-2">
+                        {manifestVerification.status === 'verified' ? (
+                          <><IconCheck className="h-4 w-4 text-positive" /><span className="text-xs text-positive">Hash verified on-chain</span></>
+                        ) : manifestVerification.status === 'mismatch' ? (
+                          <><IconAlertTriangle className="h-4 w-4 text-negative" /><span className="text-xs text-negative">Hash mismatch — art may be tampered</span></>
+                        ) : manifestVerification.status === 'no-hash' ? (
+                          <><IconAlertTriangle className="h-4 w-4 text-dim" /><span className="text-xs text-dim">No on-chain hash committed</span></>
+                        ) : (
+                          <><IconAlertTriangle className="h-4 w-4 text-dim" /><span className="text-xs text-dim">Unchecked</span></>
+                        )}
+                      </div>
+                      {manifestVerification.expectedHash && (
+                        <p className="mt-1 break-all font-mono text-[10px] text-dim">{manifestVerification.expectedHash}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -712,6 +799,28 @@ function EvoProgress({ label, current, required, format }: {
       </div>
     </div>
   );
+}
+
+function lifecycleLabel(type: string): string {
+  switch (type) {
+    case 'Static': return 'Static';
+    case 'Reveal': return 'Reveal';
+    case 'CommitReveal': return 'Commit-Reveal';
+    case 'RevealAndEvolve': return 'Reveal & Evolve';
+    case 'Custom': return 'Custom';
+    default: return type;
+  }
+}
+
+function lifecycleDesc(type: string): string {
+  switch (type) {
+    case 'Static': return 'Art never changes. Simplest lifecycle.';
+    case 'Reveal': return 'Art starts hidden, revealed by the creator.';
+    case 'CommitReveal': return 'Provably fair reveal — no one can peek or change the art.';
+    case 'RevealAndEvolve': return 'Art reveals, then evolves through stages as collectors feed it SOL.';
+    case 'Custom': return 'Full creative control — evolve and manually switch art stages anytime.';
+    default: return '';
+  }
 }
 
 function Sparkline({ points, color }: { points: number[]; color: string }) {

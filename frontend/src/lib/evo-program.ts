@@ -588,6 +588,7 @@ export function createBuyIx(
   royaltyDest: FeeDestination,
   burnDestination: PublicKey,
   evoId: number,
+  maxPriceLamports: bigint,
 ): TransactionInstruction {
   const incinerator = (royaltyDest === 'Burn')
     ? (burnDestination.equals(PublicKey.default) ? INCINERATOR : burnDestination)
@@ -604,13 +605,17 @@ export function createBuyIx(
     { pubkey: creator, isSigner: false, isWritable: true },
     { pubkey: (royaltyDest === 'Treasury' || royaltyDest === 'Split') ? treasury : SystemProgram.programId, isSigner: false, isWritable: true },
     { pubkey: incinerator, isSigner: false, isWritable: true },
+    // incinerator_fallback — always the canonical INCINERATOR. Required by the
+    // program in case the configured burn_destination is a program-owned PDA.
+    { pubkey: INCINERATOR, isSigner: false, isWritable: true },
     { pubkey: buyer, isSigner: true, isWritable: true },
     { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
   ];
   return new TransactionInstruction({
     programId: PROGRAM_ID,
     keys,
-    data: Buffer.concat([DISC.buy, writeU32(evoId)]),
+    // buy(evo_id: u32, max_price: u64)
+    data: Buffer.concat([DISC.buy, writeU32(evoId), writeU64(Number(maxPriceLamports))]),
   });
 }
 
@@ -636,6 +641,8 @@ export function createShatterIx(
     { pubkey: creator, isSigner: false, isWritable: true },
     { pubkey: (treasury && (shatterFeeDest === 'Treasury' || shatterFeeDest === 'Split')) ? treasury : SystemProgram.programId, isSigner: false, isWritable: true },
     { pubkey: incinerator, isSigner: false, isWritable: true },
+    // incinerator_fallback — always the canonical INCINERATOR.
+    { pubkey: INCINERATOR, isSigner: false, isWritable: true },
     { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
   ];
   const data = Buffer.concat([DISC.shatter, writeU32(evoId)]);

@@ -85,6 +85,7 @@ export default function CreateCollectionPage() {
   const [website, setWebsite] = useState('');
   const [twitter, setTwitter] = useState('');
   const [telegram, setTelegram] = useState('');
+  const [discord, setDiscord] = useState('');
 
   // Economics
   const [mintPriceSol, setMintPriceSol] = useState('0.1');
@@ -224,6 +225,7 @@ export default function CreateCollectionPage() {
     if (website.trim()) socialParams.set('website', website.trim());
     if (twitter.trim()) socialParams.set('twitter', twitter.trim());
     if (telegram.trim()) socialParams.set('telegram', telegram.trim());
+    if (discord.trim()) socialParams.set('discord', discord.trim());
     if (logoUri) socialParams.set('logo', logoUri);
     const finalMetadataUri = socialParams.toString()
       ? `${effectiveMetadataUri}${effectiveMetadataUri.includes('?') ? '&' : '?'}${socialParams.toString()}`
@@ -386,7 +388,7 @@ export default function CreateCollectionPage() {
                     <input type="number" className={inputCls} value={supplyCap} onChange={e => setSupplyCap(e.target.value)} />
                   </div>
                 </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label className={labelCls}>Website</label>
                     <input className={inputCls} value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://…" />
@@ -398,6 +400,10 @@ export default function CreateCollectionPage() {
                   <div>
                     <label className={labelCls}>Telegram</label>
                     <input className={inputCls} value={telegram} onChange={e => setTelegram(e.target.value)} placeholder="https://t.me/…" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Discord</label>
+                    <input className={inputCls} value={discord} onChange={e => setDiscord(e.target.value)} placeholder="https://discord.gg/…" />
                   </div>
                 </div>
               </div>

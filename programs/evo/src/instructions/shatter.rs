@@ -49,6 +49,14 @@ pub struct Shatter<'info> {
     #[account(mut)]
     pub incinerator: UncheckedAccount<'info>,
 
+    /// Fallback burn target — always the canonical Solana INCINERATOR.
+    /// Used when `incinerator` ends up being a program-owned PDA (e.g. a
+    /// malicious creator set `burn_destination` to an EVO PDA to trap SOL).
+    /// Without this fallback the locked SOL would be unrecoverable.
+    /// CHECK: Verified at runtime to be the canonical INCINERATOR.
+    #[account(mut)]
+    pub incinerator_fallback: UncheckedAccount<'info>,
+
     pub system_program: Program<'info, System>,
 }
 
@@ -77,6 +85,16 @@ pub fn shatter(ctx: Context<Shatter>, evo_id: u32) -> Result<()> {
     // System Program transfer CPI does NOT work on program-owned accounts.
     let evo_info = evo.to_account_info();
 
+    // Resolve the actual burn target. If `incinerator` is program-owned
+    // (the malicious-collision case), fall back to the canonical INCINERATOR
+    // so locked SOL is never trapped. The fallback account must match the
+    // canonical INCINERATOR address.
+    let canonical_incinerator = crate::constants::INCINERATOR;
+    require!(
+        ctx.accounts.incinerator_fallback.key() == canonical_incinerator,
+        EvoError::InvalidBurnDestination
+    );
+
     if fee > 0 {
         match collection.shatter_fee_destination {
             FeeDestination::Creator => {
@@ -97,7 +115,7 @@ pub fn shatter(ctx: Context<Shatter>, evo_id: u32) -> Result<()> {
             }
             FeeDestination::Burn => {
                 let burn_dest = if collection.burn_destination == Pubkey::default() {
-                    INCINERATOR
+                    canonical_incinerator
                 } else {
                     collection.burn_destination
                 };
@@ -105,15 +123,18 @@ pub fn shatter(ctx: Context<Shatter>, evo_id: u32) -> Result<()> {
                     ctx.accounts.incinerator.key() == burn_dest,
                     EvoError::InvalidBurnDestination
                 );
-                // Prevent burn destination from being a program-owned PDA
-                // (stops creator from reclaiming "burned" fees via close_collection)
-                require!(
-                    ctx.accounts.incinerator.owner != &crate::ID,
-                    EvoError::BurnDestinationIsProgramPda
-                );
+                // Choose the actual target. If `incinerator` is owned by this
+                // program (e.g. a malicious creator set burn_destination to an
+                // EVO PDA), fall back to the canonical INCINERATOR. Otherwise
+                // use the configured burn destination.
+                let burn_target = if ctx.accounts.incinerator.owner == &crate::ID {
+                    &ctx.accounts.incinerator_fallback
+                } else {
+                    &ctx.accounts.incinerator
+                };
                 transfer_lamports(
                     &evo_info,
-                    &ctx.accounts.incinerator.to_account_info(),
+                    &burn_target.to_account_info(),
                     fee,
                 )?;
                 msg!("Burned {} lamports to burn destination", fee);

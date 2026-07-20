@@ -454,6 +454,7 @@ export default function DegensPage() {
           <span>Meld -- EVO Protocol -- Not financial advice, just better than a slot machine.</span>
           <div className="flex items-center gap-4">
             <Link href="/" className="transition-colors hover:text-text">Back to app</Link>
+            <Link href="/guide" className="transition-colors hover:text-text">Guide</Link>
             <Link href="/docs" className="transition-colors hover:text-text">Docs</Link>
             <a href="https://github.com/stephenclawdbot-png/EVO" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">GitHub</a>
             <span>Powered by <a href="https://www.helius.dev/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Helius</a> / <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Supabase</a> / <a href="https://solana.com/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Solana</a></span>

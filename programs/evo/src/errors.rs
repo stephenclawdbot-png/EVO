@@ -149,6 +149,9 @@ pub enum EvoError {
     #[msg("Burn destination cannot be a program-derived address of this program")]
     BurnDestinationIsProgramPda,
 
+    #[msg("Listing price exceeds buyer-supplied max_price (slippage protection)")]
+    PriceExceedsMax,
+
     #[msg("Cannot transfer EVO to the zero address")]
     InvalidNewOwner,
 

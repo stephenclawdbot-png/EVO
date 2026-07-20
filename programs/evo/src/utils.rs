@@ -73,12 +73,22 @@ pub fn route_fee<'info>(
     creator: &SystemAccount<'info>,
     treasury: Option<&SystemAccount<'info>>,
     incinerator: Option<&UncheckedAccount<'info>>,
+    incinerator_fallback: &UncheckedAccount<'info>,
     burn_destination: Pubkey,
     amount: u64,
 ) -> Result<()> {
     if amount == 0 {
         return Ok(());
     }
+
+    // The fallback must always be the canonical INCINERATOR. It is used when
+    // the configured burn destination turns out to be a program-owned PDA
+    // (malicious creator set burn_destination to an EVO PDA), so that the fee
+    // is burned for real rather than reverting and trapping funds.
+    require!(
+        incinerator_fallback.key() == crate::constants::INCINERATOR,
+        EvoError::InvalidBurnDestination
+    );
 
     match destination {
         FeeDestination::Creator => {
@@ -113,16 +123,19 @@ pub fn route_fee<'info>(
                 incinerator.key() == burn_dest,
                 EvoError::InvalidBurnDestination
             );
-            // Prevent burn destination from being a program-owned PDA
-            require!(
-                incinerator.owner != &crate::ID,
-                EvoError::BurnDestinationIsProgramPda
-            );
+            // If the configured burn destination is owned by this program
+            // (e.g. an EVO PDA set maliciously), fall back to the canonical
+            // INCINERATOR instead of reverting — never trap the user's funds.
+            let burn_target = if incinerator.owner == &crate::ID {
+                incinerator_fallback
+            } else {
+                incinerator
+            };
             let cpi_ctx = CpiContext::new(
                 system_program.to_account_info(),
                 Transfer {
                     from: from.to_account_info(),
-                    to: incinerator.to_account_info(),
+                    to: burn_target.to_account_info(),
                 },
             );
             transfer(cpi_ctx, amount)?;

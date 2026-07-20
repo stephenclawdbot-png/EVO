@@ -57,18 +57,33 @@ pub struct Buy<'info> {
     #[account(mut)]
     pub incinerator: Option<UncheckedAccount<'info>>,
 
+    /// Fallback burn target — always the canonical Solana INCINERATOR. Used
+    /// when `incinerator` is program-owned (malicious burn_destination = EVO
+    /// PDA). Without this, royalty routing would revert and break all buys.
+    /// CHECK: Verified at runtime in route_fee.
+    #[account(mut)]
+    pub incinerator_fallback: UncheckedAccount<'info>,
+
     #[account(mut)]
     pub buyer: Signer<'info>,
 
     pub system_program: Program<'info, System>,
 }
 
-pub fn buy(ctx: Context<Buy>, evo_id: u32) -> Result<()> {
+pub fn buy(ctx: Context<Buy>, evo_id: u32, max_price: u64) -> Result<()> {
     let evo = &mut ctx.accounts.evo;
     let collection = &ctx.accounts.collection_config;
     let price = ctx.accounts.listing.price_lamports;
 
     require!(price > 0, EvoError::InsufficientLamports);
+
+    // Slippage protection — buyer caps the price they will pay. Prevents the
+    // seller / MEV from front-running a pending buy with delist+relist at a
+    // higher price in the same slot.
+    require!(
+        price <= max_price,
+        EvoError::PriceExceedsMax
+    );
 
     // Prevent self-trade — buyer cannot be the seller
     require!(ctx.accounts.buyer.key() != ctx.accounts.seller.key(), EvoError::SelfTradeNotAllowed);
@@ -102,6 +117,7 @@ pub fn buy(ctx: Context<Buy>, evo_id: u32) -> Result<()> {
             &ctx.accounts.creator,
             ctx.accounts.treasury.as_ref(),
             ctx.accounts.incinerator.as_ref(),
+            &ctx.accounts.incinerator_fallback,
             collection.burn_destination,
             royalty,
         )?;

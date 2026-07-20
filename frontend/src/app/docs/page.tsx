@@ -669,6 +669,10 @@ export default function DocsPage() {
               className="inline-flex items-center gap-2 rounded bg-accent px-8 py-3 text-sm font-semibold text-[#0a0a0c] transition-colors hover:bg-accent-hover">
               Create a collection <IconArrowRight className="h-4 w-4" />
             </Link>
+            <Link href="/guide"
+              className="inline-flex items-center gap-2 rounded border border-border-strong px-8 py-3 text-sm font-semibold text-text transition-colors hover:bg-surface-2">
+              Creator & collector guide
+            </Link>
             <Link href="/degens"
               className="inline-flex items-center gap-2 rounded border border-border-strong px-8 py-3 text-sm font-semibold text-text transition-colors hover:bg-surface-2">
               Degen guide
@@ -683,6 +687,7 @@ export default function DocsPage() {
           <span>Meld — EVO Protocol — Assets that don&apos;t stay the same.</span>
           <div className="flex items-center gap-4">
             <Link href="/" className="transition-colors hover:text-text">Back to app</Link>
+            <Link href="/guide" className="transition-colors hover:text-text">Guide</Link>
             <Link href="/degens" className="transition-colors hover:text-text">Degen Guide</Link>
             <a href="https://github.com/stephenclawdbot-png/EVO" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">GitHub</a>
             <a href="https://solscan.io/account/HGLPG19Vkg3nNS1VJfPqY8Wtu2Ets4oKMTxAZRDRe3Ei" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Program</a>
