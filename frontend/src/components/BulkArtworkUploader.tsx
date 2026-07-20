@@ -184,9 +184,50 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
     setError(null);
 
     try {
+      let totalExtracted = 0;
+
+      // When the number of ZIPs dropped together matches the number of
+      // states, treat it as "one ZIP per state" (e.g. images.zip +
+      // evolved_images.zip for a 2-state collection) and assign each ZIP's
+      // contents directly to its positional state — same as the per-state
+      // drop zone. Relying on folder-name matching (groupFilesByState) here
+      // silently dumps everything into state 0 whenever the ZIP's internal
+      // folder isn't literally named "state1"/"state2"/etc, which is the
+      // common case for creators who name folders after their own artwork
+      // (e.g. "images_256"/"evolved_images_256") — that bug is why bulk
+      // uploads with more than one state looked like they only ever
+      // populated the first state.
+      if (zipFiles.length === stateNames.length && stateNames.length > 1) {
+        const perStateImages: File[][] = stateNames.map(() => []);
+        const allJsons: File[] = [];
+
+        for (let s = 0; s < zipFiles.length; s++) {
+          for await (const batch of unzipFilesStream(zipFiles[s], 100)) {
+            for (const f of batch) {
+              if (f.type.startsWith('image/')) perStateImages[s].push(f);
+              else if (f.type === 'application/json') allJsons.push(f);
+            }
+            totalExtracted += batch.length;
+            setPhase(`Extracting… ${totalExtracted} files`);
+          }
+        }
+
+        for (let s = 0; s < perStateImages.length; s++) {
+          perStateImages[s].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+        }
+
+        setStateFiles(perStateImages);
+        setJsonFiles(allJsons);
+        setPhase('');
+
+        if (perStateImages.reduce((sum, s) => sum + s.length, 0) > 5000) {
+          setShowWarning(true);
+        }
+        return;
+      }
+
       const allImages: File[] = [];
       const allJsons: File[] = [];
-      let totalExtracted = 0;
 
       for (const zip of zipFiles) {
         for await (const batch of unzipFilesStream(zip, 100)) {
