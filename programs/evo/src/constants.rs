@@ -7,7 +7,7 @@ pub const EVO_SEED: &[u8] = b"evo";
 pub const LISTING_SEED: &[u8] = b"listing";
 
 // Default protocol values
-pub const DEFAULT_CREATION_FEE_LAMPORTS: u64 = 67_890_000; // 0.06789 SOL
+pub const DEFAULT_CREATION_FEE_LAMPORTS: u64 = 45_900_000; // 0.0459 SOL
 
 // BPS constants (basis points: 100 = 1%, 10000 = 100%)
 pub const MAX_SHATTER_FEE_BPS: u16 = 2000; // 20% max
