@@ -59,9 +59,9 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
         setShatterFeeBps(cfg.shatterFeeBps);
         setEvolveThresholds({
           trade: cfg.evolveTradeThreshold,
-          feed: cfg.evolveFeedThreshold,
-          hold: cfg.evolveHoldSeconds,
-          locked: cfg.evolveLockedThreshold,
+          feed: Number(cfg.evolveFeedThreshold),
+          hold: Number(cfg.evolveHoldSeconds),
+          locked: Number(cfg.evolveLockedThreshold),
           maxStates: cfg.maxStates,
           lifecycleType: cfg.lifecycleType,
         });

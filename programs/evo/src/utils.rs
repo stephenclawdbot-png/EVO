@@ -48,6 +48,25 @@ pub fn verify_reserve_invariant<'info>(
     Ok(())
 }
 
+/// Close a program-owned PDA: drain all lamports to `receiver`, zero the
+/// data, and reassign ownership to the System Program. Mirrors Anchor's
+/// `close = ` but usable from inside a handler (e.g. for `Option` accounts
+/// where the `close` constraint cannot apply).
+pub fn close_account_raw<'info>(
+    account: &AccountInfo<'info>,
+    receiver: &AccountInfo<'info>,
+) -> Result<()> {
+    let lamports = account.lamports();
+    **receiver.try_borrow_mut_lamports()? = receiver
+        .lamports()
+        .checked_add(lamports)
+        .ok_or(EvoError::MathOverflow)?;
+    **account.try_borrow_mut_lamports()? = 0;
+    account.assign(&anchor_lang::system_program::ID);
+    account.resize(0)?;
+    Ok(())
+}
+
 /// Validate that a metadata URI uses an allowed scheme (http, https, ipfs, arweave).
 /// Prevents `javascript:` and other dangerous schemes from being stored on-chain.
 pub fn validate_metadata_uri(uri: &str) -> Result<()> {

@@ -40,7 +40,7 @@ const instructions = [
 
 const techSpecs = [
   ['Network', 'Solana mainnet'],
-  ['Program ID', 'HGLPG19Vkg3nNS1VJfPqY8Wtu2Ets4oKMTxAZRDRe3Ei'],
+  ['Program ID', 'Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2'],
   ['Framework', 'Anchor 0.31.0'],
   ['Instructions', '17'],
   ['Account types', '4 (Protocol, Collection, EVO, Listing)'],
@@ -474,7 +474,7 @@ export default function DocsPage() {
             <div className="flex flex-col items-center">
               <div className="rounded-lg border-2 border-text-strong bg-surface px-8 py-5 text-center">
                 <p className="text-sm font-bold text-text-strong">EVO Program</p>
-                <p className="mt-1 text-[10px] text-dim font-mono">HGLPG19Vkg3nNS1VJfPqY8Wtu2Ets4oKMTxAZRDRe3Ei</p>
+                <p className="mt-1 text-[10px] text-dim font-mono">Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2</p>
                 <p className="mt-1 text-[10px] text-dim">17 instructions | Anchor framework</p>
               </div>
               <div className="my-2 flex flex-col items-center text-dim">
@@ -690,7 +690,7 @@ export default function DocsPage() {
             <Link href="/guide" className="transition-colors hover:text-text">Guide</Link>
             <Link href="/degens" className="transition-colors hover:text-text">Degen Guide</Link>
             <a href="https://github.com/stephenclawdbot-png/EVO" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">GitHub</a>
-            <a href="https://solscan.io/account/HGLPG19Vkg3nNS1VJfPqY8Wtu2Ets4oKMTxAZRDRe3Ei" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Program</a>
+            <a href="https://solscan.io/account/Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Program</a>
             <span>Powered by <a href="https://www.helius.dev/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Helius</a> | <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Supabase</a> | <a href="https://solana.com/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Solana</a></span>
           </div>
         </div>

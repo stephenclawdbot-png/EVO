@@ -1,4 +1,5 @@
 import type { WalletContextState } from '@solana/wallet-adapter-react';
+import { Buffer } from 'buffer';
 
 export interface UploadResult {
   txId: string;
@@ -24,8 +25,18 @@ export interface FailedUpload {
 
 const IRYS_GATEWAY = 'https://gateway.irys.xyz/';
 
+// Solana RPC endpoints for Irys to verify funding transactions
+const SOLANA_MAINNET_RPC = 'https://mainnet.helius-rpc.com/?api-key=71fd3e79-53c1-40f6-8dfe-dd0a22cc5885';
+const SOLANA_DEVNET_RPC = 'https://api.devnet.solana.com';
+
 let irysInstance: any = null;
 let irysDevnetInstance: any = null;
+
+/** Clear cached Irys instances (call when upload fails to force fresh init on retry) */
+export function clearIrysCache() {
+  irysInstance = null;
+  irysDevnetInstance = null;
+}
 
 /**
  * Create an Irys uploader instance using the new @irys/upload + @irys/upload-solana SDK.
@@ -41,21 +52,21 @@ export async function getIrys(wallet: WalletContextState, useDevnet = false) {
   const Uploader = uploadMod.WebUploader ?? uploadMod.default;
   const WebSolana = solanaMod.WebSolana ?? solanaMod.default;
 
-  const provider = {
-    publicKey: wallet.publicKey,
-    signMessage: async (message: Uint8Array): Promise<Uint8Array> => {
-      if (!wallet.signMessage) throw new Error('Wallet does not support signMessage');
-      return wallet.signMessage(message);
-    },
-    sendTransaction: wallet.sendTransaction,
-  };
+  if (!wallet.publicKey) throw new Error('Wallet not connected');
 
-  let builder = Uploader(WebSolana).withProvider(provider);
+  // Pass the real wallet adapter directly. The Irys Solana token reads
+  // `wallet.signMessage` (via HexInjectedSolanaSigner) and
+  // `wallet.sendTransaction` from the provider. Earlier code built a plain
+  // object that detached `wallet.sendTransaction`, losing the adapter's
+  // `this` binding and causing silent "Network Error" failures on the
+  // funding transaction. Passing `wallet` preserves that binding.
+  let builder = Uploader(WebSolana).withProvider(wallet as any);
 
   if (useDevnet) {
-    builder = builder.devnet();
+    // Irys devnet requires a Solana devnet RPC for funding verification
+    builder = builder.devnet().withRpc(SOLANA_DEVNET_RPC);
   } else {
-    builder = builder.mainnet();
+    builder = builder.mainnet().withRpc(SOLANA_MAINNET_RPC);
   }
 
   const instance = await builder;
@@ -64,23 +75,6 @@ export async function getIrys(wallet: WalletContextState, useDevnet = false) {
   else irysInstance = instance;
 
   return instance;
-}
-
-export async function getIrysBalance(wallet: WalletContextState): Promise<number> {
-  try {
-    const irys = await getIrys(wallet, false);
-    const balance = await irys.getLoadedBalance();
-    // Convert from atomic units if unitConverter exists, otherwise return raw
-    if (irys.utils?.unitConverter) {
-      return parseFloat(irys.utils.unitConverter(balance).toString());
-    }
-    if (irys.utils?.fromAtomic) {
-      return parseFloat(irys.utils.fromAtomic(balance).toString());
-    }
-    return parseFloat(balance.toString()) / 1e9; // lamports to SOL fallback
-  } catch {
-    return 0;
-  }
 }
 
 export async function estimateUploadCost(
@@ -105,6 +99,37 @@ export async function estimateUploadCost(
   }
 }
 
+/**
+ * Pre-fund the Irys account with SOL so uploads don't fail with 402.
+ * Returns the funded amount in SOL.
+ */
+export async function fundIrys(
+  solAmount: number,
+  wallet: WalletContextState,
+  useDevnet = false,
+): Promise<number> {
+  const irys = await getIrys(wallet, useDevnet);
+  const atomicAmount = BigInt(Math.floor(solAmount * 1e9));
+  const receipt = await irys.fund(atomicAmount);
+  return solAmount;
+}
+
+/**
+ * Check the Irys account balance (funded amount, not wallet SOL).
+ */
+export async function getIrysBalance(wallet: WalletContextState, useDevnet = false): Promise<number> {
+  try {
+    const irys = await getIrys(wallet, useDevnet);
+    const balance = await irys.getLoadedBalance();
+    if (irys.utils?.unitConverter) {
+      return parseFloat(irys.utils.unitConverter(balance).toString());
+    }
+    return parseFloat(balance.toString()) / 1e9;
+  } catch {
+    return 0;
+  }
+}
+
 export async function uploadFile(
   file: File | Uint8Array,
   wallet: WalletContextState,
@@ -113,16 +138,16 @@ export async function uploadFile(
 ): Promise<UploadResult> {
   const irys = await getIrys(wallet, useDevnet);
 
-  let data: Uint8Array | string;
+  let data: Buffer;
   let size: number;
   let fileName: string;
 
   if (file instanceof File) {
-    data = new Uint8Array(await file.arrayBuffer());
+    data = Buffer.from(await file.arrayBuffer());
     size = file.size;
     fileName = file.name;
   } else {
-    data = file;
+    data = Buffer.from(file);
     size = file.length;
     fileName = 'data';
   }
@@ -144,6 +169,84 @@ export async function uploadFile(
 }
 
 /**
+ * Upload all files for a state as a SINGLE bundle transaction using irys.uploadFolder().
+ * This creates a temporary signing key for individual data items and bundles them
+ * into one transaction — the user's wallet only signs once per state.
+ * Returns the manifest ID and per-file tx IDs.
+ */
+export async function uploadStateFolder(
+  files: File[],
+  stateIndex: number,
+  wallet: WalletContextState,
+  useDevnet = false,
+  onProgress?: (uploaded: number, total: number, fileName: string) => void,
+): Promise<{ manifestId: string; results: UploadResult[] }> {
+  const irys = await getIrys(wallet, useDevnet);
+
+  // Auto-fund the Irys balance if needed. uploadFolder bundles every file
+  // into one transaction, so an unfunded (or under-funded) balance fails
+  // the whole bundle with a generic "Network Error". We estimate the cost
+  // for the total payload and top up with a 20% buffer (min 0.005 SOL) when
+  // the current loaded balance is below that.
+  const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
+  try {
+    const [loadedBalance, atomicCost] = await Promise.all([
+      irys.getLoadedBalance(),
+      irys.getPrice(Math.ceil(totalBytes * 1.05)),
+    ]);
+    const needed = (atomicCost * 12n) / 10n; // +20% buffer
+    if (BigInt(loadedBalance) < needed) {
+      // Fund the gap, floored at a small minimum so tiny uploads aren't
+      // rejected for being below Irys's funding granularity.
+      const topUp = (() => {
+        const minFund = 5_000_000n; // 0.005 SOL in lamports
+        const gap = needed - BigInt(loadedBalance);
+        return gap > minFund ? gap : minFund;
+      })();
+      onProgress?.(0, files.length, `Funding Irys (${Number(topUp) / 1e9} SOL)…`);
+      await irys.fund(topUp);
+    }
+  } catch (err) {
+    // getPrice/fund can fail on devnet or when the wallet lacks SOL. Surface
+    // a clear message but don't abort — the upload itself will fail with a
+    // more specific error if funding truly was the blocker.
+    console.warn('Irys pre-fund skipped:', err);
+  }
+
+  onProgress?.(0, files.length, 'Bundling files…');
+
+  // uploadFolder signs each file with a temporary key, bundles them + a manifest
+  // into a single transaction, and uploads the whole bundle at once
+  const response = await irys.uploadFolder(files, {
+    manifestTags: [
+      { name: 'App-Name', value: 'EVO' },
+      { name: 'State-Index', value: String(stateIndex) },
+      { name: 'Content-Type', value: 'application/x.irys-manifest+json' },
+    ],
+  });
+
+  // Extract individual tx IDs from the manifest paths
+  const manifest = response.manifest;
+  const results: UploadResult[] = files.map((f) => {
+    const pathEntry = manifest?.paths?.[f.name];
+    const txId = pathEntry?.id || '';
+    return {
+      txId,
+      uri: txId ? `${IRYS_GATEWAY}${txId}` : '',
+      size: f.size,
+      fileName: f.name,
+    };
+  });
+
+  onProgress?.(files.length, files.length, 'Bundle uploaded');
+
+  return {
+    manifestId: response.manifestId,
+    results,
+  };
+}
+
+/**
  * Upload files for a specific state with concurrent sliding-window workers.
  */
 export async function uploadStateFiles(
@@ -161,6 +264,7 @@ export async function uploadStateFiles(
   let uploaded = 0;
   let failCount = 0;
   const total = files.length;
+  let cacheCleared = false;
 
   async function worker() {
     while (index < files.length) {
@@ -181,7 +285,14 @@ export async function uploadStateFiles(
         results[current] = result;
       } catch (err: any) {
         failCount++;
-        failed.push({ file, stateIndex, error: err?.message || String(err) });
+        const errMsg = err?.response?.data || err?.message || err?.toString?.() || String(err);
+        failed.push({ file, stateIndex, error: errMsg });
+
+        // Clear Irys cache on first failure so retries get a fresh instance
+        if (!cacheCleared) {
+          cacheCleared = true;
+          clearIrysCache();
+        }
       }
       uploaded++;
       onProgress?.(uploaded, total, failCount, file.name);
@@ -241,7 +352,7 @@ export async function uploadJson(
   useDevnet = false,
 ): Promise<UploadResult> {
   const jsonStr = JSON.stringify(data, null, 2);
-  const result = await uploadFile(new TextEncoder().encode(jsonStr), wallet, [
+  const result = await uploadFile(Buffer.from(jsonStr, 'utf-8'), wallet, [
     { name: 'App-Name', value: 'EVO' },
     { name: 'Content-Type', value: 'application/json' },
   ], useDevnet);

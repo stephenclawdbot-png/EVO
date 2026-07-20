@@ -11,7 +11,7 @@ import {
 } from '@solana/web3.js';
 
 // ─── Constants ──────────────────────────────────────────────
-export const PROGRAM_ID = new PublicKey('HGLPG19Vkg3nNS1VJfPqY8Wtu2Ets4oKMTxAZRDRe3Ei');
+export const PROGRAM_ID = new PublicKey('Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2');
 export const PROTOCOL_PDA = (() => {
   const [pda] = PublicKey.findProgramAddressSync([Buffer.from('protocol')], PROGRAM_ID);
   return pda;
@@ -72,9 +72,9 @@ export interface LifecycleParamsInput {
   randomnessPolicy: RandomnessPolicy;
   manifestRoot: Uint8Array;
   evolveTradeThreshold: number;
-  evolveFeedThreshold: number;
-  evolveHoldSeconds: number;
-  evolveLockedThreshold: number;
+  evolveFeedThreshold: bigint;
+  evolveHoldSeconds: bigint;
+  evolveLockedThreshold: bigint;
   transitionPolicyHash: Uint8Array;
   burnDestination: PublicKey;
   artworkManifestHash: Uint8Array;
@@ -90,7 +90,7 @@ const RANDOMNESS_MAP: RandomnessPolicy[] = ['None', 'Predetermined', 'BatchRevea
 export interface ProtocolConfig {
   treasury: PublicKey;
   treasuryAuthority: PublicKey;
-  creationFeeLamports: number;
+  creationFeeLamports: bigint;
   initialized: boolean;
   bump: number;
 }
@@ -104,8 +104,8 @@ export interface CollectionConfig {
   shatterFeeDestination: FeeDestination;
   tradeRoyaltyBps: number;
   royaltyDestination: FeeDestination;
-  mintPriceLamports: number;
-  lockAmountLamports: number;
+  mintPriceLamports: bigint;
+  lockAmountLamports: bigint;
   bump: number;
   metadataUri: string;
   lifecycleType: LifecycleType;
@@ -116,15 +116,15 @@ export interface CollectionConfig {
   artworkManifestHash: Uint8Array;
   // Evolution thresholds
   evolveTradeThreshold: number;
-  evolveFeedThreshold: number;   // lamports
-  evolveHoldSeconds: number;
-  evolveLockedThreshold: number; // lamports
+  evolveFeedThreshold: bigint;   // lamports
+  evolveHoldSeconds: bigint;
+  evolveLockedThreshold: bigint; // lamports
 }
 
 export interface FractureLine {
   tradeNumber: number;
   previousOwner: PublicKey;
-  timestamp: number;
+  timestamp: bigint;
   position: number;
   intensity: number;
 }
@@ -132,8 +132,8 @@ export interface FractureLine {
 export interface EVOAccount {
   collection: PublicKey;
   owner: PublicKey;
-  lockedLamports: number;
-  forgedAt: number;
+  lockedLamports: bigint;
+  forgedAt: bigint;
   facetCount: number;
   tradeCount: number;
   resonanceSeed: Buffer;
@@ -143,9 +143,9 @@ export interface EVOAccount {
   // Lifecycle state
   mintIndex: number;
   currentState: number;
-  lastTransitionAt: number;
+  lastTransitionAt: bigint;
   feedCount: number;
-  totalFedLamports: number;
+  totalFedLamports: bigint;
   // Derived
   evoId?: number;
   pda?: PublicKey;
@@ -154,7 +154,7 @@ export interface EVOAccount {
 export interface ListingData {
   evo: PublicKey;
   seller: PublicKey;
-  priceLamports: number;
+  priceLamports: bigint;
   bump: number;
   pda?: PublicKey;
 }
@@ -190,16 +190,11 @@ function readU16(buf: Buffer, offset: number): [number, number] {
 function readU32(buf: Buffer, offset: number): [number, number] {
   return [buf.readUInt32LE(offset), offset + 4];
 }
-function readU64(buf: Buffer, offset: number): [number, number] {
-  // Read as BigInt then convert — values can exceed JS safe int but for SOL amounts it's fine
-  const lo = buf.readUInt32LE(offset);
-  const hi = buf.readUInt32LE(offset + 4);
-  return [lo + hi * 0x100000000, offset + 8];
+function readU64(buf: Buffer, offset: number): [bigint, number] {
+  return [buf.readBigUInt64LE(offset), offset + 8];
 }
-function readI64(buf: Buffer, offset: number): [number, number] {
-  const lo = buf.readUInt32LE(offset);
-  const hi = buf.readInt32LE(offset + 4);
-  return [lo + hi * 0x100000000, offset + 8];
+function readI64(buf: Buffer, offset: number): [bigint, number] {
+  return [buf.readBigInt64LE(offset), offset + 8];
 }
 function readBool(buf: Buffer, offset: number): [boolean, number] {
   return [buf[offset] !== 0, offset + 1];
@@ -237,10 +232,11 @@ function writeU32(val: number): Buffer {
   b.writeUInt32LE(val);
   return b;
 }
-function writeU64(val: number): Buffer {
+function writeU64(val: bigint | number): Buffer {
   const b = Buffer.alloc(8);
-  b.writeUInt32LE(val & 0xffffffff, 0);
-  b.writeUInt32LE(Math.floor(val / 0x100000000) & 0xffffffff, 4);
+  const v = BigInt(val);
+  b.writeUInt32LE(Number(v & 0xffffffffn), 0);
+  b.writeUInt32LE(Number(v >> 32n) & 0xffffffff, 4);
   return b;
 }
 function writeString(val: string): Buffer {
@@ -256,10 +252,11 @@ function writeFeeDest(val: FeeDestination): Buffer {
   return Buffer.from([FEE_DEST_MAP[val]]);
 }
 
-function writeI64(val: number): Buffer {
+function writeI64(val: bigint | number): Buffer {
   const b = Buffer.alloc(8);
-  b.writeInt32LE(val & 0xffffffff, 0);
-  b.writeInt32LE(Math.floor(val / 0x100000000) & 0xffffffff, 4);
+  const v = BigInt(val);
+  b.writeUInt32LE(Number(v & 0xffffffffn), 0);
+  b.writeInt32LE(Number(v >> 32n) & 0xffffffff, 4);
   return b;
 }
 
@@ -342,9 +339,9 @@ export function parseCollectionConfig(data: Buffer): CollectionConfig | null {
 
   // Evolve thresholds (u32 + u64 + i64 + u64 = 28 bytes)
   let evolveTradeThreshold = 0;
-  let evolveFeedThreshold = 0;
-  let evolveHoldSeconds = 0;
-  let evolveLockedThreshold = 0;
+  let evolveFeedThreshold = 0n;
+  let evolveHoldSeconds = 0n;
+  let evolveLockedThreshold = 0n;
   if (off + 28 <= data.length) {
     [evolveTradeThreshold, off] = readU32(data, off);
     [evolveFeedThreshold, off] = readU64(data, off);
@@ -401,9 +398,9 @@ export function parseEVOAccount(data: Buffer): EVOAccount | null {
   // Lifecycle state
   let mintIndex = 0;
   let currentState = 0;
-  let lastTransitionAt = 0;
+  let lastTransitionAt = 0n;
   let feedCount = 0;
-  let totalFedLamports = 0;
+  let totalFedLamports = 0n;
 
   if (off + 4 <= data.length) {
     [mintIndex, off] = readU32(data, off);
@@ -449,8 +446,8 @@ export function createCreateCollectionIx(
   shatterFeeDest: FeeDestination,
   tradeRoyaltyBps: number,
   royaltyDest: FeeDestination,
-  mintPriceLamports: number,
-  lockAmountLamports: number,
+  mintPriceLamports: bigint | number,
+  lockAmountLamports: bigint | number,
   metadataUri: string,
   lifecycle: LifecycleParamsInput,
 ): TransactionInstruction {
@@ -513,7 +510,7 @@ export function createFeedIx(
   collectionPda: PublicKey,
   feeder: PublicKey,
   evoId: number,
-  additionalLamports: number,
+  additionalLamports: bigint | number,
 ): TransactionInstruction {
   const data = Buffer.concat([
     DISC.feed,
@@ -537,7 +534,7 @@ export function createListIx(
   collectionPda: PublicKey,
   seller: PublicKey,
   evoId: number,
-  priceLamports: number,
+  priceLamports: bigint | number,
 ): TransactionInstruction {
   const [listingPda] = getListingPDA(evoPda);
   const data = Buffer.concat([
@@ -615,7 +612,7 @@ export function createBuyIx(
     programId: PROGRAM_ID,
     keys,
     // buy(evo_id: u32, max_price: u64)
-    data: Buffer.concat([DISC.buy, writeU32(evoId), writeU64(Number(maxPriceLamports))]),
+    data: Buffer.concat([DISC.buy, writeU32(evoId), writeU64(maxPriceLamports)]),
   });
 }
 
@@ -637,6 +634,9 @@ export function createShatterIx(
     { pubkey: evoPda, isSigner: false, isWritable: true },
     { pubkey: collectionPda, isSigner: false, isWritable: false },
     { pubkey: PROTOCOL_PDA, isSigner: false, isWritable: false },
+    // Optional listing PDA — derived from the EVO. Always passed; the program
+    // auto-detects presence (None if unlisted) and closes it atomically on shatter.
+    { pubkey: getListingPDA(evoPda)[0], isSigner: false, isWritable: true },
     { pubkey: owner, isSigner: true, isWritable: true },
     { pubkey: creator, isSigner: false, isWritable: true },
     { pubkey: (treasury && (shatterFeeDest === 'Treasury' || shatterFeeDest === 'Split')) ? treasury : SystemProgram.programId, isSigner: false, isWritable: true },
@@ -766,7 +766,7 @@ export function createInitializeProtocolIx(
   payer: PublicKey,
   treasury: PublicKey,
   treasuryAuthority: PublicKey,
-  creationFeeLamports: number,
+  creationFeeLamports: bigint | number,
 ): TransactionInstruction {
   const data = Buffer.concat([
     DISC.initializeProtocol,
@@ -921,8 +921,8 @@ export async function readAllEVOsByOwner(conn: Connection, owner: PublicKey): Pr
 }
 
 // ─── Utility ─────────────────────────────────────────────────
-export function lamportsToSol(lamports: number): number {
-  return lamports / LAMPORTS_PER_SOL;
+export function lamportsToSol(lamports: bigint | number): number {
+  return Number(lamports) / LAMPORTS_PER_SOL;
 }
 
 export function solToLamports(sol: number): number {

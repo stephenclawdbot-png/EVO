@@ -94,14 +94,14 @@ export function evoAccountToData(
     name,
     owner: evo.owner.toBase58(),
     lockedLamports: lamportsToSol(evo.lockedLamports),
-    forgedAt: evo.forgedAt,
+    forgedAt: Number(evo.forgedAt) * 1000,
     facetCount: evo.facetCount,
     tradeCount: evo.tradeCount,
     resonanceSeed: seedHex,
     fractureLines: evo.fractureLines.map(fl => ({
       tradeNumber: fl.tradeNumber,
       previousOwner: fl.previousOwner.toBase58().slice(0, 8) + '...',
-      timestamp: fl.timestamp,
+      timestamp: Number(fl.timestamp),
       position: fl.position,
       intensity: fl.intensity,
     })),
@@ -110,8 +110,8 @@ export function evoAccountToData(
     listPriceLamports: null,
     isShattered: evo.isShattered,
     currentState: evo.currentState,
-    totalFedLamports: evo.totalFedLamports,
-    lastTransitionAt: evo.lastTransitionAt * 1000,
+    totalFedLamports: Number(evo.totalFedLamports),
+    lastTransitionAt: Number(evo.lastTransitionAt) * 1000,
     evoPda: evo.pda?.toBase58(),
     collectionPda: evo.collection.toBase58(),
     collectionName: collectionName,
@@ -137,9 +137,9 @@ export function collectionConfigToData(cfg: CollectionConfig): CollectionData {
     shatterFeeDestination: cfg.shatterFeeDestination,
     royaltyDestination: cfg.royaltyDestination,
     evolveTradeThreshold: cfg.evolveTradeThreshold,
-    evolveFeedThreshold: cfg.evolveFeedThreshold,
-    evolveHoldSeconds: cfg.evolveHoldSeconds,
-    evolveLockedThreshold: cfg.evolveLockedThreshold,
+    evolveFeedThreshold: Number(cfg.evolveFeedThreshold),
+    evolveHoldSeconds: Number(cfg.evolveHoldSeconds),
+    evolveLockedThreshold: Number(cfg.evolveLockedThreshold),
   };
 }
 
@@ -187,7 +187,7 @@ export async function mergeListingData(
     if (idx === undefined) continue;
     evos[idx].isListed = true;
     evos[idx].listPrice = lamportsToSol(listing.priceLamports);
-    evos[idx].listPriceLamports = listing.priceLamports;
+    evos[idx].listPriceLamports = Number(listing.priceLamports);
   }
   return evos;
 }
@@ -203,7 +203,7 @@ export async function mergeSingleListing(
   if (listing) {
     evo.isListed = true;
     evo.listPrice = lamportsToSol(listing.priceLamports);
-    evo.listPriceLamports = listing.priceLamports;
+    evo.listPriceLamports = Number(listing.priceLamports);
   }
   return evo;
 }

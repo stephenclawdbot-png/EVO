@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Nav } from '@/components/Nav';
+import { Footer } from '@/components/Footer';
 import Link from 'next/link';
 import { readAllCollections, getCollectionPDA, readAllEVOs, lamportsToSol } from '@/lib/evo-program';
 import { collectionConfigToData } from '@/lib/evo-data';
@@ -38,7 +39,7 @@ export default function MyCollectionsPage() {
           name: disc.config.name,
           supplyCap: disc.config.supplyCap,
           currentSupply: disc.config.currentSupply,
-          totalLockedSol: lamportsToSol(active.reduce((s, e) => s + e.lockedLamports, 0)),
+          totalLockedSol: lamportsToSol(active.reduce((s, e) => s + e.lockedLamports, 0n)),
           evoCount: active.length,
         });
       }
@@ -121,6 +122,7 @@ export default function MyCollectionsPage() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }

@@ -102,9 +102,12 @@ export default function CreateCollectionPage() {
   const [revealAuthority, setRevealAuthority] = useState('');
   const [randomnessPolicy, setRandomnessPolicy] = useState<RandomnessPolicy>('None');
   const [evolveTradeThreshold, setEvolveTradeThreshold] = useState('3');
-  const [evolveFeedThreshold, setEvolveFeedThreshold] = useState('10000000');
-  const [evolveHoldSeconds, setEvolveHoldSeconds] = useState('86400');
-  const [evolveLockedThreshold, setEvolveLockedThreshold] = useState('10000000');
+  // Human-readable evolution thresholds. Stored as raw strings so the user
+  // can type decimals (e.g. "0.0", "0.05") without the value snapping back on
+  // every keystroke. Converted to lamports/seconds only at submit time.
+  const [evolveFeedSol, setEvolveFeedSol] = useState('0.01');
+  const [evolveHoldHours, setEvolveHoldHours] = useState('24');
+  const [evolveLockedSol, setEvolveLockedSol] = useState('0.01');
   const [manifestRoot, setManifestRoot] = useState('');
   const [transitionPolicyHash, setTransitionPolicyHash] = useState('');
   const [artworkManifestHash, setArtworkManifestHash] = useState('');
@@ -244,9 +247,9 @@ export default function CreateCollectionPage() {
         randomnessPolicy,
         manifestRoot: parseHex32(effectiveManifestRoot),
         evolveTradeThreshold: parseInt(evolveTradeThreshold) || 0,
-        evolveFeedThreshold: parseInt(evolveFeedThreshold) || 0,
-        evolveHoldSeconds: parseInt(evolveHoldSeconds) || 0,
-        evolveLockedThreshold: parseInt(evolveLockedThreshold) || 0,
+        evolveFeedThreshold: BigInt(Math.floor(parseFloat(evolveFeedSol || '0') * 1_000_000_000)),
+        evolveHoldSeconds: BigInt(Math.floor(parseFloat(evolveHoldHours || '0') * 3600)),
+        evolveLockedThreshold: BigInt(Math.floor(parseFloat(evolveLockedSol || '0') * 1_000_000_000)),
         transitionPolicyHash: parseHex32(transitionPolicyHash),
         burnDestination: INCINERATOR,
         artworkManifestHash: parseHex32(artworkManifestHash),
@@ -388,7 +391,21 @@ export default function CreateCollectionPage() {
                     <label className={labelCls}>Supply Cap</label>
                     <input type="number" className={inputCls} value={supplyCap} onChange={e => setSupplyCap(e.target.value)} />
                   </div>
+                  <div>
+                    <label className={labelCls}>Visual Lifecycle</label>
+                    <select className={inputCls} value={lifecycleType} onChange={e => setLifecycleType(e.target.value as LifecycleType)}>
+                      {LIFECYCLE_TYPES.map(t => <option key={t} value={t}>{LIFECYCLE_INFO[t].label}</option>)}
+                    </select>
+                    <p className="mt-1 text-[10px] leading-relaxed text-dim">{LIFECYCLE_INFO[lifecycleType].desc}</p>
+                  </div>
                 </div>
+                {lifecycleType !== 'Static' && (
+                  <div>
+                    <label className={labelCls}>Max States</label>
+                    <input type="number" className={inputCls} value={maxStates} onChange={e => setMaxStates(e.target.value)} />
+                    <p className="mt-1 text-[10px] text-dim">Number of visual stages. Each stage needs its own set of images.</p>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label className={labelCls}>Website</label>
@@ -463,34 +480,15 @@ export default function CreateCollectionPage() {
               </div>
             </div>
 
-            {/* Lifecycle */}
+            {/* Lifecycle — advanced settings (type & max states are in Basics) */}
+            {needsLifecycle && (
             <div className={sectionCls}>
-              <h2 className={sectionTitleCls}>Visual Lifecycle</h2>
+              <h2 className={sectionTitleCls}>Lifecycle Settings</h2>
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelCls}>Lifecycle Type</label>
-                    <select className={inputCls} value={lifecycleType} onChange={e => setLifecycleType(e.target.value as LifecycleType)}>
-                      {LIFECYCLE_TYPES.map(t => <option key={t} value={t}>{LIFECYCLE_INFO[t].label}</option>)}
-                    </select>
-                    <p className="mt-1 text-[10px] leading-relaxed text-dim">{LIFECYCLE_INFO[lifecycleType].desc}</p>
-                  </div>
-                  <div>
-                    <label className={labelCls}>Max States{lifecycleType === 'Static' ? ' (locked)' : ''}</label>
-                    <input
-                      type="number"
-                      className={inputCls}
-                      value={lifecycleType === 'Static' ? '1' : maxStates}
-                      onChange={e => setMaxStates(e.target.value)}
-                      readOnly={lifecycleType === 'Static'}
-                    />
-                    <p className="mt-1 text-[10px] text-dim">{lifecycleType === 'Static' ? 'Static EVOs have 1 state — no evolution.' : 'Number of visual stages (1 = no evolution).'}</p>
-                  </div>
+                <div className="rounded border border-border bg-surface p-2 text-[10px] leading-relaxed text-muted">
+                  <span className="font-semibold text-text">{LIFECYCLE_INFO[lifecycleType].label}</span> — {LIFECYCLE_INFO[lifecycleType].desc}
                 </div>
-
-                {needsLifecycle && (
-                  <>
-                    <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className={labelCls}>Randomness Policy</label>
                         <select className={inputCls} value={randomnessPolicy} onChange={e => setRandomnessPolicy(e.target.value as RandomnessPolicy)}>
@@ -524,8 +522,8 @@ export default function CreateCollectionPage() {
                           <div>
                             <label className={labelCls}>Feed SOL to evolve</label>
                             <input type="number" step="0.001" className={inputCls}
-                              value={evolveFeedThreshold ? (parseInt(evolveFeedThreshold) / 1_000_000_000).toString() : ''}
-                              onChange={e => setEvolveFeedThreshold(e.target.value ? Math.floor(parseFloat(e.target.value) * 1_000_000_000).toString() : '0')}
+                              value={evolveFeedSol}
+                              onChange={e => setEvolveFeedSol(e.target.value)}
                               placeholder="0.01"
                             />
                             <p className="mt-1 text-[10px] leading-relaxed text-dim">
@@ -535,8 +533,8 @@ export default function CreateCollectionPage() {
                           <div>
                             <label className={labelCls}>Hold time (hours)</label>
                             <input type="number" step="0.1" className={inputCls}
-                              value={evolveHoldSeconds ? (parseInt(evolveHoldSeconds) / 3600).toString() : ''}
-                              onChange={e => setEvolveHoldSeconds(e.target.value ? Math.floor(parseFloat(e.target.value) * 3600).toString() : '0')}
+                              value={evolveHoldHours}
+                              onChange={e => setEvolveHoldHours(e.target.value)}
                               placeholder="24"
                             />
                             <p className="mt-1 text-[10px] leading-relaxed text-dim">
@@ -546,8 +544,8 @@ export default function CreateCollectionPage() {
                           <div>
                             <label className={labelCls}>Locked SOL to evolve</label>
                             <input type="number" step="0.001" className={inputCls}
-                              value={evolveLockedThreshold ? (parseInt(evolveLockedThreshold) / 1_000_000_000).toString() : ''}
-                              onChange={e => setEvolveLockedThreshold(e.target.value ? Math.floor(parseFloat(e.target.value) * 1_000_000_000).toString() : '0')}
+                              value={evolveLockedSol}
+                              onChange={e => setEvolveLockedSol(e.target.value)}
                               placeholder="0.01"
                             />
                             <p className="mt-1 text-[10px] leading-relaxed text-dim">
@@ -598,10 +596,9 @@ export default function CreateCollectionPage() {
                         <input className={inputCls} value={transitionPolicyHash} onChange={e => setTransitionPolicyHash(e.target.value)} placeholder="64 hex chars (optional)" />
                       </div>
                     </div>
-                  </>
-                )}
               </div>
             </div>
+            )}
 
             {/* Artwork */}
             <div className={sectionCls}>
@@ -632,6 +629,58 @@ export default function CreateCollectionPage() {
                 {artMode === 'bulk' ? (
                   <div>
                     <label className={labelCls}>Artwork (ZIP or per-state)</label>
+                    <details className="mb-3 rounded-lg border border-border bg-surface p-3 text-[11px] leading-relaxed text-muted">
+                      <summary className="cursor-pointer font-semibold text-text">How to upload artwork (click to expand)</summary>
+                      <div className="mt-3 space-y-3">
+                        <div>
+                          <p className="font-semibold text-text">Two ways to upload:</p>
+                          <ul className="mt-1 ml-4 list-disc space-y-1">
+                            <li><span className="font-semibold text-text">ZIP files</span> — Drag one or more .zip files into the drop zone. The uploader extracts them and auto-sorts images into states based on folder names (e.g. <code className="rounded bg-bg px-1">state1/</code>, <code className="rounded bg-bg px-1">state2/</code>).</li>
+                            <li><span className="font-semibold text-text">Per-state drop zones</span> — Drag image files directly into each state box below. Useful for small collections or when adding a few files manually.</li>
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-text">Image files:</p>
+                          <ul className="mt-1 ml-4 list-disc space-y-1">
+                            <li>PNG, JPG, GIF, or WebP — all supported.</li>
+                            <li>File naming: <code className="rounded bg-bg px-1">0.png</code>, <code className="rounded bg-bg px-1">1.png</code>, <code className="rounded bg-bg px-1">2.png</code>… (zero-indexed, matching the mint order).</li>
+                            <li>Each state must have the same number of images. If State 1 has 100 images, State 2 also needs 100.</li>
+                            <li>Image #0 in State 1 corresponds to Image #0 in State 2 — they represent the same NFT at different lifecycle stages.</li>
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-text">JSON trait files (optional but recommended):</p>
+                          <ul className="mt-1 ml-4 list-disc space-y-1">
+                            <li>Drop <code className="rounded bg-bg px-1">.json</code> files alongside your images (in the ZIP or per-state zone).</li>
+                            <li>Each JSON file should be named to match its image: <code className="rounded bg-bg px-1">0.json</code> for <code className="rounded bg-bg px-1">0.png</code>, <code className="rounded bg-bg px-1">1.json</code> for <code className="rounded bg-bg px-1">1.png</code>, etc.</li>
+                            <li>Format: <code className="rounded bg-bg px-1">{'{"traits": {"Rarity": "Rare", "Color": "Blue"}}'}</code> — a simple object with a <code className="rounded bg-bg px-1">traits</code> key mapping trait names to values.</li>
+                            <li>Only one set of JSON files is needed (not per-state). Traits apply to the NFT itself, not per-stage.</li>
+                            <li>If no JSON files are provided, traits will be empty in the manifest. You can always add them later via the metadata API.</li>
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-text">Mixed upload example (ZIP structure):</p>
+                          <pre className="mt-1 overflow-x-auto rounded bg-bg p-2 text-[10px] text-text"><code>{`my-collection.zip
+├── state1/
+│   ├── 0.png
+│   ├── 1.png
+│   ├── 0.json
+│   └── 1.json
+└── state2/
+    ├── 0.png
+    └── 1.png`}</code></pre>
+                          <p className="mt-1">JSON files can live in any state folder — the uploader collects them all and matches by filename index.</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-text">Costs:</p>
+                          <ul className="mt-1 ml-4 list-disc space-y-1">
+                            <li>Uploads go to Arweave via Irys — permanent, censorship-resistant storage.</li>
+                            <li>Cost is paid in SOL from your connected wallet. Use "Estimate cost" after adding files to preview the fee.</li>
+                            <li>Devnet option is free but temporary (data pruned after ~60 days). Use mainnet for production collections.</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </details>
                     <BulkArtworkUploader
                       collectionName={name}
                       stateNames={Array.from({ length: lifecycleType === 'Static' ? 1 : (parseInt(maxStates) || 1) }, (_, i) => `State ${i + 1}`)}
@@ -651,9 +700,39 @@ export default function CreateCollectionPage() {
             <div className="rounded-lg border border-border bg-bg p-3 text-[11px] text-muted">
               <div className="flex flex-wrap justify-between gap-2">
                 <span>Protocol treasury: <span className="font-mono text-text">{protocol.treasury.toBase58().slice(0, 8)}…</span></span>
-                <span>Creation fee: <span className="font-mono text-text">{protocol.creationFeeLamports / 1_000_000_000} SOL</span></span>
+                <span>Creation fee: <span className="font-mono text-text">{Number(protocol.creationFeeLamports) / 1_000_000_000} SOL</span></span>
               </div>
             </div>
+
+            {/* File review toggle */}
+            {artMode === 'bulk' && bulkArtwork && (
+              <details className="rounded-lg border border-border bg-surface p-3" open>
+                <summary className="cursor-pointer text-xs font-semibold text-text">
+                  Review uploaded files ({bulkArtwork.totalImages} images · {bulkArtwork.manifest.items.length} items · {bulkArtwork.manifest.lifecycle.stateNames.length} states)
+                </summary>
+                <div className="mt-3 space-y-2 text-[11px] text-muted">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded border border-border bg-bg px-2 py-0.5">Manifest URI: <span className="font-mono text-text">{bulkArtwork.manifestUri.slice(0, 40)}…</span></span>
+                    <span className="rounded border border-border bg-bg px-2 py-0.5">Merkle root: <span className="font-mono text-text">{bulkArtwork.merkleRoot.slice(0, 20)}…</span></span>
+                  </div>
+                  <div className="rounded border border-border bg-bg p-2">
+                    <p className="mb-1 font-semibold text-text">States preview (first image per state):</p>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+                      {bulkArtwork.manifest.items.slice(0, 6).map((item, i) => (
+                        <div key={i} className="rounded border border-border p-1">
+                          <img src={item.states[0]} alt="" className="h-16 w-16 rounded object-cover" />
+                          <p className="mt-1 text-[9px] text-dim">#{item.index}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {bulkArtwork.manifest.items.length > 6 && (
+                      <p className="mt-1 text-[10px] text-dim">+ {bulkArtwork.manifest.items.length - 6} more items…</p>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-dim">If this looks correct, proceed to create collection below. The manifest and Merkle root will be recorded on-chain.</p>
+                </div>
+              </details>
+            )}
 
             {/* Submit */}
             <button

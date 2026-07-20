@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Nav } from '@/components/Nav';
+import { Footer } from '@/components/Footer';
 import { Transaction } from '@solana/web3.js';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -189,6 +190,7 @@ export default function CollectionForgePage() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }

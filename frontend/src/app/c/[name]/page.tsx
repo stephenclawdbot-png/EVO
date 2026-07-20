@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { EvoCard } from '@/components/EvoCard';
 import { EvoDetail } from '@/components/EvoDetail';
 import { Nav } from '@/components/Nav';
+import { Footer } from '@/components/Footer';
 import { TradeChart } from '@/components/TradeChart';
 import { TradingViewWidget } from '@/components/TradingViewWidget';
 import { EVOData, CollectionData, evoAccountToData, collectionConfigToData, mergeListingData } from '@/lib/evo-data';
@@ -380,6 +381,7 @@ export default function CollectionPage() {
           </>
         )}
       </section>
-    </div>
-  );
-}
+            <Footer />
+          </div>
+        );
+      }

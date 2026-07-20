@@ -109,7 +109,10 @@ export async function* unzipFilesStream(zipFile: File, chunkSize = 100): AsyncGe
       const name = path.split('/').pop() || path;
       const ext = name.toLowerCase().split('.').pop() || '';
       const type = TYPE_MAP[ext] || 'application/octet-stream';
-      batch.push(new File([entries[path]], name, { type }));
+      const file = new File([entries[path]], name, { type });
+      // Store the full ZIP path as a plain property for state folder matching
+      (file as any)._zipPath = path;
+      batch.push(file);
       delete entries[path];
     }
     yield batch;
@@ -138,11 +141,21 @@ export function groupFilesByState(
     }
     if (!file.type.startsWith('image/')) continue;
 
-    const lower = file.name.toLowerCase();
+    // Use the full relative path (from ZIP extraction or drag-drop folder) for state matching
+    const relativePath = (file as any)._zipPath || file.webkitRelativePath || file.name;
+    const lower = relativePath.toLowerCase();
     let placed = false;
     for (let i = 0; i < stateNames.length; i++) {
       const stateLower = stateNames[i].toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (lower.includes(stateLower) || lower.includes(`state${i}`) || lower.includes(`state${i + 1}`)) {
+      // Match folder names like "state1/", "state 1/", "state-1/"
+      const statePatterns = [
+        `state${i + 1}`,
+        `state-${i + 1}`,
+        `state_${i + 1}`,
+        `state ${i + 1}`,
+        stateLower,
+      ];
+      if (statePatterns.some(p => lower.includes(p))) {
         imageGroups[i].push(file);
         placed = true;
         break;
@@ -151,6 +164,11 @@ export function groupFilesByState(
     if (!placed) {
       imageGroups[0].push(file);
     }
+  }
+
+  // Sort each state's images by filename (natural/numeric order)
+  for (let i = 0; i < imageGroups.length; i++) {
+    imageGroups[i].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
   }
 
   return { images: imageGroups, jsons };

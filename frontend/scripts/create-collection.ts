@@ -47,7 +47,7 @@ async function main() {
     process.exit(1);
   }
   console.log('Protocol treasury:', proto.treasury.toBase58());
-  console.log('Creation fee:', proto.creationFeeLamports / LAMPORTS_PER_SOL, 'SOL');
+  console.log('Creation fee:', Number(proto.creationFeeLamports) / LAMPORTS_PER_SOL, 'SOL');
 
   // Check if collection already exists
   const [collectionPda] = getCollectionPDA(COLLECTION_NAME);
@@ -59,7 +59,7 @@ async function main() {
   }
 
   // Check we have enough balance
-  const totalCost = proto.creationFeeLamports + 0.001 * LAMPORTS_PER_SOL;
+  const totalCost = Number(proto.creationFeeLamports) + 0.001 * LAMPORTS_PER_SOL;
   if (balance < totalCost) {
     console.error(`Insufficient balance. Need ~${totalCost / LAMPORTS_PER_SOL} SOL, have ${balance / LAMPORTS_PER_SOL} SOL`);
     process.exit(1);
@@ -85,9 +85,9 @@ async function main() {
       randomnessPolicy: 'None',
       manifestRoot: new Uint8Array(32),
       evolveTradeThreshold: 0,
-      evolveFeedThreshold: 0,
-      evolveHoldSeconds: 0,
-      evolveLockedThreshold: 0,
+      evolveFeedThreshold: 0n,
+      evolveHoldSeconds: 0n,
+      evolveLockedThreshold: 0n,
       transitionPolicyHash: new Uint8Array(32),
       burnDestination: new PublicKey('1nc1nerator11111111111111111111111111111111'),
       artworkManifestHash: new Uint8Array(32),

@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("HGLPG19Vkg3nNS1VJfPqY8Wtu2Ets4oKMTxAZRDRe3Ei");
+declare_id!("Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2");
 
 mod constants;
 mod errors;
@@ -190,5 +190,14 @@ pub mod evo {
         new_treasury: Pubkey,
     ) -> Result<()> {
         instructions::update_treasury::update_treasury(ctx, new_treasury)
+    }
+
+    /// Update the protocol creation fee.
+    /// Only the treasury authority can call this.
+    pub fn update_creation_fee(
+        ctx: Context<UpdateCreationFee>,
+        new_fee_lamports: u64,
+    ) -> Result<()> {
+        instructions::update_creation_fee::update_creation_fee(ctx, new_fee_lamports)
     }
 }

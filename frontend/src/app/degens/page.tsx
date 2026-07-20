@@ -107,7 +107,7 @@ const faqs = [
   },
   {
     q: 'How do I know an EVO is real?',
-    a: 'Every EVO is an on-chain account. Check the program address (HGLPG19Vkg3nNS1VJfPqY8Wtu2Ets4oKMTxAZRDRe3Ei) on Solscan. The account stores the locked SOL amount, current lifecycle state, and owner. No off-chain server can fake this.',
+    a: 'Every EVO is an on-chain account. Check the program address (Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2) on Solscan. The account stores the locked SOL amount, current lifecycle state, and owner. No off-chain server can fake this.',
   },
   {
     q: 'What makes one EVO worth more than another?',

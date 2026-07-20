@@ -28,6 +28,18 @@ pub struct Shatter<'info> {
     #[account(seeds = [PROTOCOL_SEED], bump = protocol_config.bump)]
     pub protocol_config: Account<'info, ProtocolConfig>,
 
+    /// Optional listing PDA. If the EVO is currently listed, shatter closes
+    /// it atomically and refunds its rent to the owner — preventing a stale
+    /// "for sale" record from lingering after the EVO is destroyed. When the
+    /// EVO is not listed the derived address holds no account and this is
+    /// `None`.
+    #[account(
+        mut,
+        seeds = [LISTING_SEED, evo.key().as_ref()],
+        bump,
+    )]
+    pub listing: Option<Account<'info, Listing>>,
+
     /// EVO owner — receives locked SOL minus shatter fee
     #[account(mut)]
     pub owner: Signer<'info>,
@@ -159,6 +171,16 @@ pub fn shatter(ctx: Context<Shatter>, evo_id: u32) -> Result<()> {
                 )?;
             }
         }
+    }
+
+    // If the EVO was listed, close the listing PDA atomically so no stale
+    // "for sale" record survives the shatter. Rent refunds to the owner.
+    if let Some(listing) = ctx.accounts.listing.as_ref() {
+        close_account_raw(
+            &listing.to_account_info(),
+            &ctx.accounts.owner.to_account_info(),
+        )?;
+        msg!("Closed listing PDA for shattered EVO #{}", evo_id);
     }
 
     // close = owner sends remaining lamports (reserve - fee + rent + any surplus) to owner.

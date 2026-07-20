@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import {
+  uploadStateFolder,
   uploadStateFiles,
   uploadJson,
   estimateUploadCost,
@@ -52,7 +53,7 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
   const [failedUploads, setFailedUploads] = useState<FailedUpload[]>([]);
   const [costEstimate, setCostEstimate] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [useDevnet, setUseDevnet] = useState(true);
+  const [useDevnet, setUseDevnet] = useState(false);
   const [lastManifestItems, setLastManifestItems] = useState<{ index: number; name?: string; states: string[] }[]>([]);
   const [verifyResults, setVerifyResults] = useState<{ checked: number; failed: string[] } | null>(null);
   const [resumeSession, setResumeSession] = useState<CompletedUpload[] | null>(null);
@@ -61,6 +62,15 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
 
   // localStorage key for resume
   const storageKey = `evo-bulk-${collectionName || 'unnamed'}-${stateNames.length}`;
+
+  // Sync stateFiles when stateNames length changes (e.g. lifecycle type changed)
+  useEffect(() => {
+    setStateFiles(prev => {
+      const next: File[][] = stateNames.map(() => []);
+      stateNames.forEach((_, si) => { if (prev[si]) next[si] = prev[si]; });
+      return next;
+    });
+  }, [stateNames.length]);
 
   // Check for resume session on mount
   useEffect(() => {
@@ -84,8 +94,8 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
     setResumeSession(null);
   }, [storageKey]);
 
-  const totalFiles = stateFiles.reduce((sum, s) => sum + s.length, 0);
-  const totalBytes = stateFiles.reduce((sum, s) => sum + s.reduce((b, f) => b + f.size, 0), 0);
+  const totalFiles = stateFiles.reduce((sum, s) => sum + (s || []).length, 0);
+  const totalBytes = stateFiles.reduce((sum, s) => sum + (s || []).reduce((b, f) => b + f.size, 0), 0);
 
   // Build skip set from resume session
   const buildSkipSet = useCallback((files: File[], stateIndex: number, completed: CompletedUpload[]): Set<string> => {
@@ -106,10 +116,50 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
     }
   }, [totalBytes, wallet, useDevnet]);
 
-  const handleStateDrop = useCallback((stateIndex: number, files: FileList | File[]) => {
+  const handleStateDrop = useCallback(async (stateIndex: number, files: FileList | File[]) => {
     const fileArray = Array.from(files);
+    const zips = fileArray.filter((f) => f.name.toLowerCase().endsWith('.zip'));
     const images = fileArray.filter((f) => f.type.startsWith('image/'));
     const jsons = fileArray.filter((f) => f.type === 'application/json');
+
+    // Per-state ZIP: extract and assign ALL images to THIS state. The user
+    // dropped on a specific state's drop zone, so we override the auto-grouping
+    // that the combined-ZIP path uses — this is how creators upload each
+    // state as its own ZIP (e.g. state1.zip, state2.zip).
+    if (zips.length > 0) {
+      setUploading(true);
+      setPhase(`Extracting ${stateNames[stateIndex] ?? `State ${stateIndex + 1}`} ZIP…`);
+      setError(null);
+      try {
+        const zipImages: File[] = [];
+        const zipJsons: File[] = [];
+        let count = 0;
+        for (const zip of zips) {
+          for await (const batch of unzipFilesStream(zip, 100)) {
+            for (const f of batch) {
+              if (f.type.startsWith('image/')) zipImages.push(f);
+              else if (f.type === 'application/json') zipJsons.push(f);
+            }
+            count += batch.length;
+            setPhase(`Extracting… ${count} files`);
+          }
+        }
+        setStateFiles((prev) => {
+          const next = [...prev];
+          next[stateIndex] = [...next[stateIndex], ...zipImages];
+          return next;
+        });
+        if (zipJsons.length > 0) setJsonFiles((prev) => [...prev, ...zipJsons]);
+        setPhase('');
+      } catch (err: any) {
+        setError(`Failed to extract ZIP for ${stateNames[stateIndex] ?? `State ${stateIndex + 1}`}: ${err?.message || err}`);
+        setPhase('');
+      } finally {
+        setUploading(false);
+      }
+      return;
+    }
+
     setStateFiles((prev) => {
       const next = [...prev];
       next[stateIndex] = [...next[stateIndex], ...images];
@@ -119,7 +169,7 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
       setJsonFiles((prev) => [...prev, ...jsons]);
     }
     setError(null);
-  }, []);
+  }, [stateNames]);
 
   const handleZipDrop = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
@@ -229,48 +279,68 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
         const files = filesPerState[s];
         if (files.length === 0) { allResults.push([]); continue; }
 
+        // Skip files already completed in resume session
         const skipNames = buildSkipSet(files, s, completed);
-        const skippedCount = files.filter(f => skipNames.has(f.name)).length;
+        const filesToUpload = files.filter(f => !skipNames.has(f.name));
+        const skippedCount = files.length - filesToUpload.length;
 
-        setPhase(`Uploading ${stateNames[s]} (${files.length} files${skippedCount > 0 ? `, ${skippedCount} cached` : ''})…`);
+        if (filesToUpload.length === 0) {
+          // All files already uploaded — reconstruct from cache
+          const cachedResults: (UploadResult | null)[] = files.map(f => {
+            const cached = completed.find(c => c.fileName === f.name && c.stateIndex === s);
+            return cached ? { txId: cached.txId, uri: `https://gateway.irys.xyz/${cached.txId}`, size: f.size, fileName: f.name } : null;
+          });
+          allResults.push(cachedResults);
+          continue;
+        }
 
-        const baseUploaded = completed.filter(c => c.stateIndex === s).length;
-        const { results, failed } = await uploadStateFiles(
-          files, s, wallet, useDevnet, CONCURRENCY,
-          (u, t, f, fn) => {
-            setProgress({ uploaded: u + allResults.reduce((sum, r) => sum + r.length, 0), total, failed: f, currentFile: fn });
-          },
-          skipNames,
-        );
+        setPhase(`Bundling ${stateNames[s]} (${filesToUpload.length} files${skippedCount > 0 ? `, ${skippedCount} cached` : ''})…`);
 
-        // Record completed uploads for resume
-        results.forEach((r, i) => {
-          if (r && files[i]) {
-            completed.push({ fileName: files[i].name, txId: r.txId, stateIndex: s });
-          }
-        });
+        try {
+          const { manifestId, results: folderResults } = await uploadStateFolder(
+            filesToUpload, s, wallet, useDevnet,
+            (u, t, fn) => {
+              setProgress({ uploaded: u + allResults.reduce((sum, r) => sum + r.length, 0), total, failed: 0, currentFile: fn });
+            },
+          );
 
-        // For skipped files, reconstruct from resume session
-        if (skipNames.size > 0) {
+          // Map folder results back to the original file array position
+          const stateResults: (UploadResult | null)[] = new Array(files.length).fill(null);
+          filesToUpload.forEach((f) => {
+            const origIdx = files.indexOf(f);
+            const result = folderResults.find(r => r.fileName === f.name);
+            if (result && result.txId) {
+              stateResults[origIdx] = result;
+              completed.push({ fileName: f.name, txId: result.txId, stateIndex: s });
+            }
+          });
+
+          // Fill in skipped (cached) files
           files.forEach((f, i) => {
-            if (skipNames.has(f.name)) {
+            if (skipNames.has(f.name) && !stateResults[i]) {
               const cached = completed.find(c => c.fileName === f.name && c.stateIndex === s);
-              if (cached && !results[i]) {
-                results[i] = { txId: cached.txId, uri: `https://arweave.net/${cached.txId}`, size: f.size, fileName: f.name };
+              if (cached) {
+                stateResults[i] = { txId: cached.txId, uri: `https://gateway.irys.xyz/${cached.txId}`, size: f.size, fileName: f.name };
               }
             }
           });
-        }
 
-        allResults.push(results);
-        globalFailed = [...globalFailed, ...failed];
+          allResults.push(stateResults);
+        } catch (err: any) {
+          // Bundle failed — mark all files as failed
+          const errMsg = err?.response?.data || err?.message || String(err);
+          filesToUpload.forEach(f => {
+            globalFailed.push({ file: f, stateIndex: s, error: errMsg });
+          });
+          allResults.push(new Array(files.length).fill(null));
+        }
         saveProgress(completed);
       }
 
       setFailedUploads(globalFailed);
 
       if (globalFailed.length > 0) {
-        setError(`${globalFailed.length} uploads failed. You can retry or proceed with gaps.`);
+        setError(`${globalFailed.length} files failed in bundle. You can retry or proceed with gaps.`);
       }
 
       // Build manifest
@@ -422,8 +492,20 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
                 <span className="h-2 w-2 rounded-full" style={{ background: STATE_COLORS[si] || '#a1a1aa' }} />
                 {stateName}
               </span>
-              <span className="text-[10px] text-muted">{stateFiles[si].length} files</span>
+              <span className="text-[10px] text-muted">{(stateFiles[si] || []).length} files</span>
             </div>
+
+            {/* Per-state ZIP / image file picker — accepts .zip or images */}
+            <label className="mt-1.5 inline-flex cursor-pointer text-[10px] text-accent hover:underline">
+              + Add ZIP or images
+              <input
+                type="file"
+                accept=".zip,image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => { if (e.target.files) handleStateDrop(si, e.target.files); e.currentTarget.value = ''; }}
+              />
+            </label>
 
             {/* Thumbnails */}
             {thumbnails[si] && thumbnails[si].length > 0 && (
@@ -434,12 +516,12 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
               </div>
             )}
 
-            {stateFiles[si].length > 6 && (
-              <p className="mt-1 text-[10px] text-dim">+{stateFiles[si].length - 6} more…</p>
+            {(stateFiles[si] || []).length > 6 && (
+              <p className="mt-1 text-[10px] text-dim">+{(stateFiles[si] || []).length - 6} more…</p>
             )}
 
-            {stateFiles[si].length === 0 && (
-              <p className="mt-2 text-[10px] text-dim">Drag images here</p>
+            {(stateFiles[si] || []).length === 0 && (
+              <p className="mt-2 text-[10px] text-dim">Drag images or a .zip here</p>
             )}
           </div>
         ))}
@@ -536,6 +618,16 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
             </svg>
             <span>{failedUploads.length} uploads failed. Retry them, or proceed (gaps will use placeholder).</span>
           </div>
+          <details className="text-[10px] text-muted">
+            <summary className="cursor-pointer hover:text-text">View error details ({Math.min(5, failedUploads.length)} shown)</summary>
+            <ul className="mt-1 space-y-0.5 pl-3">
+              {failedUploads.slice(0, 5).map((f, i) => (
+                <li key={i} className="truncate">
+                  <span className="text-negative">{f.file.name}</span>: {f.error}
+                </li>
+              ))}
+            </ul>
+          </details>
           <div className="flex gap-2">
             <button
               onClick={retryFailed}
