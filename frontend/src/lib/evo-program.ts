@@ -11,7 +11,7 @@ import {
 } from '@solana/web3.js';
 
 // ─── Constants ──────────────────────────────────────────────
-export const PROGRAM_ID = new PublicKey('7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc');
+export const PROGRAM_ID = new PublicKey('HGLPG19Vkg3nNS1VJfPqY8Wtu2Ets4oKMTxAZRDRe3Ei');
 export const PROTOCOL_PDA = (() => {
   const [pda] = PublicKey.findProgramAddressSync([Buffer.from('protocol')], PROGRAM_ID);
   return pda;

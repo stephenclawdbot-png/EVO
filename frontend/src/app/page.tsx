@@ -348,7 +348,7 @@ export default function Home() {
           <span>Meld — EVO Protocol — Assets that don&apos;t stay the same.</span>
           <div className="flex items-center gap-4">
             <a href="https://github.com/stephenclawdbot-png/EVO" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">GitHub</a>
-            <a href="https://solscan.io/account/7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Program</a>
+            <a href="https://solscan.io/account/HGLPG19Vkg3nNS1VJfPqY8Wtu2Ets4oKMTxAZRDRe3Ei" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Program</a>
             <span>Powered by <a href="https://www.helius.dev/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Helius</a> · <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Supabase</a> · <a href="https://solana.com/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Solana</a></span>
           </div>
         </div>

@@ -3,7 +3,7 @@
 // Swap EVO_PROGRAM_ID to the mainnet program ID after mainnet deploy.
 
 /** EVO program ID — devnet (ready for mainnet) */
-export const EVO_PROGRAM_ID = '7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc';
+export const EVO_PROGRAM_ID = 'HGLPG19Vkg3nNS1VJfPqY8Wtu2Ets4oKMTxAZRDRe3Ei';
 
 /** Protocol Config PDA (singleton, seed: "protocol") */
 export const PROTOCOL_PDA = (() => {
