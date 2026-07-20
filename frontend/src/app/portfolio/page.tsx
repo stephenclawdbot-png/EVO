@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Nav } from '@/components/Nav';
+import { Footer } from '@/components/Footer';
 import Link from 'next/link';
 import {
   readAllEVOsByOwner,
@@ -224,6 +225,7 @@ export default function PortfolioPage() {
           </>
         )}
       </div>
+      <Footer />
     </div>
   );
 }

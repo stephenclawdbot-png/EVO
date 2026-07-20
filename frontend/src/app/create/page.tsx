@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Nav } from '@/components/Nav';
+import { Footer } from '@/components/Footer';
 import { Transaction, PublicKey } from '@solana/web3.js';
 import Link from 'next/link';
 import {
@@ -686,6 +687,7 @@ export default function CreateCollectionPage() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }

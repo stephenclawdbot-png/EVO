@@ -6,7 +6,7 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { ThemeToggle } from './ThemeToggle';
 import { readAllCollections } from '@/lib/evo-program';
-import { IconEvoMark, IconHammer, IconCollection, IconPortfolio } from './Icons';
+import { IconEvoMark, IconHammer, IconCollection, IconPortfolio, IconHelp } from './Icons';
 
 interface TickerStat { label: string; value: string; tone?: 'pos' | 'neg' | 'neutral' }
 
