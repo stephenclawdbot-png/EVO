@@ -218,8 +218,8 @@ export default function DegensPage() {
               Gambling vs EVO
             </h2>
           </div>
-          <div className="overflow-hidden rounded border border-border">
-            <div className="grid grid-cols-3 gap-px bg-border">
+          <div className="overflow-x-auto rounded border border-border">
+            <div className="grid min-w-[420px] grid-cols-3 gap-px bg-border">
               <div className="bg-surface p-3" />
               <div className="bg-surface p-3 text-center text-[11px] font-semibold uppercase tracking-wide text-dim">
                 Gambling
@@ -319,8 +319,8 @@ export default function DegensPage() {
               Know what you pay before you click.
             </p>
           </div>
-          <div className="overflow-hidden rounded border border-border">
-            <div className="grid grid-cols-3 gap-px bg-border">
+          <div className="overflow-x-auto rounded border border-border">
+            <div className="grid min-w-[480px] grid-cols-3 gap-px bg-border">
               <div className="bg-surface-2 p-3 text-[11px] font-semibold uppercase tracking-wide text-dim">Action</div>
               <div className="bg-surface-2 p-3 text-[11px] font-semibold uppercase tracking-wide text-dim">Cost</div>
               <div className="bg-surface-2 p-3 text-[11px] font-semibold uppercase tracking-wide text-dim">Where it goes</div>

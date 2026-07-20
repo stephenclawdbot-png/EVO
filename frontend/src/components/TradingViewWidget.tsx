@@ -132,20 +132,20 @@ export function TradingViewWidget({ events, loading, currentFloorSol, collection
   return (
     <div className="rounded-lg border border-border bg-surface">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-text-strong">{collectionName || 'EVO'} Chart</span>
           {currentFloorSol != null && currentFloorSol > 0 && (
             <span className="font-mono text-xs text-positive">◎ {currentFloorSol.toFixed(3)}</span>
           )}
-          <span className="text-[10px] text-dim">{view.candles.length} candles</span>
+          <span className="hidden text-[10px] text-dim sm:inline">{view.candles.length} candles</span>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setChartType(chartType === 'candles' ? 'line' : 'candles')}
             className="rounded border border-border-strong px-2 py-0.5 text-[10px] text-muted transition-colors hover:text-text"
           >
-            {chartType === 'candles' ? '📉 Candles' : '📈 Line'}
+            {chartType === 'candles' ? 'Candles' : 'Line'}
           </button>
           <div className="flex rounded border border-border p-0.5">
             {RANGE_LABELS.map(r => (

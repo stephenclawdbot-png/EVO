@@ -386,7 +386,7 @@ export default function CreateCollectionPage() {
                     <input type="number" className={inputCls} value={supplyCap} onChange={e => setSupplyCap(e.target.value)} />
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div>
                     <label className={labelCls}>Website</label>
                     <input className={inputCls} value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://…" />
@@ -504,7 +504,7 @@ export default function CreateCollectionPage() {
                           Leave a field at 0 to ignore that condition. Each stage becomes progressively harder — stage 2 needs 2× the threshold, stage 3 needs 3×, etc.
                           Evolution is permissionless: anyone can trigger it, but it only fires if conditions are met.
                         </p>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                           <div>
                             <label className={labelCls}>Trades to evolve</label>
                             <input type="number" className={inputCls} value={evolveTradeThreshold} onChange={e => setEvolveTradeThreshold(e.target.value)} />

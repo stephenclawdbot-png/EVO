@@ -270,9 +270,9 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
 
             {/* Evolution stages — from manifest, dynamic count */}
             {stageImages.length > 0 && (
-              <div className="mt-3 grid gap-2" style={{ gridTemplateColumns: `repeat(${stageImages.length}, minmax(0, 1fr))` }}>
+              <div className="mt-3 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'thin' }}>
                 {stageImages.map((s, i) => (
-                  <div key={i} className={`relative flex aspect-square items-center justify-center overflow-hidden rounded border ${
+                  <div key={i} className={`relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded border ${
                     i === evo.currentState ? 'border-accent bg-accent-soft' : i < evo.currentState ? 'border-border opacity-40' : 'border-border opacity-20'}`}>
                     <img src={s.image} alt={s.name} className="h-10 w-10 pixelated" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     <span className="absolute bottom-0 left-0 right-0 bg-bg/70 py-0.5 text-center text-[10px] text-muted">{s.name}</span>

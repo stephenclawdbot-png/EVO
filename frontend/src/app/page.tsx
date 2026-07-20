@@ -346,7 +346,7 @@ export default function Home() {
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-3 py-3 text-[11px] text-dim lg:px-4">
           <span>Meld — EVO Protocol — Assets that don&apos;t stay the same.</span>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <a href="/docs" className="transition-colors hover:text-text">Docs</a>
             <a href="/degens" className="transition-colors hover:text-text">Degen Guide</a>
             <a href="https://github.com/stephenclawdbot-png/EVO" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">GitHub</a>
