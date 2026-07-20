@@ -45,13 +45,78 @@ const comparison: { label: string; gamble: string; evo: string }[] = [
   { label: 'Transparent?', gamble: 'No', evo: 'Every transaction on-chain' },
   { label: 'Exit liquidity?', gamble: 'Hope you cashed out', evo: 'Shatter or sell anytime' },
   { label: 'House edge?', gamble: 'Built in, always against you', evo: 'No house. Flat fee on transfers.' },
+  { label: 'Upside?', gamble: 'Fixed payout at best', evo: 'Floor + market premium + evolution' },
+  { label: 'Can it rug?', gamble: 'Yes, server-side', evo: 'No, program is on-chain' },
 ];
 
 const steps = [
-  { icon: IconLock, title: 'Lock SOL', desc: 'Send SOL into the EVO program. It is locked inside a PDA — a smart contract wallet nobody can raid.' },
+  { icon: IconLock, title: 'Lock SOL', desc: 'Send SOL into the EVO program. It is locked inside a PDA -- a smart contract wallet nobody can raid.' },
   { icon: IconHammer, title: 'Get an EVO', desc: 'You receive a unique evolving on-chain asset. It has a floor value equal to the locked SOL.' },
   { icon: IconEvolve, title: 'It evolves', desc: 'On-chain feeds trigger evolution. The asset changes. The story writes itself on-chain.' },
   { icon: IconShatter, title: 'Trade or shatter', desc: 'List it for sale at any price above floor. Or shatter it to reclaim the locked SOL. Your call.' },
+];
+
+const strategies = [
+  {
+    name: 'Floor sniping',
+    risk: 'Low',
+    desc: 'Buy EVOs trading close to their locked SOL value. The floor protects your downside. If market sentiment improves, you capture the premium. If it doesn\'t, shatter and walk away with your SOL minus the fee.',
+  },
+  {
+    name: 'Evolution flipping',
+    risk: 'Medium',
+    desc: 'Buy EVOs before a lifecycle trigger (feed, reveal, evolve). The visual state change can drive demand. Sell into the hype after the transition. Watch the lifecycle type -- not all EVOs evolve the same way.',
+  },
+  {
+    name: 'Collection arbitrage',
+    risk: 'Medium',
+    desc: 'Some collections have higher locked SOL than others. Buy from a low-floor collection, shatter for profit if the market price drops below the lock. Or buy undervalued collections before broader market discovery.',
+  },
+  {
+    name: 'Forge and flip',
+    risk: 'High',
+    desc: 'Forge new EVOs from fresh collections. If the collection gains traction, early forged assets carry premium value. If it doesn\'t, shatter for the floor. Risk is the creation fee plus time value of locked SOL.',
+  },
+];
+
+const fees = [
+  { action: 'Create collection', cost: '0.0459 SOL', goes: 'Protocol treasury' },
+  { action: 'Forge (mint)', cost: 'Locked SOL amount', goes: 'Locked in EVO PDA (reclaimable)' },
+  { action: 'Buy (marketplace)', cost: 'Listing price + royalty', goes: 'Seller + creator royalty' },
+  { action: 'Transfer', cost: '0.009 SOL (flat)', goes: 'Protocol treasury' },
+  { action: 'Shatter', cost: 'Up to 20% of locked SOL', goes: 'Collection fee account' },
+  { action: 'List / delist', cost: 'Free', goes: '-' },
+];
+
+const faqs = [
+  {
+    q: 'What happens to my SOL when I forge?',
+    a: 'It gets locked inside the EVO\'s PDA. Nobody can take it -- not the creator, not the treasury, not anyone. The only ways out are selling the EVO to another buyer or shattering it to reclaim the locked SOL.',
+  },
+  {
+    q: 'Can the creator steal my SOL?',
+    a: 'No. The locked SOL sits in a program-derived address controlled by the EVO program, not the creator. The program code only allows the current holder to shatter and reclaim. The creator cannot touch it.',
+  },
+  {
+    q: 'What is the shatter fee?',
+    a: 'Each collection sets a shatter fee up to a maximum of 20% of the locked SOL. This fee goes to the collection\'s fee account, not to a house. The remaining 80%+ goes straight to your wallet.',
+  },
+  {
+    q: 'Can I lose money?',
+    a: 'Yes. If you buy above floor and the market price drops, you can lose the premium. But you can always shatter to recover the locked SOL minus the shatter fee. Your downside is capped at the premium you paid plus the fee.',
+  },
+  {
+    q: 'How do I know an EVO is real?',
+    a: 'Every EVO is an on-chain account. Check the program address (HGLPG19Vkg3nNS1VJfPqY8Wtu2Ets4oKMTxAZRDRe3Ei) on Solscan. The account stores the locked SOL amount, current lifecycle state, and owner. No off-chain server can fake this.',
+  },
+  {
+    q: 'What makes one EVO worth more than another?',
+    a: 'Three things: (1) locked SOL amount -- higher lock means higher floor, (2) lifecycle stage -- evolved or revealed states can carry premium, (3) collection demand -- market sentiment drives price above floor.',
+  },
+  {
+    q: 'Is this gambling?',
+    a: 'No. Gambling is negative EV by design -- the house edge guarantees you lose over time. EVO is a backed asset -- you lock SOL, get a provably-owned on-chain asset, and can exit at any time. The floor is your safety net.',
+  },
 ];
 
 export default function DegensPage() {
@@ -90,8 +155,27 @@ export default function DegensPage() {
         </div>
       </section>
 
+      {/* Quick nav */}
+      <div className="border-b border-border bg-surface">
+        <div className="mx-auto flex max-w-3xl flex-wrap gap-2 px-4 py-3 text-[11px]">
+          {[
+            ['#problem', 'The problem'],
+            ['#difference', 'The difference'],
+            ['#comparison', 'Head to head'],
+            ['#how', 'How it works'],
+            ['#strategies', 'Strategies'],
+            ['#fees', 'Fees'],
+            ['#faq', 'FAQ'],
+          ].map(([href, label]) => (
+            <a key={href} href={href} className="rounded border border-border-strong px-3 py-1 text-dim transition-colors hover:text-text">
+              {label}
+            </a>
+          ))}
+        </div>
+      </div>
+
       {/* Why gambling is worse */}
-      <section className="border-b border-border bg-surface">
+      <section id="problem" className="border-b border-border bg-surface">
         <div className="mx-auto max-w-3xl px-4 py-16 lg:py-20">
           <p className="text-[11px] uppercase tracking-[0.2em] text-dim">The problem</p>
           <h2 className="mt-2 text-xl font-semibold tracking-tight text-text-strong sm:text-2xl">
@@ -105,7 +189,7 @@ export default function DegensPage() {
       </section>
 
       {/* Why Meld is different */}
-      <section className="border-b border-border">
+      <section id="difference" className="border-b border-border">
         <div className="mx-auto max-w-5xl px-4 py-16 lg:py-20">
           <div className="mb-12 text-center">
             <p className="text-[11px] uppercase tracking-[0.2em] text-dim">The difference</p>
@@ -126,7 +210,7 @@ export default function DegensPage() {
       </section>
 
       {/* Comparison table */}
-      <section className="border-b border-border bg-surface">
+      <section id="comparison" className="border-b border-border bg-surface">
         <div className="mx-auto max-w-3xl px-4 py-16 lg:py-20">
           <div className="mb-10 text-center">
             <p className="text-[11px] uppercase tracking-[0.2em] text-dim">Head to head</p>
@@ -166,7 +250,7 @@ export default function DegensPage() {
       </section>
 
       {/* How it works */}
-      <section className="border-b border-border">
+      <section id="how" className="border-b border-border">
         <div className="mx-auto max-w-3xl px-4 py-16 lg:py-20">
           <div className="mb-10 text-center">
             <p className="text-[11px] uppercase tracking-[0.2em] text-dim">How it works</p>
@@ -191,6 +275,94 @@ export default function DegensPage() {
         </div>
       </section>
 
+      {/* Strategies */}
+      <section id="strategies" className="border-b border-border bg-surface">
+        <div className="mx-auto max-w-3xl px-4 py-16 lg:py-20">
+          <div className="mb-10 text-center">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-dim">Playbook</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-text-strong sm:text-2xl">
+              Degen strategies
+            </h2>
+            <p className="mt-3 text-sm text-muted">
+              Not financial advice. Just how the mechanics work.
+            </p>
+          </div>
+          <div className="space-y-4">
+            {strategies.map((s, i) => (
+              <div key={i} className="rounded-lg border border-border bg-bg p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold text-text-strong">{s.name}</h3>
+                  <span className={`rounded px-2 py-0.5 text-[10px] font-medium ${
+                    s.risk === 'Low' ? 'bg-positive-soft text-positive' :
+                    s.risk === 'Medium' ? 'bg-warn-soft text-warn' :
+                    'bg-negative-soft text-negative'
+                  }`}>
+                    {s.risk} risk
+                  </span>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-muted">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Fees */}
+      <section id="fees" className="border-b border-border">
+        <div className="mx-auto max-w-3xl px-4 py-16 lg:py-20">
+          <div className="mb-10 text-center">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-dim">Costs</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-text-strong sm:text-2xl">
+              Fee breakdown
+            </h2>
+            <p className="mt-3 text-sm text-muted">
+              Know what you pay before you click.
+            </p>
+          </div>
+          <div className="overflow-hidden rounded border border-border">
+            <div className="grid grid-cols-3 gap-px bg-border">
+              <div className="bg-surface-2 p-3 text-[11px] font-semibold uppercase tracking-wide text-dim">Action</div>
+              <div className="bg-surface-2 p-3 text-[11px] font-semibold uppercase tracking-wide text-dim">Cost</div>
+              <div className="bg-surface-2 p-3 text-[11px] font-semibold uppercase tracking-wide text-dim">Where it goes</div>
+            </div>
+            {fees.map((f, i) => (
+              <div key={i} className="grid grid-cols-3 gap-px bg-border">
+                <div className="bg-bg p-3 text-xs font-medium text-text-strong">{f.action}</div>
+                <div className="bg-bg p-3 text-xs font-mono text-muted">{f.cost}</div>
+                <div className="bg-bg p-3 text-xs text-muted">{f.goes}</div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-[11px] text-dim">
+            All fees are set on-chain at the protocol level. Creators cannot charge more than the
+            maximums defined in the program. Check the collection config before forging.
+          </p>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="border-b border-border bg-surface">
+        <div className="mx-auto max-w-3xl px-4 py-16 lg:py-20">
+          <div className="mb-10 text-center">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-dim">Questions</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-text-strong sm:text-2xl">
+              FAQ
+            </h2>
+          </div>
+          <div className="space-y-3">
+            {faqs.map((faq, i) => (
+              <details key={i} className="group rounded-lg border border-border bg-bg p-4">
+                <summary className="cursor-pointer list-none text-sm font-semibold text-text-strong transition-colors group-hover:text-accent">
+                  <span className="mr-2 font-mono text-dim">Q.</span>
+                  {faq.q}
+                </summary>
+                <p className="mt-3 pl-6 text-xs leading-relaxed text-muted">{faq.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Bottom line */}
       <section className="border-b border-border bg-surface">
         <div className="mx-auto max-w-3xl px-4 py-20 text-center lg:py-28">
@@ -204,22 +376,28 @@ export default function DegensPage() {
             One takes your money. The other locks it into something you own.
             That is the entire difference.
           </p>
-          <Link href="/"
-            className="mt-10 inline-flex items-center gap-2 rounded bg-accent px-8 py-3 text-sm font-semibold text-[#0a0a0c] transition-colors hover:bg-accent-hover">
-            Get started <IconArrowRight className="h-4 w-4" />
-          </Link>
+          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link href="/"
+              className="inline-flex items-center gap-2 rounded bg-accent px-8 py-3 text-sm font-semibold text-[#0a0a0c] transition-colors hover:bg-accent-hover">
+              Get started <IconArrowRight className="h-4 w-4" />
+            </Link>
+            <Link href="/docs"
+              className="inline-flex items-center gap-2 rounded border border-border-strong px-8 py-3 text-sm font-semibold text-text transition-colors hover:bg-surface-2">
+              Read the docs
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-3 py-3 text-[11px] text-dim lg:px-4">
-          <span>Meld — EVO Protocol — Not financial advice, just better than a slot machine.</span>
+          <span>Meld -- EVO Protocol -- Not financial advice, just better than a slot machine.</span>
           <div className="flex items-center gap-4">
             <Link href="/" className="transition-colors hover:text-text">Back to app</Link>
             <Link href="/docs" className="transition-colors hover:text-text">Docs</Link>
             <a href="https://github.com/stephenclawdbot-png/EVO" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">GitHub</a>
-            <span>Powered by <a href="https://www.helius.dev/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Helius</a> · <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Supabase</a> · <a href="https://solana.com/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Solana</a></span>
+            <span>Powered by <a href="https://www.helius.dev/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Helius</a> / <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Supabase</a> / <a href="https://solana.com/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-text">Solana</a></span>
           </div>
         </div>
       </footer>
