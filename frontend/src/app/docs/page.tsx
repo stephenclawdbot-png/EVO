@@ -139,6 +139,140 @@ export default function DocsPage() {
               </div>
             </div>
           </div>
+
+          {/* ── Gambling vs EVO ── */}
+          <div className="mt-10 rounded-lg border border-border bg-surface p-6">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-dim">
+              Gambling vs EVO
+            </h3>
+            <p className="mt-2 text-xs text-muted">
+              Both involve risk and SOL. The difference is what you walk away with.
+            </p>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[480px] text-left text-xs">
+                <thead>
+                  <tr className="border-b border-border text-dim">
+                    <th className="py-2 pr-4 font-semibold">Aspect</th>
+                    <th className="py-2 pr-4 font-semibold text-negative">Gambling</th>
+                    <th className="py-2 pr-4 font-semibold text-accent">EVO</th>
+                  </tr>
+                </thead>
+                <tbody className="text-muted">
+                  <tr className="border-b border-border/50">
+                    <td className="py-2 pr-4 font-mono text-text-strong">Your SOL</td>
+                    <td className="py-2 pr-4">Gone the moment you bet. Win or lose, the house keeps it.</td>
+                    <td className="py-2 pr-4">Locked in a PDA you control. Shatter to reclaim it.</td>
+                  </tr>
+                  <tr className="border-b border-border/50">
+                    <td className="py-2 pr-4 font-mono text-text-strong">Floor value</td>
+                    <td className="py-2 pr-4 text-negative">Zero. You can lose everything.</td>
+                    <td className="py-2 pr-4 text-positive">Locked SOL minus max 20% shatter fee.</td>
+                  </tr>
+                  <tr className="border-b border-border/50">
+                    <td className="py-2 pr-4 font-mono text-text-strong">Exit</td>
+                    <td className="py-2 pr-4">Only if you win. Loser gets nothing.</td>
+                    <td className="py-2 pr-4 text-positive">Always available via shatter.</td>
+                  </tr>
+                  <tr className="border-b border-border/50">
+                    <td className="py-2 pr-4 font-mono text-text-strong">House edge</td>
+                    <td className="py-2 pr-4">Built into the odds. You lose long-term.</td>
+                    <td className="py-2 pr-4">No house. Fee is a protocol surcharge, not an odds advantage.</td>
+                  </tr>
+                  <tr className="border-b border-border/50">
+                    <td className="py-2 pr-4 font-mono text-text-strong">Ownership</td>
+                    <td className="py-2 pr-4">Nothing. You bet, you watch, you leave.</td>
+                    <td className="py-2 pr-4">You hold a tradeable, evolving on-chain asset.</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-4 font-mono text-text-strong">Upside</td>
+                    <td className="py-2 pr-4">Fixed payout if you win. Nothing if you lose.</td>
+                    <td className="py-2 pr-4">Market price + locked floor. Asset can appreciate and you still keep the floor.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-4 text-xs leading-relaxed text-muted">
+              <span className="text-text-strong">The key insight:</span> gambling is a binary bet
+              with a house that always wins. EVO is an asset you own with a guaranteed exit.
+              The locked SOL is your money, not a wager. The market premium is upside, not a jackpot.
+              You can lose the premium, but you never lose the floor.
+            </p>
+          </div>
+
+          {/* ── NFT vs Meme Tokens ── */}
+          <div className="mt-6 rounded-lg border border-border bg-surface p-6">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-dim">
+              NFT vs Meme Tokens vs EVO
+            </h3>
+            <p className="mt-2 text-xs text-muted">
+              Where EVO sits between the two most common Solana asset types.
+            </p>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[560px] text-left text-xs">
+                <thead>
+                  <tr className="border-b border-border text-dim">
+                    <th className="py-2 pr-4 font-semibold">Property</th>
+                    <th className="py-2 pr-4 font-semibold text-warn">NFT</th>
+                    <th className="py-2 pr-4 font-semibold text-negative">Meme Token</th>
+                    <th className="py-2 pr-4 font-semibold text-accent">EVO</th>
+                  </tr>
+                </thead>
+                <tbody className="text-muted">
+                  <tr className="border-b border-border/50">
+                    <td className="py-2 pr-4 font-mono text-text-strong">Backed by</td>
+                    <td className="py-2 pr-4">JPEG on IPFS (no SOL)</td>
+                    <td className="py-2 pr-4">Liquidity pool (can drain)</td>
+                    <td className="py-2 pr-4 text-accent">SOL locked in PDA</td>
+                  </tr>
+                  <tr className="border-b border-border/50">
+                    <td className="py-2 pr-4 font-mono text-text-strong">Floor price</td>
+                    <td className="py-2 pr-4 text-negative">Can go to zero</td>
+                    <td className="py-2 pr-4 text-negative">Can go to zero</td>
+                    <td className="py-2 pr-4 text-positive">Locked SOL (never zero)</td>
+                  </tr>
+                  <tr className="border-b border-border/50">
+                    <td className="py-2 pr-4 font-mono text-text-strong">Fungibility</td>
+                    <td className="py-2 pr-4">Non-fungible (1 of 1 or set)</td>
+                    <td className="py-2 pr-4">Fully fungible (1 token = 1 token)</td>
+                    <td className="py-2 pr-4">Non-fungible, but shatters into SOL</td>
+                  </tr>
+                  <tr className="border-b border-border/50">
+                    <td className="py-2 pr-4 font-mono text-text-strong">State</td>
+                    <td className="py-2 pr-4">Static (image never changes)</td>
+                    <td className="py-2 pr-4">Static (token has no visual)</td>
+                    <td className="py-2 pr-4 text-accent">Evolving (visual state on-chain)</td>
+                  </tr>
+                  <tr className="border-b border-border/50">
+                    <td className="py-2 pr-4 font-mono text-text-strong">Exit</td>
+                    <td className="py-2 pr-4">Sell on marketplace (if buyer exists)</td>
+                    <td className="py-2 pr-4">Sell into LP (if liquidity exists)</td>
+                    <td className="py-2 pr-4 text-positive">Shatter (always works, reclaim SOL)</td>
+                  </tr>
+                  <tr className="border-b border-border/50">
+                    <td className="py-2 pr-4 font-mono text-text-strong">Rug risk</td>
+                    <td className="py-2 pr-4 text-negative">Creator can abandon, floor crashes</td>
+                    <td className="py-2 pr-4 text-negative">Devs can pull LP, token dies</td>
+                    <td className="py-2 pr-4 text-positive">No rug. SOL is in the PDA, not the creator&apos;s wallet</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-4 font-mono text-text-strong">Speculation</td>
+                    <td className="py-2 pr-4">Hype-driven, no floor guarantee</td>
+                    <td className="py-2 pr-4">Hype-driven, LP-dependent</td>
+                    <td className="py-2 pr-4 text-accent">Market premium + locked floor. Speculate on top, not against the floor.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-4 text-xs leading-relaxed text-muted">
+              <span className="text-text-strong">NFTs</span> give you ownership of an image with no
+              guaranteed value. <span className="text-text-strong">Meme tokens</span> give you
+              fungible units that depend on liquidity pools that can vanish.
+              <span className="text-text-strong"> EVO</span> combines the uniqueness of an NFT with
+              the redeemability of a token — you own a non-fungible, evolving asset backed by real
+              SOL that you can exit at any time. The market sets the premium; the locked SOL sets
+              the floor.
+            </p>
+          </div>
         </div>
       </section>
 
