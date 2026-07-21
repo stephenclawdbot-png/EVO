@@ -11,7 +11,7 @@ import {
 } from '@solana/web3.js';
 
 // ─── Constants ──────────────────────────────────────────────
-export const PROGRAM_ID = new PublicKey('Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2');
+export const PROGRAM_ID = new PublicKey('9Vh3gyG9PaNhThVSAWiq8c212xvXfokCrvJrrwju7VWh'); // LOCAL TEST ONLY — deployer-restriction-free devnet build
 export const PROTOCOL_PDA = (() => {
   const [pda] = PublicKey.findProgramAddressSync([Buffer.from('protocol')], PROGRAM_ID);
   return pda;
@@ -302,6 +302,7 @@ export function parseCollectionConfig(data: Buffer): CollectionConfig | null {
   const [creator, o2] = readPubkey(data, off); off = o2;
   const [supplyCap, o3] = readU32(data, off); off = o3;
   const [currentSupply, o4] = readU32(data, off); off = o4;
+  const [, o4b] = readU32(data, off); off = o4b; // total_minted (unused on frontend, but present on-chain — must be read to keep offsets aligned)
   const [shatterFeeBps, o5] = readU16(data, off); off = o5;
   const [shatterFeeDest, o6] = readFeeDest(data, off); off = o6;
   const [tradeRoyaltyBps, o7] = readU16(data, off); off = o7;
