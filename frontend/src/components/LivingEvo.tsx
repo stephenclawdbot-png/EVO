@@ -43,9 +43,9 @@ const STAGES: Stage[] = [
     id: 'fed',
     icon: IconFeed,
     title: 'Fed',
-    body: '0.05 SOL added. The EVO grows. Its locked value rises, its form brightens. Feeding is how an owner invests in the object itself.',
+    body: '0.05 SOL added. The EVO transforms. Its locked value rises, its form brightens. Feeding is how an owner invests in the object itself.',
     lockedSol: 0.15,
-    note: 'it grows',
+    note: 'it evolves',
   },
   {
     id: 'evolved',

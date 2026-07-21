@@ -429,7 +429,7 @@ export default function Home() {
           <div className="grid grid-cols-1 gap-px overflow-hidden rounded border border-border bg-border sm:grid-cols-2 lg:grid-cols-5">
             <OpCard icon={IconHammer} name="Forge" desc="Lock SOL into a PDA. A new EVO is born with a floor value." />
             <OpCard icon={IconTrendingUp} name="Trade" desc="Buy and sell on-chain. Royalties enforced. The floor travels." />
-            <OpCard icon={IconFeed} name="Feed" desc="Add SOL to the lock. The object grows in value and form." />
+            <OpCard icon={IconFeed} name="Feed" desc="Add SOL to the lock. The object evolves in value and form." />
             <OpCard icon={IconEvolve} name="Evolve" desc="Hit a threshold. The art changes. The state machine is the art." />
             <OpCard icon={IconShatter} name="Shatter" desc="Destroy the EVO. Recover the locked SOL, minus a fee." />
           </div>

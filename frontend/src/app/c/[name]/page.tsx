@@ -273,9 +273,9 @@ export default function CollectionPage() {
               const soldOut = remaining === 0;
               const filling = pct >= 75 && !soldOut;
               const statusLabel = soldOut ? 'Sold out' : filling ? 'Almost gone' : pct >= 40 ? 'Filling up' : 'Available';
-              const statusColor = soldOut ? 'text-dim' : filling ? 'text-warning' : 'text-positive';
-              const dotColor = soldOut ? 'bg-dim' : filling ? 'bg-warning' : 'bg-positive';
-              const barColor = soldOut ? 'bg-dim' : filling ? 'bg-warning' : 'bg-positive';
+              const statusColor = soldOut ? 'text-dim' : filling ? 'text-warn' : 'text-positive';
+              const dotColor = soldOut ? 'bg-dim' : filling ? 'bg-warn' : 'bg-positive';
+              const barColor = soldOut ? 'bg-dim' : filling ? 'bg-warn' : 'bg-positive';
               return (
                 <div className="relative">
                   <button

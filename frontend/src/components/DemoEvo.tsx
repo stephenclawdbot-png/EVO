@@ -9,10 +9,10 @@ const CAT_IMG = '/api/img?uri=' + encodeURIComponent('https://gateway.irys.xyz/G
 const FEED_THRESHOLD = 0.15; // SOL needed to evolve
 const LOCKED_SOL = 0.05; // SOL inside the demo EVO
 
-type Phase = 'kitten' | 'evolved' | 'shattered';
+type Phase = 'adult' | 'evolved' | 'shattered';
 
 export function DemoEvo() {
-  const [phase, setPhase] = useState<Phase>('kitten');
+  const [phase, setPhase] = useState<Phase>('adult');
   const [fed, setFed] = useState(0);
   const [feeding, setFeeding] = useState(false);
   const [shattering, setShattering] = useState(false);
@@ -50,11 +50,11 @@ export function DemoEvo() {
   };
 
   const handleReset = () => {
-    setPhase('kitten');
+    setPhase('adult');
     setFed(0);
   };
 
-  const img = phase === 'evolved' ? CAT_IMG : KITTEN_IMG;
+  const img = phase === 'evolved' ? KITTEN_IMG : CAT_IMG;
 
   return (
     <div className="mx-auto w-full max-w-sm">
@@ -84,7 +84,7 @@ export function DemoEvo() {
               <span className="font-mono tabular-nums text-[10px] text-positive">+{fmtSolValue(totalValue)} recovered</span>
             </div>
           ) : !imgError ? (
-            <img src={img} alt={phase === 'evolved' ? 'Evolved cat' : 'Kitten'}
+            <img src={img} alt={phase === 'evolved' ? 'Evolved kitten' : 'Adult cat'}
               className="relative z-[1] pixelated transition-all duration-500"
               style={{
                 transform: `scale(${phase === 'evolved' ? 1.1 : 0.9})`,
@@ -94,7 +94,7 @@ export function DemoEvo() {
               onError={() => setImgError(true)} />
           ) : (
             <div className="relative z-[1] flex h-20 w-20 items-center justify-center rounded border border-dashed border-border-strong text-[10px] text-dim">
-              {phase === 'evolved' ? 'Cat' : 'Kitten'}
+              {phase === 'evolved' ? 'Kitten' : 'Cat'}
             </div>
           )}
 
@@ -104,7 +104,7 @@ export function DemoEvo() {
               background: phase === 'evolved' ? '#8b5cf620' : '#6366f120',
               color: phase === 'evolved' ? '#a78bfa' : '#818cf8',
             }}>
-              {phase === 'evolved' ? 'S1 · Evolved' : 'S0 · Kitten'}
+              {phase === 'evolved' ? 'S1 · Kitten' : 'S0 · Adult'}
             </span>
           )}
 
@@ -157,7 +157,7 @@ export function DemoEvo() {
 
               {phase === 'evolved' && (
                 <p className="text-center text-[10px] text-accent">
-                  Your EVO evolved! Shatter to recover {fmtSolValue(totalValue)}.
+                  Your EVO transformed! Shatter to recover {fmtSolValue(totalValue)}.
                 </p>
               )}
             </>

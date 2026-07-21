@@ -117,7 +117,7 @@ export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed, href, 
 
         {/* Below-floor arbitrage badge */}
         {belowFloor && (
-          <span className="absolute left-1.5 top-7 z-10 rounded bg-warning px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-[#0a0a0b]">
+          <span className="absolute left-1.5 top-7 z-10 rounded bg-warn px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-[#0a0a0b]">
             Below Floor
           </span>
         )}
@@ -184,7 +184,7 @@ export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed, href, 
         <div className="flex items-center justify-between gap-1">
           <h3 className="truncate text-xs font-medium text-text">{evo.name}</h3>
           {evo.isListed ? (
-            <span className={`shrink-0 font-mono text-xs font-bold ${belowFloor ? 'text-warning' : 'text-positive'}`}>{evo.listPrice}</span>
+            <span className={`shrink-0 font-mono text-xs font-bold ${belowFloor ? 'text-warn' : 'text-positive'}`}>{evo.listPrice}</span>
           ) : (
             <span className="shrink-0 font-mono text-[11px] text-dim">{evo.tradeCount}x</span>
           )}

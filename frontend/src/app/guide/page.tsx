@@ -214,7 +214,7 @@ export default function GuidePage() {
             are enforced automatically by the protocol, so you always get your cut. The locked SOL
             (floor value) travels with the EVO to the new owner.
           </Step>
-          <Step num="4" title="Feed SOL to Grow It">
+          <Step num="4" title="Feed SOL to Evolve It">
             Add more SOL to your EVO&apos;s lock. This raises its floor value and can trigger
             evolution in evolving collections. Feeding is optional — your EVO works fine without it.
           </Step>
