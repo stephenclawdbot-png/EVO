@@ -33,6 +33,9 @@ export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed }: EvoC
     let active = true;
     resolveImage(metadataUri, '/placeholder.png', evo.currentState, isRevealed, evo.id).then(img => {
       if (active) setResolvedImage(img);
+    }).catch((e) => {
+      console.error('EvoCard: resolveImage failed:', e);
+      if (active) setResolvedImage('/placeholder.png');
     });
     return () => { active = false; };
   }, [metadataUri, evo.currentState, isRevealed, evo.id]);

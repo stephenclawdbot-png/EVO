@@ -52,7 +52,9 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
   } | null>(null);
 
   useEffect(() => {
+    let active = true;
     readCollectionConfig(connection, collectionName).then(cfg => {
+      if (!active) return;
       if (cfg) {
         setCreator(cfg.creator.toBase58());
         setMetadataUri(cfg.metadataUri);
@@ -67,35 +69,41 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
           lifecycleType: cfg.lifecycleType,
         });
       }
-    }).catch(() => {});
+    }).catch((e) => { console.error('EvoDetail: readCollectionConfig failed:', e); });
+    return () => { active = false; };
   }, [connection, collectionName]);
 
   useEffect(() => {
     if (!metadataUri) { setManifest(null); setStageImages([]); setManifestVerification(null); return; }
     let active = true;
     (async () => {
-      const cfg = await readCollectionConfig(connection, collectionName);
-      const expectedHash = cfg?.artworkManifestHash;
-      const m = await fetchVisualManifest(metadataUri, expectedHash);
-      if (!active) return;
-      setManifest(m);
-      setManifestVerification(getManifestVerification(metadataUri));
-      // Extract per-EVO traits from bulk manifest items
-      const rawItems = (m as any)?.items;
-      if (Array.isArray(rawItems)) {
-        const item = rawItems.find((it: any) => it.index === evo.id);
-        setTraits(item?.traits ?? null);
-      } else {
-        setTraits(null);
-      }
-      if (m && Array.isArray(m.stages) && m.stages.length > 0) {
-        const imgs = m.stages.map(s => ({
-          name: s.name,
-          image: resolveActiveImage(m, evo.id, s.id, isRevealed),
-        }));
-        if (active) setStageImages(imgs);
-      } else {
-        if (active) setStageImages([]);
+      try {
+        const cfg = await readCollectionConfig(connection, collectionName);
+        const expectedHash = cfg?.artworkManifestHash;
+        const m = await fetchVisualManifest(metadataUri, expectedHash);
+        if (!active) return;
+        setManifest(m);
+        setManifestVerification(getManifestVerification(metadataUri));
+        // Extract per-EVO traits from bulk manifest items
+        const rawItems = (m as any)?.items;
+        if (Array.isArray(rawItems)) {
+          const item = rawItems.find((it: any) => it.index === evo.id);
+          setTraits(item?.traits ?? null);
+        } else {
+          setTraits(null);
+        }
+        if (m && Array.isArray(m.stages) && m.stages.length > 0) {
+          const imgs = m.stages.map(s => ({
+            name: s.name,
+            image: resolveActiveImage(m, evo.id, s.id, isRevealed),
+          }));
+          if (active) setStageImages(imgs);
+        } else {
+          if (active) setStageImages([]);
+        }
+      } catch (e) {
+        console.error('EvoDetail: manifest fetch failed:', e);
+        if (active) { setManifest(null); setStageImages([]); }
       }
     })();
     return () => { active = false; };
@@ -106,6 +114,9 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
     let active = true;
     resolveImage(metadataUri, '/placeholder.png', evo.currentState, isRevealed, evo.id).then(img => {
       if (active) setResolvedImage(img);
+    }).catch((e) => {
+      console.error('EvoDetail: resolveImage failed:', e);
+      if (active) setResolvedImage('/placeholder.png');
     });
     return () => { active = false; };
   }, [metadataUri, evo.currentState, isRevealed, evo.id]);

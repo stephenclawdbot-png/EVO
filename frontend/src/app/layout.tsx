@@ -4,6 +4,7 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 import "./globals.css";
 import { WalletContextProvider } from "@/components/WalletProvider";
 import { ThemeProvider, themeInitScript } from "@/components/ThemeProvider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -48,7 +49,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
-          <WalletContextProvider>{children}</WalletContextProvider>
+          <WalletContextProvider>
+            <ErrorBoundary>{children}</ErrorBoundary>
+          </WalletContextProvider>
         </ThemeProvider>
       </body>
     </html>
