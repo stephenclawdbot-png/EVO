@@ -1,6 +1,6 @@
 'use client';
 
-import { EVOData, getAgeString } from '@/lib/evo-data';
+import { EVOData, getAgeString, invalidateCollectionsCache } from '@/lib/evo-data';
 import { useState, useEffect, Component } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
@@ -15,6 +15,7 @@ import {
   createTransferIx,
   readCollectionConfig,
   readProtocolConfig,
+  readListing,
   getCollectionPDA,
 } from '@/lib/evo-program';
 import { resolveImage, fetchVisualManifest, resolveActiveImage, EvoVisualManifest, getManifestVerification, ManifestVerification } from '@/lib/evo-visuals';
@@ -132,12 +133,19 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
     if (!wallet.connected || !wallet.publicKey) { setError('Connect wallet first'); return null; }
     const tx = new Transaction().add(ix);
     tx.feePayer = wallet.publicKey;
-    const { blockhash } = await connection.getLatestBlockhash();
+    // Blockhash-based confirmation: the signature-only overload polls with a
+    // fixed timeout and can report failure while the tx actually lands (users
+    // saw "not saving" / silent state). The blockhash form is deterministic —
+    // it resolves confirmed or throws when the blockhash truly expires.
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
     const signed = await wallet.signTransaction?.(tx);
     if (!signed) throw new Error('Transaction signing failed');
     const sig = await connection.sendRawTransaction(signed.serialize());
-    await connection.confirmTransaction(sig, 'confirmed');
+    const conf = await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, 'confirmed');
+    if (conf.value.err) throw new Error(`Transaction failed on-chain: ${JSON.stringify(conf.value.err)}`);
+    // State changed on-chain — the home page's cached stats are now stale.
+    invalidateCollectionsCache();
     return sig;
   };
 
@@ -180,27 +188,41 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
       if (!cfg) throw new Error('Collection not found');
       const proto = await readProtocolConfig(connection);
       if (!proto) throw new Error('Protocol not found');
+      // Slippage cap: buyer authorizes the exact listed price in lamports.
+      // The on-chain `buy` reverts if the seller front-runs with delist+relist
+      // at a higher price in the same slot.
+      // If the merged listing price is missing (listing data failed to merge),
+      // read the live listing instead of defaulting to 0 — max_price=0 would
+      // make the on-chain `price <= max_price` check fail EVERY buy.
+      let maxPrice = evo.listPriceLamports;
+      if (maxPrice == null) {
+        const listing = await readListing(connection, new PublicKey(evo.evoPda!));
+        if (!listing) throw new Error('No active listing found for this EVO');
+        maxPrice = Number(listing.priceLamports);
+      }
       const sig = await sendTx(createBuyIx(
         new PublicKey(evo.evoPda!), collectionPda,
         new PublicKey(evo.owner), cfg.creator, wallet.publicKey!, proto.treasury,
         cfg.royaltyDestination, cfg.burnDestination, evo.id,
-        // Slippage cap: buyer authorizes the exact listed price in lamports.
-        // The on-chain `buy` reverts if the seller front-runs with delist+relist
-        // at a higher price in the same slot.
-        BigInt(evo.listPriceLamports ?? 0),
+        BigInt(maxPrice),
       ));
       if (sig) { setTxResult(sig); onRefresh?.(); }
     } catch (err: any) { setError(err.message || 'Buy failed'); } finally { setAction(null); }
   };
 
   const handleShatter = async () => {
-    const cfg = await readCollectionConfig(connection, collectionName);
-    if (!cfg) throw new Error('Collection not found');
-    const feeBps = cfg.shatterFeeBps;
-    const refundLamports = Math.floor(evo.lockedLamports * (10000 - feeBps) / 10000);
-    if (!confirm(`Shatter this EVO and recover ${refundLamports.toFixed(4)} SOL (after ${(feeBps / 100).toFixed(1)}% fee)? This cannot be undone.`)) return;
-    setAction('shatter'); setError(null); setTxResult(null);
+    setError(null); setTxResult(null);
     try {
+      // NOTE: this read must live INSIDE try/catch — it used to run before it,
+      // so an RPC hiccup threw an unhandled rejection and the button silently died.
+      const cfg = await readCollectionConfig(connection, collectionName);
+      if (!cfg) throw new Error('Collection not found');
+      const feeBps = cfg.shatterFeeBps;
+      // evo.lockedLamports is in SOL (display units) — no Math.floor here.
+      // Flooring a sub-1-SOL value truncated the dialog to "recover 0.0000 SOL".
+      const refundSol = evo.lockedLamports * (10000 - feeBps) / 10000;
+      if (!confirm(`Shatter this EVO and recover ${refundSol.toFixed(4)} SOL (after ${(feeBps / 100).toFixed(1)}% fee)? This cannot be undone.`)) return;
+      setAction('shatter');
       const collectionPda = new PublicKey(evo.collectionPda!);
       const proto = await readProtocolConfig(connection);
       if (!proto) throw new Error('Protocol not found');

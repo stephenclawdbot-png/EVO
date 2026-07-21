@@ -47,6 +47,12 @@ export interface EvoVisualManifest {
   };
   /** Optional provenance for per-EVO image hash verification. */
   provenance?: EvoProvenance;
+  /**
+   * Per-EVO items carried through from a bulk manifest (BulkArtworkUploader).
+   * Present only when the source manifest was bulk-format. `states` are
+   * normalized image URLs indexed by stage; `traits` are optional display traits.
+   */
+  items?: { index: number; states: string[]; traits?: Record<string, string> }[];
 }
 
 // ─── Manifest Verification ──────────────────────────────────
@@ -332,13 +338,17 @@ export async function fetchVisualManifest(
     const normalized = normalizeToVisualManifest(data);
     if (!normalized) return null;
 
-    // Cache bulk items for per-EVO resolution
+    // Cache bulk items for per-EVO resolution AND carry them on the normalized
+    // manifest itself, so consumers (traits display, per-EVO image resolution)
+    // can read them without touching the global cache.
     if (isBulkManifest(data)) {
       const items = (data as any).items.map((it: any) => ({
         index: it.index,
         states: it.states.map((s: string) => normalizeUri(s)),
+        traits: it.traits,
       }));
       bulkManifestCache.set(metadataUri, items);
+      normalized.items = items;
     }
 
     const manifest = normalized;
@@ -371,9 +381,13 @@ export async function fetchVisualManifest(
       };
     }
 
-    manifestCache.set(metadataUri, { manifest: data, ts: Date.now() });
+    // Cache and return the NORMALIZED manifest — not the raw response.
+    // Returning `data` here was a real bug: bulk/small manifests don't have
+    // v1's `stages`/`fallback_image`/`lifecycle` shape, so stage names, the
+    // stage gallery, and image fallbacks silently broke for those collections.
+    manifestCache.set(metadataUri, { manifest, ts: Date.now() });
     verificationCache.set(metadataUri, verification);
-    return data;
+    return manifest;
   } catch {
     return null;
   }
@@ -489,14 +503,14 @@ export function resolveActiveImage(
 ): string {
   const stageNum = resolveActiveStageNumber(manifest, onChainStage, isRevealed);
 
-  // 0. Per-EVO bulk manifest items (highest priority)
-  if (evoId !== undefined) {
-    for (const [uri, items] of bulkManifestCache) {
-      if (!items || !Array.isArray(items)) continue;
-      const item = items.find(it => it.index === evoId);
-      if (item && item.states[stageNum]) {
-        return proxyImageUri(item.states[stageNum]);
-      }
+  // 0. Per-EVO bulk manifest items (highest priority).
+  // Use the manifest's OWN items — never scan the global cache across all
+  // collections: EVO #N exists in every collection, so a cross-cache scan
+  // could resolve collection B's EVO to collection A's artwork.
+  if (evoId !== undefined && Array.isArray(manifest.items)) {
+    const item = manifest.items.find(it => it.index === evoId);
+    if (item && item.states[stageNum]) {
+      return proxyImageUri(item.states[stageNum]);
     }
   }
 

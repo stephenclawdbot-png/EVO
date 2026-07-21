@@ -14,7 +14,7 @@ import {
   createForgeIx,
   generateResonanceSeed,
 } from '@/lib/evo-program';
-import { CollectionData, collectionConfigToData } from '@/lib/evo-data';
+import { CollectionData, collectionConfigToData, invalidateCollectionsCache } from '@/lib/evo-data';
 import { resolveImage } from '@/lib/evo-visuals';
 import { IconCheck, IconAlertTriangle, IconExternalLink, IconArrowRight } from '@/components/Icons';
 
@@ -80,13 +80,18 @@ export default function CollectionForgePage() {
       const ix = createForgeIx(wallet.publicKey, collectionPda, cfg.creator, evoId, resonanceSeed);
       const tx = new Transaction().add(ix);
       tx.feePayer = wallet.publicKey;
-      const { blockhash } = await connection.getLatestBlockhash();
+      // Blockhash-based confirmation — deterministic, unlike the signature-only
+      // overload which can time out while the tx actually lands.
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       tx.recentBlockhash = blockhash;
       const signed = await wallet.signTransaction?.(tx);
       if (!signed) throw new Error('Transaction signing failed');
       const sig = await connection.sendRawTransaction(signed.serialize());
-      await connection.confirmTransaction(sig, 'confirmed');
+      const conf = await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, 'confirmed');
+      if (conf.value.err) throw new Error(`Transaction failed on-chain: ${JSON.stringify(conf.value.err)}`);
       setTxSig(sig);
+      // A mint happened — the home page's cached stats are stale now.
+      invalidateCollectionsCache();
       await fetchCollection();
     } catch (err: any) { setError(err.message || 'Forge failed'); } finally { setForging(false); }
   };

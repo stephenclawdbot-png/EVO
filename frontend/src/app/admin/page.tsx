@@ -16,7 +16,8 @@ import {
   createSetVisualStageIx,
   createUpdateMetadataIx,
 } from '@/lib/evo-program';
-import { CollectionData, collectionConfigToData } from '@/lib/evo-data';
+import { CollectionData, collectionConfigToData, invalidateCollectionsCache } from '@/lib/evo-data';
+import { invalidateManifestCache } from '@/lib/evo-visuals';
 import { IconCheck, IconAlertTriangle, IconExternalLink } from '@/components/Icons';
 
 export default function AdminPage() {
@@ -79,12 +80,19 @@ function AdminContent() {
     if (!wallet.connected || !wallet.publicKey) { setError('Connect wallet first'); return null; }
     const tx = new Transaction().add(ix);
     tx.feePayer = wallet.publicKey;
-    const { blockhash } = await connection.getLatestBlockhash();
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
     const signed = await wallet.signTransaction?.(tx);
     if (!signed) throw new Error('Transaction signing failed');
     const sig = await connection.sendRawTransaction(signed.serialize());
-    await connection.confirmTransaction(sig, 'confirmed');
+    const conf = await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, 'confirmed');
+    if (conf.value.err) throw new Error(`Transaction failed on-chain: ${JSON.stringify(conf.value.err)}`);
+    // Every admin action (reveal / evolve / set stage / update metadata) changes
+    // what should render. Bust the manifest cache (60s TTL would keep serving
+    // the old art — the "mystery image not updating" bug) and the home page's
+    // cached collection stats.
+    invalidateManifestCache();
+    invalidateCollectionsCache();
     return sig;
   };
 

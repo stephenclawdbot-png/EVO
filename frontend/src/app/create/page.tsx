@@ -207,12 +207,13 @@ export default function CreateCollectionPage() {
     if (!wallet.connected || !wallet.publicKey) { setError('Connect wallet first'); return null; }
     const tx = new Transaction().add(ix);
     tx.feePayer = wallet.publicKey;
-    const { blockhash } = await connection.getLatestBlockhash();
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
     const signed = await wallet.signTransaction?.(tx);
     if (!signed) throw new Error('Transaction signing failed');
     const sig = await connection.sendRawTransaction(signed.serialize());
-    await connection.confirmTransaction(sig, 'confirmed');
+    const conf = await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, 'confirmed');
+    if (conf.value.err) throw new Error(`Transaction failed on-chain: ${JSON.stringify(conf.value.err)}`);
     return sig;
   };
 

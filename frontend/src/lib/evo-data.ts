@@ -146,6 +146,25 @@ export function collectionConfigToData(cfg: CollectionConfig): CollectionData {
   };
 }
 
+/**
+ * Invalidate the home page's localStorage collections cache (any version).
+ * Call after ANY successful state-changing transaction (forge, feed, buy,
+ * shatter, list, delist, transfer) so the home page's stats (minted count,
+ * locked SOL, floor) refresh instead of serving up-to-60s-stale data.
+ * Safe to call anywhere — no-ops outside the browser.
+ */
+export function invalidateCollectionsCache(): void {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    const stale: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (key && key.startsWith('evo_collections')) stale.push(key);
+    }
+    stale.forEach(k => window.localStorage.removeItem(k));
+  } catch { /* storage unavailable (private mode etc.) — ignore */ }
+}
+
 export function getAgeString(forgedAt: number): string {
   const now = Date.now();
   const elapsed = now - forgedAt;

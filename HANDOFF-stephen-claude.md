@@ -1,7 +1,8 @@
 # HANDOFF → branch `stephen-claude`
 
 **Keyword:** `EVO-STEPHEN-CLAUDE-HARDENING-2026-07-21`
-**Branch:** `stephen-claude` · **Commits:** `f328c42` (tier1/3 + docs + SECURITY) → `f4961ad` (EvoDetail crash-proofing)
+**Branch:** `stephen-claude`
+**Commits:** `f328c42` (tier1/3 + docs + SECURITY) → `f4961ad` (EvoDetail crash-proofing) → `1f58649` (handoff v1) → **latest: frontend seamlessness sweep**
 **Author on commits:** `Stephen in Claude`
 **From:** Stephen (in Claude / Anthropic) → **To:** the local agent (Stephen in Copilot)
 
@@ -9,115 +10,98 @@
 
 ## 0. READ THIS FIRST — verification status
 
-**Nothing in this branch was built or run.** The environment it was authored in
-had **no `anchor`, no `solana` CLI, and no `node_modules`** (and the frontend is a
-modified Next.js). So every change is **correct-by-inspection only**.
+**Nothing in this branch was built or run.** The authoring environment has **no
+`anchor`, no `solana` CLI, and no `node_modules`** (and the frontend is a modified
+Next.js). Every change is **correct-by-inspection only**.
 
 **Your job before any deploy:**
-- `anchor build && anchor test` (localnet) for the Rust.
-- `cd frontend && npm i && npx tsc --noEmit && npm run build && npx vitest` for the frontend.
-- The program is **LIVE ON MAINNET WITH REAL USER SOL** — treat any redeploy as
-  high-stakes. See `SECURITY.md`.
+```
+anchor build && anchor test                          # Rust (only comments changed)
+cd frontend && npm i && npx tsc --noEmit && npm run build && npx vitest
+```
+The program is **LIVE ON MAINNET WITH REAL USER SOL** — see `SECURITY.md`.
+Frontend vitest note: `evo-visuals` tests may assert the OLD (buggy) behavior of
+`fetchVisualManifest` returning the raw manifest — if tests fail there, update the
+assertions to expect the NORMALIZED manifest (that's the fix, not a regression).
 
 ---
 
-## 1. Live mainnet facts (verified on-chain this session, not from docs)
+## 1. Live mainnet facts (verified on-chain, not from docs)
 
 | Item | Value |
 |---|---|
 | Program (live, upgradeable) | `Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2` |
 | Upgrade authority = treasury authority | `G3aWJsdtrRT12HnC9R2BVoyErQbtGXseaM9c2xt1MJUJ` |
 | Treasury (fee sink) | `8McmuNBz7NHToGG2pBcJEuUpcof5T8HJ7DPG2A1xfkQc` |
-| Creation fee | 0.0459 SOL |
-| Live collection | `Solana Evo Kitties` (cap 900) |
-| Minted / holders / locked | **6 minted · 4 holders · 0.30 SOL locked · 0 listings** |
-
-The docs previously showed a **stale devnet program id** (`7UST…`) as if current —
-that has been corrected across user/integration docs (historical devnet-proof and
-`build-verification.txt` left intact on purpose).
+| Live collection | `Solana Evo Kitties` (cap 900) — 6 minted · 4 holders · 0.30 SOL locked |
 
 ---
 
-## 2. What changed
+## 2. FRONTEND SEAMLESSNESS SWEEP (latest commit) — the important one
 
-### Commit `f328c42` — tier-1 + tier-3 + docs
-- **`frontend/.../c/[name]/forge/page.tsx`** — *behavior fix.* Forge now uses
-  `total_minted` (not `current_supply`) as the new EVO's id. Latent bug: after any
-  shatter, `current_supply < total_minted`, so a `current_supply`-derived id
-  collides with a still-live EVO PDA and **minting breaks**. Display id shown as
-  `nextId` (= total_minted); supply counter still uses `current_supply`.
-- **`programs/evo/src/instructions/{forge,buy,reveal_collection}.rs`** — comments
-  only, **no behavior change**: documents the `evo_id` vs `mint_index` convention,
-  the intentional non-reset of `last_transition_at` on trades, and the on-chain vs
-  off-chain boundary of the "provably fair reveal" claim.
-- **`packages/evo-sdk/`** — flagged `createBuyIx` / `createShatterIx` as **broken
-  vs the deployed program** (buy missing `listing` + `incinerator_fallback`
-  accounts AND the `max_price` arg; shatter missing optional `listing` +
-  `incinerator_fallback`). Documented the correct account layout inline + README
-  drift warning. **Not rewritten** (no way to typecheck here, SDK not in CI).
-- **Docs** — program-id fix, VRF reframed as a stub (not active), self-trade MEDIUM
-  marked fixed (guard is in `buy.rs`), README/START_HERE set to live-mainnet +
-  not-audited. New **`SECURITY.md`** (honest posture + $0 hardening plan +
-  invariants to test + disclosure). Credit "Stephen (in Claude)" added.
+Context: the user is frustrated that the terminal "always gets broken" — this pass
+systematically fixed every provable bug in the mint → view → trade → detail flow.
+Verified first that the frontend ix builders are **complete and correctly ordered**
+vs the deployed program (buy has `listing` + `incinerator_fallback` + `max_price`;
+shatter has both too) — so trading failures were NOT account-layout.
 
-### Commit `f4961ad` — EvoDetail crash-proofing
-- **`frontend/src/components/EvoDetail.tsx`** — added a per-section `<Guard>` error
-  boundary around the left column (art + tabs) and right column (sidebar). A render
-  throw now degrades to an inline message **and logs the section name + React
-  component stack** instead of white-screening. Pre-return derived data
-  (`premium`, `holderHistory`, `uniqueHolders`, `sparkPoints`) made defensive
-  (normalize `fractureLines`, try/catch with safe defaults) because that code runs
-  in EvoDetail's own render where a child boundary can't help.
-- **`frontend/src/lib/evo-data.ts`** — fracture-line `timestamp` was on-chain
-  **seconds** mapped into a **millisecond** field → Activity tab showed "56y ago".
-  Now `* 1000`.
+### Real bugs found & fixed
 
----
+| # | File | Bug | User symptom it explains |
+|---|---|---|---|
+| 1 | `lib/evo-visuals.ts` | `fetchVisualManifest` **returned the RAW manifest, not the normalized one** (`return data` instead of `return normalized`). Bulk/small manifests don't have v1's `stages`/`fallback_image`/`lifecycle` shape, so stage names, the stage gallery, and fallbacks silently broke for bulk collections (= the Kitties). Now returns/caches the normalized manifest, with bulk `items` (+ traits) carried through on a new typed `items?` field. | "Kittens not updating", stage strip never showing, wrong stage names |
+| 2 | `lib/evo-visuals.ts` | `resolveActiveImage` scanned the **global** bulk cache across ALL collections — EVO #N exists in every collection, so collection B's EVO could resolve to collection A's artwork. Now uses `manifest.items` only. | wrong/mixed images once a 2nd collection exists |
+| 3 | `components/EvoDetail.tsx` `handleShatter` | RPC read ran **outside** try/catch → any RPC hiccup = unhandled rejection, button silently dead. AND `Math.floor` applied to a SOL-denominated value → confirm dialog said "recover **0.0000** SOL" for any sub-1-SOL floor (Kitties lock 0.05). Both fixed. | "buttons not working", scary 0.0000 dialog |
+| 4 | `components/EvoDetail.tsx` `handleBuy` | `maxPrice = BigInt(evo.listPriceLamports ?? 0)` — if listing merge failed, max_price=0 makes the on-chain `price <= max_price` check fail **every** buy. Now falls back to a live `readListing` read; errors clearly if no listing. | "cannot trade" |
+| 5 | ALL tx senders (`EvoDetail`, `forge`, `admin`, `create`) | Deprecated signature-only `confirmTransaction(sig, 'confirmed')` polls with a fixed timeout and can report failure while the tx actually lands. Switched to blockhash-form confirm (`{signature, blockhash, lastValidBlockHeight}`) + explicit `conf.value.err` check. | "not saving", "state changes not persisting" |
+| 6 | `lib/evo-data.ts` + call sites | NEW `invalidateCollectionsCache()` — clears the home page's `evo_collections*` localStorage cache. Called after every successful tx (EvoDetail sendTx, forge success, admin sendTx). | "locked SOL stale after minting", stale home stats |
+| 7 | `app/admin/page.tsx` | After reveal/evolve/set-stage/update-metadata, nothing busted the 60s manifest cache or home cache → old art kept rendering. Admin `sendTx` now calls `invalidateManifestCache()` + `invalidateCollectionsCache()` on success. | "mystery placeholder not changing" |
+| 8 | `lib/evo-data.ts` (commit `f4961ad`) | Fracture-line timestamps were on-chain **seconds** stored in a **ms** field → Activity tab "56y ago". `* 1000`. | wrong ages |
 
-## 3. The still-open frontend crash (needs YOUR run)
+### From commit `f4961ad` (still relevant)
+`EvoDetail` is wrapped in per-section `<Guard>` error boundaries (left column /
+right column). Any remaining render crash now degrades to an inline message and
+logs `EvoDetail section "detail-left|right" crashed: <error + component stack>`
+— **run the app, click an EVO, and the console names the exact crashing line.**
+That's the trap for the one still-unreproduced crash.
 
-The "EVO detail page blank on click" root cause was **not** found by static reading:
-data reaching `EvoDetail` is well-formed (both mount paths use `evoAccountToData`,
-which normalizes everything and filters nulls), and there's no unconditional render
-throw with valid data. It's a value-edge or browser-only condition.
-
-**The Guard added in `f4961ad` is the trap.** Run the app, click an EVO, and the
-console will print:
-```
-EvoDetail section "detail-left" crashed: <the real error> <component stack>
-```
-That names the exact line. Capture it and fix the root cause there (or send it back).
-
-Other open items from the user's list to keep in mind: images not loading in browser
-(proxy works server-side), collection page `fetchData` silently failing in browser,
-Phantom tx warnings.
+### Explicitly NOT touched (couldn't verify or out of code's reach)
+- **Phantom warnings** — that's Blowfish/Phantom flagging an unverified program +
+  raw PDA txs. Code can't fix it: submit the domain + program for review
+  (Phantom's dapp allowlisting), publish `solana-verify` build, stable domain.
+- `BulkArtworkUploader` / `ArtworkDropzone` / Irys upload paths, `evo-chart.ts`
+  heuristics, portfolio page internals — not audited this pass.
+- The on-chain program — zero behavior changes anywhere in this branch.
 
 ---
 
-## 4. What is NOT done — CI-gated / needs the toolchain
+## 3. Commit `f328c42` recap (tier-1/3 + docs)
 
-1. **On-chain `evo_id` guard.** The clean fix is `require!(evo_id == collection.total_minted)`
-   in `forge.rs` + a new error, but it **breaks ~24 tests** that forge non-sequential
-   ids, and it couldn't be verified here. Do it as its own commit: add the guard,
-   update the tests to forge sequentially, get CI green, THEN consider deploy. The
-   frontend already forges at `total_minted`, so it's compatible.
-2. **SDK regen from IDL.** Fix `createBuyIx` / `createShatterIx` properly (see the
-   inline spec in `packages/evo-sdk/src/instructions.ts`) or regenerate from the
-   Anchor IDL, then typecheck.
-3. **Tier-0 trust work (SECURITY.md):** multisig with **independent** signers +
-   published signer set; an **exit-safe pause flag** (can freeze forge/list/buy but
-   NEVER shatter/transfer/delist/feed); `solana-verify` reproducible-build hash;
-   Trident fuzzing + the invariant tests listed in SECURITY.md §4.
+- **forge page**: forge id now `total_minted` (not `current_supply`) — after any
+  shatter the old code collides with a live PDA and minting breaks permanently.
+- **Rust**: comment-only docs of `evo_id`/`mint_index` convention, `last_transition_at`
+  non-reset on trade, and the real scope of "provably fair reveal".
+- **`@evo/sdk`**: `createBuyIx`/`createShatterIx` are **broken vs deployed program**
+  (missing `listing` + `incinerator_fallback`; buy missing `max_price`). Flagged
+  inline with the correct layouts; regenerate from IDL.
+- **Docs**: stale devnet id `7UST…` → live id; VRF is a stub; self-trade MEDIUM is
+  fixed; README/START_HERE reflect live-mainnet + unaudited. New `SECURITY.md`.
 
 ---
 
-## 5. Deploy guidance
-- **Frontend** (both frontend commits): safe to ship **after** a clean `tsc`/build.
-- **On-chain comments only** (`f328c42` .rs changes): no behavior change; safe, but
-  still rebuild + test.
-- **Do NOT** deploy the on-chain `evo_id` guard until it exists and CI is green (§4).
+## 4. Follow-ups (CI-gated, need your toolchain)
+
+1. **Run the build + tests** (§0). Fix any type nits my inspection missed.
+2. **Reproduce the detail-page crash** with the Guard logs; fix root cause.
+3. **On-chain `evo_id` guard**: `require!(evo_id == collection.total_minted)` in
+   `forge.rs` + new error + update ~24 tests that forge non-sequentially. Only
+   deploy after green CI. (Frontend already forges at `total_minted`.)
+4. **SDK regen from IDL**, then typecheck.
+5. **Tier-0 trust (SECURITY.md)**: independent multisig signers, exit-safe pause
+   (never blocks shatter/transfer/delist/feed), `solana-verify` hash, Trident
+   fuzzing + invariant tests (SECURITY.md §4).
+6. **Phantom**: submit for Blowfish/Phantom review once domain + verified build exist.
 
 ---
 
-*Authored by Stephen (in Claude). If any statement here drifts from the branch, the
-branch wins — re-read the diffs: `git log --stat f4961ad~2..f4961ad`.*
+*If this doc drifts from the branch, the branch wins: `git log --stat origin/stephen-claude`.*
