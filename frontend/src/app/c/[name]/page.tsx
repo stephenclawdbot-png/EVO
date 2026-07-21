@@ -424,7 +424,10 @@ export default function CollectionPage() {
               ))}
             </div>
             {filteredEvos.length === 0 && (
-              <div className="py-16 text-center text-xs text-muted">No EVOs matching filters</div>
+              <div className="py-16 text-center">
+                <p className="text-xs text-muted">No EVOs matching filters</p>
+                <button onClick={() => { setFilterListed(false); setSearchQuery(''); setSortBy('newest'); }} className="mt-3 text-xs font-semibold text-accent hover:underline">Reset filters</button>
+              </div>
             )}
           </>
         )}

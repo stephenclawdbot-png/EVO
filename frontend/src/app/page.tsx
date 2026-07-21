@@ -391,6 +391,7 @@ export default function Home() {
         ) : filteredCollections.length === 0 ? (
           <div className="py-12 text-center">
             <p className="text-xs text-muted">No collections match &quot;{searchQuery}&quot;</p>
+            <button onClick={() => setSearchQuery('')} className="mt-3 text-xs font-semibold text-accent hover:underline">Clear search</button>
           </div>
         ) : (
           <>

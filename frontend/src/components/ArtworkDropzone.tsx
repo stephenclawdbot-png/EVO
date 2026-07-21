@@ -11,6 +11,7 @@ import {
   type UploadedImage,
   type CollectionManifest,
 } from '@/lib/artwork-upload';
+import { humanizeError } from '@/lib/errors';
 
 export interface ArtworkResult {
   images: UploadedImage[];
@@ -75,7 +76,7 @@ export function ArtworkDropzone({ collectionName, maxStates, onArtworkReady }: P
       setImages(newImages);
       await rebuild(newImages, parsedManifest);
     } catch (err: any) {
-      setError(err?.message || 'Failed to process files.');
+      setError(humanizeError(err?.message || 'Failed to process files.'));
     } finally {
       setProcessing(false);
     }
