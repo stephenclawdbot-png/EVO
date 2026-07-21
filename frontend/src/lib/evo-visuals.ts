@@ -520,6 +520,15 @@ export async function resolveImage(
   isRevealed?: boolean,
   evoId?: number,
 ): Promise<string> {
+  // Pre-reveal placeholder: if collection is not revealed and metadata URI has a
+  // preReveal query param, show that image instead of the actual art.
+  if (isRevealed === false) {
+    try {
+      const preReveal = new URL(metadataUri).searchParams.get('preReveal');
+      if (preReveal) return preReveal;
+    } catch { /* not a URL */ }
+  }
+
   const manifest = await fetchVisualManifest(metadataUri);
   if (!manifest) return fallback;
   return resolveActiveImage(manifest, evoId, onChainStage, isRevealed);

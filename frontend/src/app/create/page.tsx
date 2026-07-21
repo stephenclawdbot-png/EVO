@@ -119,6 +119,10 @@ export default function CreateCollectionPage() {
   const [logoUri, setLogoUri] = useState('');
   const [logoUploading, setLogoUploading] = useState(false);
 
+  // Pre-reveal mystery image (optional, for reveal-type collections)
+  const [preRevealUri, setPreRevealUri] = useState('');
+  const [preRevealUploading, setPreRevealUploading] = useState(false);
+
   const fetchProtocol = useCallback(async () => {
     setLoadingProto(true);
     try {
@@ -180,6 +184,25 @@ export default function CreateCollectionPage() {
     }
   };
 
+  // Upload pre-reveal image to Supabase Storage
+  const handlePreRevealUpload = async (file: File) => {
+    if (file.size > 2_000_000) { setError('Pre-reveal image must be under 2MB'); return; }
+    setPreRevealUploading(true); setError(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('wallet', wallet.publicKey?.toString() || 'anon');
+      const res = await fetch('/api/logo', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      setPreRevealUri(data.url);
+    } catch (err: any) {
+      setError(err?.message || 'Upload failed');
+    } finally {
+      setPreRevealUploading(false);
+    }
+  };
+
   const sendTx = async (ix: any) => {
     if (!wallet.connected || !wallet.publicKey) { setError('Connect wallet first'); return null; }
     const tx = new Transaction().add(ix);
@@ -230,6 +253,7 @@ export default function CreateCollectionPage() {
     if (telegram.trim()) socialParams.set('telegram', telegram.trim());
     if (discord.trim()) socialParams.set('discord', discord.trim());
     if (logoUri) socialParams.set('logo', logoUri);
+    if (preRevealUri) socialParams.set('preReveal', preRevealUri);
     const finalMetadataUri = socialParams.toString()
       ? `${effectiveMetadataUri}${effectiveMetadataUri.includes('?') ? '&' : '?'}${socialParams.toString()}`
       : effectiveMetadataUri;
@@ -385,6 +409,32 @@ export default function CreateCollectionPage() {
                     </div>
                   </div>
                 </div>
+                {needsLifecycle && (
+                  <div>
+                    <label className={labelCls}>Pre-Reveal Mystery Image <span className="text-dim">(optional)</span></label>
+                    <div className="flex items-center gap-3">
+                      {preRevealUri ? (
+                        <img src={preRevealUri} alt="Pre-reveal" className="h-12 w-12 rounded-lg border border-border object-cover" />
+                      ) : (
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-surface text-dim">
+                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 5v.01M12 12v.01" /></svg>
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+                          onChange={e => { const f = e.target.files?.[0]; if (f) handlePreRevealUpload(f); }}
+                          className="block w-full text-[10px] text-dim file:mr-2 file:rounded file:border file:border-border file:bg-surface file:px-2 file:py-1 file:text-[10px] file:font-semibold file:text-text hover:file:border-accent"
+                          disabled={preRevealUploading}
+                        />
+                        <p className="mt-1 text-[10px] text-dim">
+                          {preRevealUploading ? 'Uploading…' : 'Shown before reveal instead of the actual art. Keeps the reveal a surprise.'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className={labelCls}>Supply Cap</label>

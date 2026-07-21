@@ -21,7 +21,7 @@ interface CollectionSummary {
 }
 
 // ── Cache helpers (stale-while-revalidate) ──
-const CACHE_KEY = 'evo_collections_v2';
+const CACHE_KEY = 'evo_collections_v3';
 const CACHE_TTL = 60_000; // 60s — fresh data matters for floor prices
 
 interface CachedSummary {

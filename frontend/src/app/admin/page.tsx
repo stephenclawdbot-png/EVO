@@ -43,10 +43,18 @@ function AdminContent() {
   const [customEvoId, setCustomEvoId] = useState('');
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [preRevealUploading, setPreRevealUploading] = useState(false);
+  const [preRevealPreview, setPreRevealPreview] = useState<string | null>(null);
 
   function parseSocialLinksLogo(uri: string): string | undefined {
     try {
       return new URL(uri).searchParams.get('logo') || undefined;
+    } catch { return undefined; }
+  }
+
+  function parsePreRevealUri(uri: string): string | undefined {
+    try {
+      return new URL(uri).searchParams.get('preReveal') || undefined;
     } catch { return undefined; }
   }
 
@@ -166,6 +174,35 @@ function AdminContent() {
         await fetchCollection();
       }
     } catch (err: any) { setError(err.message || 'Logo update failed'); } finally { setAction(null); setLogoUploading(false); }
+  };
+
+  const handlePreRevealUpload = async (file: File) => {
+    if (!wallet.connected || !wallet.publicKey || !collection) { setError('Connect wallet first'); return; }
+    if (file.size > 2_000_000) { setError('Image must be under 2MB'); return; }
+    setAction('prereveal'); setError(null); setTxResult(null); setPreRevealUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('wallet', wallet.publicKey.toString());
+      const res = await fetch('/api/logo', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      const preRevealUrl = data.url as string;
+      setPreRevealPreview(preRevealUrl);
+
+      const existingUri = collection.metadataUri || '';
+      const [base, queryStr] = existingUri.split('?');
+      const params = new URLSearchParams(queryStr || '');
+      params.set('preReveal', preRevealUrl);
+      const newMetadataUri = `${base}?${params.toString()}`;
+
+      const [collectionPda] = getCollectionPDA(COLLECTION_NAME);
+      const sig = await sendTx(createUpdateMetadataIx(collectionPda, wallet.publicKey, newMetadataUri));
+      if (sig) {
+        setTxResult(sig);
+        await fetchCollection();
+      }
+    } catch (err: any) { setError(err.message || 'Pre-reveal image update failed'); } finally { setAction(null); setPreRevealUploading(false); }
   };
 
   const lifecycleLabel = (lt: string) => {
@@ -290,6 +327,38 @@ function AdminContent() {
                 </label>
               </div>
             </div>
+
+            {/* Pre-Reveal Mystery Image (for reveal-type collections) */}
+            {(collection.lifecycleType === 'Reveal' || collection.lifecycleType === 'CommitReveal' || collection.lifecycleType === 'RevealAndEvolve') && (
+              <div className="mt-5">
+                <p className="text-[10px] uppercase tracking-wide text-dim">Pre-Reveal Mystery Image</p>
+                <p className="mt-1 text-[11px] text-dim">
+                  Shown to collectors before the collection is revealed, instead of the actual art.
+                  Keeps the reveal a surprise. Optional — if not set, collectors see Stage 1 art.
+                </p>
+                <div className="mt-2 flex items-center gap-3">
+                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border bg-surface">
+                    {preRevealPreview ? (
+                      <img src={preRevealPreview} alt="Pre-reveal preview" className="h-full w-full object-cover" />
+                    ) : collection?.metadataUri && parsePreRevealUri(collection.metadataUri) ? (
+                      <img src={parsePreRevealUri(collection.metadataUri)} alt="Current pre-reveal" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-dim text-[10px]">None</div>
+                    )}
+                  </div>
+                  <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded border border-border-strong bg-surface px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:border-accent ${action === 'prereveal' ? 'opacity-40 pointer-events-none' : ''}`}>
+                    {preRevealUploading ? 'Uploading...' : 'Upload Mystery Image'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={action !== null}
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePreRevealUpload(f); }}
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
 
             <div className="mt-5 rounded border border-border bg-surface p-4">
               <p className="text-[10px] uppercase tracking-wide text-dim">On-Chain Lifecycle</p>
