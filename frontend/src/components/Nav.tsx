@@ -45,6 +45,14 @@ export function Nav({ onRefresh, ticker = [] }: NavProps) {
 
   useEffect(() => { checkCollections(); }, [checkCollections]);
 
+  // Auto-refetch every 30s, paused when tab hidden
+  useEffect(() => {
+    if (!onRefresh) return;
+    const tick = () => { if (document.visibilityState === 'visible') onRefresh(); };
+    const id = setInterval(tick, 30_000);
+    return () => clearInterval(id);
+  }, [onRefresh]);
+
   const connected = wallet.connected && !!wallet.publicKey;
 
   return (
@@ -115,6 +123,13 @@ export function Nav({ onRefresh, ticker = [] }: NavProps) {
       {/* Ticker strip */}
       {ticker.length > 0 && (
         <div className="flex h-7 items-center gap-0 border-t border-border bg-surface overflow-x-auto">
+          <span className="flex shrink-0 items-center gap-1 border-r border-border px-3 text-[9px] font-bold uppercase tracking-wider text-positive">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-positive opacity-60" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-positive" />
+            </span>
+            Live
+          </span>
           {ticker.map((s, i) => <TickerItem key={i} s={s} />)}
         </div>
       )}
