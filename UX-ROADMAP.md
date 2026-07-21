@@ -170,3 +170,58 @@ record — sentimental + scarcity proof).
 3. Newcomer three-panel + demo EVO (conversion)
 4. Creator stage-confirm + holder-math (prevents the next Kitties inversion)
 5. Portfolio P&L + ready-to-evolve (retention)
+
+---
+
+# Appendix: Frontend engineering suggestions (bug-class killers)
+
+Each item targets a CLASS of bug actually hit in this codebase, not hypotheticals.
+Ordered by ROI for a solo developer.
+
+1. **Sentry (free tier), ~1 hr** — the EvoDetail crash survived "exhaustive
+   inspection" because nobody had a stack trace. Production error monitoring
+   converts "users say it's broken" into file:line + component stack + device.
+   Highest-leverage hour available.
+
+2. **TanStack Query for all chain reads** — the stale-stats, stale-manifest,
+   stuck-verification, and unmerged-listing bugs are all symptoms of five
+   hand-built cache systems (home localStorage SWR, two Maps in evo-visuals,
+   per-page useEffect fetches). Query replaces them: SWR, retries, focus
+   revalidation, and `invalidateQueries(['collection', name])` after every tx.
+   Kills the class. (~1 weekend)
+
+3. **Unit-safe types, ~2 hrs** — four double-division bugs came from
+   `lockedLamports` (a field that actually holds SOL). Either rename display
+   fields (`lockedSol`) or better: keep `bigint` lamports through the data
+   layer and convert to SOL only at render, in one function.
+
+4. **Generate the client from the Anchor IDL** — three hand-maintained
+   encodings of the program exist (frontend lib, @evo/sdk, tests) and the SDK
+   already drifted into building broken transactions. `@coral-xyz/anchor` +
+   the emitted IDL derives account order/arg encoding — drift becomes
+   impossible. Pairs with the SDK regen already in HANDOFF §4.
+
+5. **Server-side aggregation before scale** — today every visitor's browser
+   runs getProgramAccounts over every EVO (1101 B each) + a 348 KB manifest
+   fetch. At 900 mints that's ~1 MB+ RPC per pageview against the paid Helius
+   key. Add `/api/collections` (aggregation once, `s-maxage=30` — CDN serves
+   the rest) and `s-maxage=300` on `/api/manifest` (Irys content is immutable;
+   the URI changes, not the content).
+
+6. **Test the money layer** — all 53 vitest tests are visuals; the parsers and
+   ix builders (where audit findings C-1..C-4 lived) have zero. Add: golden
+   parser tests using REAL mainnet account bytes as fixtures (layout drift
+   fails CI instantly); builder tests asserting account order against the
+   program's Accounts structs; one Playwright smoke test with mocked RPC to
+   catch white-screens pre-deploy.
+
+7. **Zod manifest schemas** — replaces ~100 lines of hand-rolled
+   isValidManifest/isBulkManifest checks + scattered `as any`; malformed
+   creator manifests become typed errors at the boundary.
+
+8. **Central program-error translator** — map error codes to human copy once
+   ("PriceExceedsMax" → "Price changed — refresh and try again"). Raw hex
+   errors read as "broken" even when the protocol is correctly protecting
+   the user.
+
+Build order: 1 → 3 → 2 → 5 → 6 → 4 → 7/8.
