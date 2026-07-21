@@ -76,6 +76,7 @@ export default function CreateCollectionPage() {
   const [initSubmitting, setInitSubmitting] = useState(false);
   const [txSig, setTxSig] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [metadataWarning, setMetadataWarning] = useState<string | null>(null);
 
   // Basics
   const [name, setName] = useState('');
@@ -224,16 +225,50 @@ export default function CreateCollectionPage() {
       return;
     }
 
-    // Append social links as query params so the collection page can display them
-    const socialParams = new URLSearchParams();
-    if (website.trim()) socialParams.set('website', website.trim());
-    if (twitter.trim()) socialParams.set('twitter', twitter.trim());
-    if (telegram.trim()) socialParams.set('telegram', telegram.trim());
-    if (discord.trim()) socialParams.set('discord', discord.trim());
-    if (logoUri) socialParams.set('logo', logoUri);
-    const finalMetadataUri = socialParams.toString()
-      ? `${effectiveMetadataUri}${effectiveMetadataUri.includes('?') ? '&' : '?'}${socialParams.toString()}`
-      : effectiveMetadataUri;
+    // Append social links as query params so the collection page can display them.
+    // The on-chain program caps metadata_uri at MAX_METADATA_URI_LEN (200 chars —
+    // see programs/evo/src/constants.rs). A manifest URI plus several social links
+    // and a logo URL can easily exceed that, which used to revert on-chain with a
+    // cryptic MetadataUriTooLong error after the user had already signed and paid
+    // for the transaction. Drop the lowest-priority fields (logo first — it's the
+    // longest single value and least essential on-chain) until it fits, and tell
+    // the user what got dropped instead of failing the whole submission.
+    const ON_CHAIN_METADATA_URI_MAX_LEN = 200;
+    const socialFields: { key: string; value: string }[] = [
+      { key: 'website', value: website.trim() },
+      { key: 'twitter', value: twitter.trim() },
+      { key: 'telegram', value: telegram.trim() },
+      { key: 'discord', value: discord.trim() },
+      { key: 'logo', value: logoUri },
+    ].filter(f => f.value);
+
+    const buildUri = (fields: typeof socialFields) => {
+      const params = new URLSearchParams();
+      for (const f of fields) params.set(f.key, f.value);
+      const qs = params.toString();
+      return qs ? `${effectiveMetadataUri}${effectiveMetadataUri.includes('?') ? '&' : '?'}${qs}` : effectiveMetadataUri;
+    };
+
+    let includedFields = [...socialFields];
+    const droppedFields: string[] = [];
+    let finalMetadataUri = buildUri(includedFields);
+    // Drop order: logo first (longest, least essential), then discord, telegram,
+    // twitter — website survives longest since it's the link people actually click.
+    for (const key of ['logo', 'discord', 'telegram', 'twitter', 'website']) {
+      if (finalMetadataUri.length <= ON_CHAIN_METADATA_URI_MAX_LEN) break;
+      const idx = includedFields.findIndex(f => f.key === key);
+      if (idx === -1) continue;
+      includedFields.splice(idx, 1);
+      droppedFields.push(key);
+      finalMetadataUri = buildUri(includedFields);
+    }
+
+    setMetadataWarning(
+      droppedFields.length > 0
+        ? `Some links didn't fit the on-chain metadata size limit and were left out: ${droppedFields.join(', ')}.`
+        : null
+    );
+
     setSubmitting(true); setError(null); setTxSig(null);
     try {
       const lamportsPerSol = 1_000_000_000;
@@ -743,6 +778,12 @@ export default function CreateCollectionPage() {
               {submitting ? 'Creating…' : <><IconHammer className="h-4 w-4" /> Create Collection</>}
             </button>
 
+            {metadataWarning && !error && (
+              <div className="flex items-start gap-2 rounded border border-yellow-500/40 bg-yellow-500/10 p-3 text-xs text-yellow-600">
+                <IconAlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{metadataWarning}</span>
+              </div>
+            )}
             {error && (
               <div className="flex items-start gap-2 rounded border border-negative/40 bg-negative/10 p-3 text-xs text-negative">
                 <IconAlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
