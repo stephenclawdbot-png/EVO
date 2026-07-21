@@ -101,7 +101,10 @@ export function evoAccountToData(
     fractureLines: evo.fractureLines.map(fl => ({
       tradeNumber: fl.tradeNumber,
       previousOwner: fl.previousOwner.toBase58().slice(0, 8) + '...',
-      timestamp: Number(fl.timestamp),
+      // Fracture-line timestamps are on-chain unix SECONDS; getAgeString (and
+      // forgedAt/lastTransitionAt) work in MILLISECONDS — convert so the
+      // Activity tab shows correct ages instead of "56y ago".
+      timestamp: Number(fl.timestamp) * 1000,
       position: fl.position,
       intensity: fl.intensity,
     })),

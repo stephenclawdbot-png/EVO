@@ -1,7 +1,7 @@
 'use client';
 
 import { EVOData, getAgeString } from '@/lib/evo-data';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Component } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Nav } from './Nav';
@@ -225,14 +225,25 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
     } catch (err: any) { setError(err.message || 'Transfer failed'); } finally { setAction(null); }
   };
 
-  // --- Derived data ---
-  const premium = evo.isListed && evo.listPrice ? ((evo.listPrice - evo.lockedLamports) / evo.lockedLamports * 100) : 0;
-  const holderHistory = [
-    { address: evo.owner, current: true, trade: null as number | null },
-    ...evo.fractureLines.slice().reverse().map(fl => ({ address: fl.previousOwner, current: false, trade: fl.tradeNumber })),
-  ];
-  const uniqueHolders = new Set(holderHistory.map(h => h.address)).size;
-  const sparkPoints = evo.fractureLines.length > 0 ? evo.fractureLines.map(fl => fl.intensity) : [0, 100];
+  // --- Derived data (defensive: this block runs in EvoDetail's own render, so
+  // a throw here would white-screen the whole page — a child <Guard> cannot
+  // catch it. Compute with safe defaults inside try/catch so render never dies. ---
+  const fractureLines = Array.isArray(evo.fractureLines) ? evo.fractureLines : [];
+  let premium = 0;
+  let holderHistory: { address: string; current: boolean; trade: number | null }[] = [];
+  let uniqueHolders = 0;
+  let sparkPoints: number[] = [0, 100];
+  try {
+    premium = evo.isListed && evo.listPrice ? ((evo.listPrice - evo.lockedLamports) / evo.lockedLamports * 100) : 0;
+    holderHistory = [
+      { address: evo.owner, current: true, trade: null as number | null },
+      ...fractureLines.slice().reverse().map(fl => ({ address: fl.previousOwner, current: false, trade: fl.tradeNumber })),
+    ];
+    uniqueHolders = new Set(holderHistory.map(h => h.address)).size;
+    sparkPoints = fractureLines.length > 0 ? fractureLines.map(fl => fl.intensity) : [0, 100];
+  } catch (e) {
+    console.error('EvoDetail: derived-data computation failed (rendering with safe defaults):', e);
+  }
 
   const ticker = [
     { label: collectionName, value: `#${evo.id}` },
@@ -257,6 +268,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
       <div className="mx-auto max-w-7xl px-3 py-4 lg:px-4">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
           {/* Left: Art + tabs */}
+          <Guard name="detail-left">
           <div>
             <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded border border-border bg-surface lg:aspect-[4/3]">
               <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 45%, #818cf818, transparent 70%)` }} />
@@ -573,8 +585,10 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
               )}
             </div>
           </div>
+          </Guard>
 
           {/* Right: Market sidebar */}
+          <Guard name="detail-right">
           <div className="space-y-3">
             <div>
               <h1 className="text-lg font-bold tracking-tight text-text-strong">{evo.name}</h1>
@@ -773,10 +787,38 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
               <div className="rounded border border-negative/20 bg-negative-soft px-3 py-3 text-center text-xs text-negative">This EVO has been shattered</div>
             )}
           </div>
+          </Guard>
         </div>
       </div>
     </div>
   );
+}
+
+/**
+ * Per-section error boundary. Wrapping a subtree in <Guard name="..."> means a
+ * render throw inside it degrades to an inline message instead of white-screening
+ * the whole detail page — and logs *which* section threw + the component stack,
+ * so an otherwise-unreproducible EvoDetail crash names itself in the console.
+ * Renders children untouched (no extra DOM) on the success path.
+ */
+type GuardProps = { name: string; children: React.ReactNode };
+class Guard extends Component<GuardProps, { error: Error | null }> {
+  state: { error: Error | null } = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error(`EvoDetail section "${this.props.name}" crashed:`, error, info?.componentStack);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="rounded border border-negative/30 bg-negative-soft px-3 py-2 text-xs text-negative">
+          <p className="font-medium">This section couldn&apos;t render ({this.props.name}).</p>
+          <p className="mt-1 break-all font-mono text-[10px] opacity-80">{this.state.error.message}</p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
