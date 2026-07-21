@@ -5,9 +5,13 @@
 ## Current State
 
 ### Program
-- **Program ID:** `7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc`
-- **Status:** Deployed on mainnet, NOT yet initialized
-- **Upgrade authority:** KEPT (program still upgradeable during development)
+- **Program ID:** `Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2`
+- **Status:** **LIVE on mainnet — deployed AND initialized.** Real holders exist.
+  - Live collection: `Solana Evo Kitties` (cap 900, minting open)
+  - Treasury (fee sink): `8McmuNBz7NHToGG2pBcJEuUpcof5T8HJ7DPG2A1xfkQc`
+  - Treasury authority / upgrade authority: `G3aWJsdtrRT12HnC9R2BVoyErQbtGXseaM9c2xt1MJUJ`
+- **Upgrade authority:** KEPT — program is still upgradeable (multisig, signers currently held by the team during dev). See `SECURITY.md`.
+- **Audit:** NOT independently audited yet — only automated / AI-assisted reviews. See `SECURITY.md` for the $0 hardening plan.
 - **GitHub:** https://github.com/stephenclawdbot-png/EVO
 
 ### CI Status

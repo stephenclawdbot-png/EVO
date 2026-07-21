@@ -59,6 +59,15 @@ pub fn reveal_collection(ctx: Context<RevealCollection>, secret: [u8; 32]) -> Re
     // The commitment is keccak256(secret), but the entropy uses a different
     // domain tag + collection key, so knowing the commitment alone does NOT
     // reveal the entropy. This preserves the "hiding" property of commit-reveal.
+    //
+    // FAIRNESS SCOPE: this on-chain step only guarantees the *entropy* was not
+    // chosen after minting (the creator committed to it up front). It does NOT,
+    // by itself, prove the off-chain art permutation actually uses this entropy.
+    // The end-to-end "provably fair reveal" claim holds only if the artwork
+    // assignment is a published, reproducible function of `reveal_entropy`
+    // (e.g. a deterministic shuffle seeded by it) that anyone can recompute and
+    // check against `manifest_root` / `artwork_manifest_hash`. Publish that
+    // derivation script, or the fairness guarantee stops at this line.
     let collection_key = collection.key();
     collection.reveal_entropy = keccak::hashv(&[&secret, b"entropy", collection_key.as_ref()]).0;
     collection.is_revealed = true;

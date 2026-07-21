@@ -69,7 +69,7 @@ All five layers occupy the same account. All transitions are governed by the sam
 
 ### 3.2 The Protocol Program
 
-The EVO program (`7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc`) defines:
+The EVO program (`Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2`) defines:
 
 | Instruction | Description |
 |---|---|
@@ -184,7 +184,15 @@ Each collection selects a `RandomnessPolicy`:
 |---|---|
 | `None` | No randomness. EVO #N = Artwork #N. |
 | `Predetermined` | Creator pre-assigns art deterministically. |
-| `BatchReveal` | Manifest committed before mint. One VRF result shuffles all assignments at reveal. |
+| `BatchReveal` | Manifest committed before mint. One reveal entropy shuffles all assignments at reveal. |
+
+> **Status note:** On-chain VRF (Switchboard/ORAO) is **not yet wired in** —
+> `programs/evo/src/vrf.rs` is an interface stub (`verify_vrf_result` returns
+> `false`). The **active** randomness mechanism is **commit-reveal**
+> (`commit_reveal` → `reveal_collection`), which produces `reveal_entropy`. Any
+> `BatchReveal` shuffle today is seeded by that commit-reveal entropy, not by a
+> verified VRF result. VRF verification is a roadmap item. See also the fairness
+> scope note in `reveal_collection.rs`.
 
 For `BatchReveal`:
 1. Creator commits a Merkle root of all 10,000 assets before minting
@@ -620,5 +628,5 @@ Whether the Solana ecosystem adopts this model depends on execution: security, u
 
 *EVO is in active development and launches as a public beta. The program remains upgradeable so bugs can be patched. Nothing in this white paper constitutes financial advice or a guarantee of returns. Two independent code reviews have been completed — all findings fixed and verified. See `docs/build-verification.txt` for build verification details.*
 
-*Program ID: `7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc`*
+*Program ID: `Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2`*
 *Repository: [github.com/stephenclawdbot-png/EVO](https://github.com/stephenclawdbot-png/EVO)*

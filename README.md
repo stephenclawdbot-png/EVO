@@ -102,15 +102,24 @@ EVO exposes the interface. The community builds the behaviors.
 
 ---
 
-## Program — Deployed on Devnet, Ready for Mainnet
+## Program — Live on Mainnet
 
 | | |
 |---|---|
-| **Program ID** | `7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc` |
+| **Program ID** | `Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2` |
 | **Old Program (CLOSED)** | `2AUfmSABAwfSAzMWuDfWXzm6TVVvVapWgtrAEBU4FHeR` |
-| **Authority/Treasury** | `G3aWJsdtrRT12HnC9R2BVoyErQbtGXseaM9c2xt1MJUJ` |
-| **Network** | Devnet (deployed + binary-verified) |
-| **Status** | Ready for mainnet initialization |
+| **Upgrade authority** | `G3aWJsdtrRT12HnC9R2BVoyErQbtGXseaM9c2xt1MJUJ` (multisig — see [SECURITY.md](SECURITY.md)) |
+| **Treasury (fee sink)** | `8McmuNBz7NHToGG2pBcJEuUpcof5T8HJ7DPG2A1xfkQc` |
+| **Treasury authority** | `G3aWJsdtrRT12HnC9R2BVoyErQbtGXseaM9c2xt1MJUJ` |
+| **Network** | **Mainnet-beta — deployed + initialized (live)** |
+| **Status** | Live. Program is **upgradeable**; **not yet independently audited** — see [SECURITY.md](SECURITY.md) |
+
+> **Security note:** EVO is live and holds real user SOL, but has **not** had a
+> professional third-party audit (only automated / AI-assisted reviews so far).
+> The upgrade authority can change program behavior. Read [SECURITY.md](SECURITY.md)
+> before locking meaningful value. Stakes are intentionally kept small until the
+> Tier-0 hardening (multisig with independent signers, exit-safe pause, audit)
+> is complete.
 
 ### Instructions
 - `initialize_protocol` — one-time setup
@@ -276,3 +285,4 @@ npm run dev
 - **admiralfinest** — [@x.com/admiralfinest](https://x.com/admiralfinest)
 - **Benedict A.** — private network engineer
 - **Stephen** — [@x.com/wino65](https://x.com/wino65) — GitHub Copilot, AI-assisted development & security review
+- **Stephen (in Claude)** — AI-assisted development & security review (Anthropic Claude)

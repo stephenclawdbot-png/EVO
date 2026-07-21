@@ -2,7 +2,7 @@
 
 **For:** OpenSea, Magic Eden, Tensor, and other Solana NFT/marketplace platforms.
 **SDK:** `@evo/sdk` v0.2.0+
-**Program ID:** `7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc`
+**Program ID:** `Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2`
 
 ---
 
@@ -237,5 +237,5 @@ bypass this.
 ## Contact
 
 - GitHub: https://github.com/stephenclawdbot-png/EVO
-- Program: `7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc`
+- Program: `Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2`
 - SDK: `@evo/sdk` on npm (after mainnet launch)

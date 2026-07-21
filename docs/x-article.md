@@ -89,7 +89,7 @@ The floor is the safety net. The premium is the speculation. EVO gives you both.
 
 ## Who Made This?
 
-EVO is built by a small team on Solana. The program is deployed on mainnet (program ID `7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc`) but not yet initialized. The code is open source at github.com/stephenclawdbot-png/EVO.
+EVO is built by a small team on Solana. The program is deployed on mainnet (program ID `Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2`) but not yet initialized. The code is open source at github.com/stephenclawdbot-png/EVO.
 
 The protocol has been through two security reviews. All findings fixed. 57 tests passing. Devnet tests green. The team is planning a formal third-party audit before fully launching.
 

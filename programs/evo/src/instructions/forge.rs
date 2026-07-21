@@ -71,6 +71,16 @@ pub fn forge(
 
     // Lifecycle state — mint_index is the slot this EVO takes in the collection.
     // Uses total_minted (monotonic) so shattered slots are never reassigned.
+    //
+    // CONVENTION: `evo_id` (the caller-supplied PDA seed) and `mint_index`
+    // are distinct on-chain. `mint_index` is the authoritative monotonic slot;
+    // `evo_id` is only the PDA address label. Clients MUST forge with
+    // `evo_id == collection.total_minted` so the two stay identical and the
+    // id space is gap-free. Using `current_supply` instead is a bug: after a
+    // shatter, `current_supply < total_minted`, so a `current_supply`-derived
+    // `evo_id` collides with an existing (occupied) EVO PDA and the forge
+    // fails at `init`. This is NOT enforced on-chain to preserve backward
+    // compatibility with the deployed program; it is a client-side invariant.
     evo.mint_index = collection.total_minted;
     evo.current_state = 0;
     evo.last_transition_at = evo.forged_at;

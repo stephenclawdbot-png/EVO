@@ -285,6 +285,29 @@ export function createDelistIx(
  * Marketplace integration: marketplaces build this ix, add their taker fee
  * ix if desired, then have the buyer sign the combined Transaction.
  */
+/**
+ * ⚠️ OUT OF SYNC WITH THE DEPLOYED PROGRAM — DO NOT USE AS-IS.
+ *
+ * This builder is missing accounts and an argument that the on-chain `buy`
+ * instruction now requires; transactions built with it will FAIL. It must be
+ * regenerated from the Anchor IDL. The authoritative, working reference is
+ * `frontend/src/lib/evo-program.ts#createBuyIx`.
+ *
+ * Correct on-chain `buy` layout (see programs/evo/src/instructions/buy.rs):
+ *   data: buy(evo_id: u32, max_price: u64)   // max_price is MISSING here
+ *   accounts (in order):
+ *     0 evo (w)
+ *     1 listing (w)                 // MISSING here — PDA ["listing", evo]
+ *     2 collection_config
+ *     3 protocol_config
+ *     4 seller (w)      = evo.owner
+ *     5 creator (w)     = collection.creator
+ *     6 treasury (w, optional)      = protocol_config.treasury
+ *     7 incinerator (w, optional)
+ *     8 incinerator_fallback (w)    // MISSING here — canonical INCINERATOR
+ *     9 buyer (signer, w)
+ *    10 system_program
+ */
 export function createBuyIx(
   evoPda: PublicKey,
   collectionPda: PublicKey,
@@ -353,6 +376,25 @@ export function createVerifyMerkleProofIx(
 /**
  * Shatter an EVO — destroy it and recover the locked SOL (minus fee).
  * The owner signs. Fee routed per collection config.
+ *
+ * ⚠️ OUT OF SYNC WITH THE DEPLOYED PROGRAM — DO NOT USE AS-IS.
+ * Missing the optional `listing` account and the `incinerator_fallback`
+ * account required by the on-chain `shatter`; transactions will FAIL.
+ * Regenerate from the Anchor IDL. Reference: `frontend/src/lib/evo-program.ts`.
+ *
+ * Correct on-chain `shatter` layout (see instructions/shatter.rs):
+ *   data: shatter(evo_id: u32)
+ *   accounts (in order):
+ *     0 evo (w, close=owner)
+ *     1 collection_config (w)
+ *     2 protocol_config
+ *     3 listing (w, optional)       // MISSING — PDA ["listing", evo], closes if listed
+ *     4 owner (signer, w)
+ *     5 creator (w)
+ *     6 treasury (w, optional)
+ *     7 incinerator (w)
+ *     8 incinerator_fallback (w)    // MISSING — canonical INCINERATOR
+ *     9 system_program
  */
 export function createShatterIx(
   evoPda: PublicKey,

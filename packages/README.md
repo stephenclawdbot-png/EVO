@@ -29,7 +29,7 @@ The z.fun frontend uses these same packages internally. When the Solana program 
 - [x] EvoClient (findByOwner, getEvo, getCollectionEvos, getCollectionConfig)
 - [x] Display helpers (stage, age, SOL conversion)
 - [x] Canvas renderer (facets, glow, fracture lines, shattered state)
-- [x] Real program ID (devnet: 7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc)
+- [x] Real program ID (devnet: Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2)
 - [x] Real account discriminators (EVOAccount, CollectionConfig, ProtocolConfig)
 - [x] Real instruction discriminators (all 15 instructions)
 - [x] Write instruction builders (forge, feed, list, delist, buy, shatter, transfer, evolve, etc.)

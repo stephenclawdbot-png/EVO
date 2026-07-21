@@ -25,6 +25,10 @@ export default function CollectionForgePage() {
   const wallet = useWallet();
   const [collection, setCollection] = useState<CollectionData | null>(null);
   const [currentSupply, setCurrentSupply] = useState(0);
+  // The id of the next EVO to forge. MUST be total_minted (monotonic), NOT
+  // current_supply — after a shatter, current_supply < total_minted, and a
+  // current_supply-derived id collides with an existing EVO PDA, breaking mint.
+  const [nextId, setNextId] = useState(0);
   const [loading, setLoading] = useState(true);
   const [forging, setForging] = useState(false);
   const [txSig, setTxSig] = useState<string | null>(null);
@@ -40,6 +44,7 @@ export default function CollectionForgePage() {
       if (cfg) {
         setCollection(collectionConfigToData(cfg));
         setCurrentSupply(cfg.currentSupply);
+        setNextId(cfg.totalMinted);
       }
     } catch (err) {
       console.error('Failed to fetch collection:', err);
@@ -53,12 +58,12 @@ export default function CollectionForgePage() {
   useEffect(() => {
     if (!collection?.metadataUri) { setResolvedImage(null); return; }
     let active = true;
-    const evoId = currentSupply;
+    const evoId = nextId;
     resolveImage(collection.metadataUri, '/placeholder.png', 0, collection.isRevealed, evoId).then(img => {
       if (active) setResolvedImage(img);
     });
     return () => { active = false; };
-  }, [collection?.metadataUri, collection?.isRevealed, currentSupply]);
+  }, [collection?.metadataUri, collection?.isRevealed, nextId]);
 
   const handleForge = async () => {
     if (!wallet.connected || !wallet.publicKey || !collection) { setError('Connect your wallet first'); return; }
@@ -68,7 +73,9 @@ export default function CollectionForgePage() {
       if (!cfg) throw new Error('Collection not found');
       if (cfg.currentSupply >= cfg.supplyCap) throw new Error('Collection is full');
       const [collectionPda] = getCollectionPDA(collectionName);
-      const evoId = cfg.currentSupply;
+      // Forge at total_minted (monotonic slot) so the id is gap-free and never
+      // collides with a still-live EVO PDA after shatters. See nextId above.
+      const evoId = cfg.totalMinted;
       const resonanceSeed = generateResonanceSeed();
       const ix = createForgeIx(wallet.publicKey, collectionPda, cfg.creator, evoId, resonanceSeed);
       const tx = new Transaction().add(ix);
@@ -120,12 +127,12 @@ export default function CollectionForgePage() {
               <div className="relative flex h-40 w-40 items-center justify-center overflow-hidden rounded border border-border bg-surface">
                 <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 45%, rgba(129,140,248,0.12), transparent 65%)` }} />
                 {resolvedImage ? (
-                  <img src={resolvedImage} alt={`${collectionName} #${currentSupply}`} className="relative z-[1] pixelated" style={{ transform: 'scale(2)' }} />
+                  <img src={resolvedImage} alt={`${collectionName} #${nextId}`} className="relative z-[1] pixelated" style={{ transform: 'scale(2)' }} />
                 ) : (
-                  <span className="relative z-[1] font-mono text-2xl font-bold text-accent">#{currentSupply}</span>
+                  <span className="relative z-[1] font-mono text-2xl font-bold text-accent">#{nextId}</span>
                 )}
               </div>
-              <p className="mt-3 text-sm font-semibold">{collectionName} #{currentSupply}</p>
+              <p className="mt-3 text-sm font-semibold">{collectionName} #{nextId}</p>
               <p className="font-mono text-[11px] text-dim">Next to forge</p>
             </div>
 
@@ -160,7 +167,7 @@ export default function CollectionForgePage() {
             {/* Forge */}
             <button onClick={handleForge} disabled={!wallet.connected || forging || remaining === 0}
               className="mt-5 w-full rounded bg-accent py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40 dark:text-[#0a0a0b]">
-              {forging ? 'Forging...' : remaining === 0 ? 'Collection full' : `Forge ${collectionName} #${currentSupply}`}
+              {forging ? 'Forging...' : remaining === 0 ? 'Collection full' : `Forge ${collectionName} #${nextId}`}
             </button>
             {!wallet.connected && (
               <div className="mt-3 flex justify-center"><WalletMultiButton /></div>

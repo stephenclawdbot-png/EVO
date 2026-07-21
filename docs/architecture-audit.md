@@ -841,8 +841,10 @@ one scanning frontend source
 repeatedly, inflating `trade_count` to reach `evolve_trade_threshold` without
 genuine market activity. This bypasses the intended evolution gating.
 
-**Status:** Not yet fixed. The fix is a single constraint:
-`require!(buyer.key() != seller.key(), SelfTradeNotAllowed)`.
+**Status:** ✅ FIXED. `buy.rs` now enforces
+`require!(ctx.accounts.buyer.key() != ctx.accounts.seller.key(), EvoError::SelfTradeNotAllowed)`
+before any state change (see `programs/evo/src/instructions/buy.rs`). The
+`SelfTradeNotAllowed` error code is defined in `errors.rs`.
 This is a protocol-level fix that requires a new Anchor error code and
 redeployment. It does not affect fund safety — locked SOL and fees are
 correctly routed regardless. It only affects evolution fairness.
@@ -952,15 +954,17 @@ character's appearance.
 |----------|:-----------:|:------------:|--------|
 | CRITICAL | 5 | 0 | All fixed |
 | HIGH | 6 | 0 | All fixed |
-| MEDIUM | 0 | 1 | Self-trade inflation — not yet fixed |
+| MEDIUM | 0 | 1 | Self-trade inflation — ✅ fixed (`buyer != seller` guard in buy.rs) |
 | LOW | 0 | 0 | — |
 | Display bugs | — | 4 | All fixed |
 
 ### Readiness Assessment
 
-**Protocol:** Ready for mainnet deployment pending the self-trade guard (MEDIUM-1).
-The self-trade issue affects evolution fairness, not fund safety. It can be
-fixed in a follow-up deployment without affecting existing accounts.
+**Protocol:** Deployed and live on mainnet. The self-trade guard (MEDIUM-1) is
+now in place. The program remains **upgradeable** and has **not** had an
+independent professional audit — see `SECURITY.md` for the current security
+posture and the $0 hardening plan (fuzzing, invariant tests, verifiable build,
+multisig with independent signers, exit-safe pause).
 
 **Frontend:** Ready. All display bugs fixed, all tests pass, TypeScript clean.
 

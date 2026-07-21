@@ -2,7 +2,18 @@
 
 TypeScript SDK for reading AND writing EVO (Evolving Value Object) data on Solana.
 
-**v0.2.0** — now with full write support (instruction builders for all 14 protocol operations).
+**v0.2.0** — instruction builders for the protocol operations.
+
+> ⚠️ **DRIFT WARNING (read before writing transactions).** This SDK has drifted
+> from the deployed program and is **not** the client the live terminal uses.
+> Known-broken: `createBuyIx` (missing the `listing` and `incinerator_fallback`
+> accounts **and** the `max_price` argument) and `createShatterIx` (missing the
+> optional `listing` and `incinerator_fallback` accounts). Transactions built
+> with those will **fail on-chain**. Until this SDK is regenerated from the
+> Anchor IDL, use `frontend/src/lib/evo-program.ts` as the authoritative
+> reference, or read the corrected account layouts documented inline in
+> `src/instructions.ts`. Read-only helpers (`EvoClient`, layout deserializers)
+> are unaffected.
 
 ## What is EVO?
 
@@ -24,7 +35,7 @@ npm install @evo/sdk @solana/web3.js
 ## Program ID
 
 ```
-7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc
+Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2
 ```
 
 Deployed on devnet. Ready for mainnet initialization.
@@ -427,7 +438,7 @@ interface EvoDisplayData {
 ```typescript
 import { EVO_PROGRAM_ID, LAMPORTS_PER_SOL, INCINERATOR } from '@evo/sdk';
 
-EVO_PROGRAM_ID  // '7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc'
+EVO_PROGRAM_ID  // 'Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2'
 LAMPORTS_PER_SOL // 1_000_000_000
 INCINERATOR     // '1nc1nerator11111111111111111111111111111111'
 ```

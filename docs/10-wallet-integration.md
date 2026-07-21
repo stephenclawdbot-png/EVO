@@ -8,7 +8,7 @@ How wallet developers and application builders integrate EVO support.
 
 | | |
 |---|---|
-| **Program ID** | `7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc` |
+| **Program ID** | `Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2` |
 | **Network** | Solana Mainnet |
 | **Protocol Config PDA** | `EuLuQqUVq5ze2E5P43MLsYUxQLXskCCAvMK1evdNajRi` |
 | **Authority** | `G3aWJsdtrRT12HnC9R2BVoyErQbtGXseaM9c2xt1MJUJ` |
@@ -98,7 +98,7 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import { Program, AnchorProvider } from '@coral-xyz/anchor';
 
 const connection = new Connection('https://api.mainnet-beta.solana.com');
-const programId = new PublicKey('7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc');
+const programId = new PublicKey('Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2');
 
 // Find all EVOs owned by a wallet
 async function findEVOsByOwner(ownerPubkey: string) {
@@ -416,7 +416,7 @@ const imageUrl = stage.image;
 ## Contact
 
 - GitHub: https://github.com/stephenclawdbot-png/EVO
-- Program ID: `7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc`
+- Program ID: `Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2`
 
 ## Rust Integration Example
 
@@ -425,7 +425,7 @@ For Solana programs that want to read EVO state via CPI or direct account parsin
 ```rust
 use solana_program::{account_info::AccountInfo, pubkey::Pubkey};
 
-const EVO_PROGRAM_ID: Pubkey = solana_program::pubkey!("7USTJBsRTmCnjowPgmh6s5igTZeaFPE7X43rZnhmm5sc");
+const EVO_PROGRAM_ID: Pubkey = solana_program::pubkey!("Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2");
 
 /// Check if an account is an EVO owned by a specific wallet
 pub fn is_evo_owner(account: &AccountInfo, owner: &Pubkey) -> bool {

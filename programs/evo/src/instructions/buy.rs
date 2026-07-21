@@ -141,6 +141,11 @@ pub fn buy(ctx: Context<Buy>, evo_id: u32, max_price: u64) -> Result<()> {
         evo.fracture_lines.push(fracture);
     }
 
+    // NOTE: `last_transition_at` is intentionally NOT updated on a trade.
+    // Evolution hold-time (`evolve_hold_seconds`) is measured from the last
+    // *visual stage* change (forge / evolve / set_visual_stage), not from the
+    // last ownership change — "held at this stage for N seconds", independent
+    // of who holds it. Do not reset it here without revisiting evolve.rs.
     evo.owner = ctx.accounts.buyer.key();
     evo.trade_count = trade_number;
 
