@@ -170,11 +170,11 @@ function AdminContent() {
 
   const lifecycleLabel = (lt: string) => {
     switch (lt) {
-      case 'static': return 'Static';
-      case 'reveal': return 'Reveal';
-      case 'commit_reveal': return 'Commit-Reveal';
-      case 'reveal_and_evolve': return 'Reveal + Evolve';
-      case 'custom': return 'Custom';
+      case 'Static': return 'Static';
+      case 'Reveal': return 'Reveal';
+      case 'CommitReveal': return 'Commit-Reveal';
+      case 'RevealAndEvolve': return 'Reveal + Evolve';
+      case 'Custom': return 'Custom';
       default: return lt;
     }
   };
@@ -318,14 +318,14 @@ function AdminContent() {
               </div>
             </div>
 
-            {(collection.lifecycleType === 'reveal' || collection.lifecycleType === 'commit_reveal' || collection.lifecycleType === 'reveal_and_evolve') && !collection.isRevealed && (
+            {(collection.lifecycleType === 'Reveal' || collection.lifecycleType === 'CommitReveal' || collection.lifecycleType === 'RevealAndEvolve') && !collection.isRevealed && (
               <div className="mt-5">
                 <p className="text-[10px] uppercase tracking-wide text-dim">Reveal Collection</p>
                 <p className="mt-1 text-[11px] text-dim">
                   Calls the on-chain <code className="text-accent">reveal_collection</code> instruction.
-                  {collection.lifecycleType === 'commit_reveal' && ' Provide the secret that matches the committed hash.'}
+                  {collection.lifecycleType === 'CommitReveal' && ' Provide the secret that matches the committed hash.'}
                 </p>
-                {collection.lifecycleType === 'commit_reveal' && (
+                {collection.lifecycleType === 'CommitReveal' && (
                   <input type="text" placeholder="Reveal secret (64 hex chars)" value={revealSecret}
                     onChange={(e) => setRevealSecret(e.target.value)}
                     className="t-input mt-2 w-full px-3 py-2 font-mono text-xs" />
@@ -337,13 +337,13 @@ function AdminContent() {
               </div>
             )}
 
-            {(collection.lifecycleType === 'reveal_and_evolve' || collection.lifecycleType === 'custom') && (
+            {(collection.lifecycleType === 'RevealAndEvolve' || collection.lifecycleType === 'Custom') && (
               <div className="mt-5">
                 <p className="text-[10px] uppercase tracking-wide text-dim">Evolve EVO (Permissionless)</p>
                 <p className="mt-1 text-[11px] text-dim">
                   Calls <code className="text-accent">evolve</code> — anyone can call it, but the EVO only
                   advances if all threshold conditions are met.
-                  {collection.lifecycleType === 'reveal_and_evolve' && ' Collection must be revealed first.'}
+                  {collection.lifecycleType === 'RevealAndEvolve' && ' Collection must be revealed first.'}
                 </p>
                 <input type="number" placeholder="EVO ID (e.g. 0)" value={evolveEvoId}
                   onChange={(e) => setEvolveEvoId(e.target.value)}
@@ -355,7 +355,7 @@ function AdminContent() {
               </div>
             )}
 
-            {collection.lifecycleType === 'custom' && (
+            {collection.lifecycleType === 'Custom' && (
               <div className="mt-5">
                 <p className="text-[10px] uppercase tracking-wide text-dim">Set Visual Stage (Authority Only)</p>
                 <p className="mt-1 text-[11px] text-dim">
@@ -377,7 +377,7 @@ function AdminContent() {
               </div>
             )}
 
-            {collection.lifecycleType === 'static' && (
+            {collection.lifecycleType === 'Static' && (
               <div className="mt-5 rounded border border-border bg-surface p-3 text-center text-xs text-dim">
                 Static lifecycle — no stage transitions allowed.
               </div>
