@@ -1,3 +1,9 @@
+ # ⛔ DEPRECATED — READ `HANDOFF-V2.md` INSTEAD
+
+> This file is superseded. The current task list, anti-loop rules, and design
+> direction live in **HANDOFF-V2.md** (keyword `EVO-V2-TERMINAL-2026-07-21`).
+> Keep this file only as historical detail on commits f328c42/f4961ad.
+
 # HANDOFF → branch `stephen-claude`
 
 **Keyword:** `EVO-STEPHEN-CLAUDE-HARDENING-2026-07-21`
