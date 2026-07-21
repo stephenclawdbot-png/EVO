@@ -863,7 +863,7 @@ export async function readAllEVOs(conn: Connection, collectionPda: PublicKey, su
 // ─── Collection & Portfolio Discovery ────────────────────────
 
 // Account sizes (from on-chain SPACE constants)
-export const COLLECTION_CONFIG_SPACE = 568;
+export const COLLECTION_CONFIG_SPACE = 572;
 export const EVO_ACCOUNT_SPACE = 1101;
 export const LISTING_ACCOUNT_SPACE = 81;
 
