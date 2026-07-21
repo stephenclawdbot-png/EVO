@@ -21,7 +21,7 @@ interface CollectionSummary {
 }
 
 // ── Cache helpers (stale-while-revalidate) ──
-const CACHE_KEY = 'evo_collections_v1';
+const CACHE_KEY = 'evo_collections_v2';
 const CACHE_TTL = 60_000; // 60s — fresh data matters for floor prices
 
 interface CachedSummary {
@@ -68,7 +68,7 @@ export default function Home() {
     // Stale-while-revalidate: show cached data instantly, then re-fetch
     if (!opts?.skipCache) {
       const cached = loadCache();
-      if (cached) {
+      if (cached && cached.length > 0) {
         const isExpired = cached[0] && (Date.now() - cached[0].cachedAt > CACHE_TTL);
         // Reconstruct CollectionSummary from cache (discovery not needed for display)
         const cachedSummaries: CollectionSummary[] = cached.map(c => ({
