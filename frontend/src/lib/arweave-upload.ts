@@ -26,7 +26,8 @@ export interface FailedUpload {
 const IRYS_GATEWAY = 'https://gateway.irys.xyz/';
 
 // Solana RPC endpoints for Irys to verify funding transactions
-const SOLANA_MAINNET_RPC = 'https://mainnet.helius-rpc.com/?api-key=71fd3e79-53c1-40f6-8dfe-dd0a22cc5885';
+// Using Helius private fast endpoint (no API key needed in URL)
+const SOLANA_MAINNET_RPC = 'https://kelli-s07i72-fast-mainnet.helius-rpc.com';
 const SOLANA_DEVNET_RPC = 'https://api.devnet.solana.com';
 
 let irysInstance: any = null;
