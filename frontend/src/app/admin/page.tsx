@@ -14,6 +14,7 @@ import {
   createRevealCollectionIx,
   createEvolveIx,
   createSetVisualStageIx,
+  createUpdateMetadataIx,
 } from '@/lib/evo-program';
 import { CollectionData, collectionConfigToData } from '@/lib/evo-data';
 import { IconCheck, IconAlertTriangle, IconExternalLink } from '@/components/Icons';
@@ -40,6 +41,14 @@ function AdminContent() {
   const [evolveEvoId, setEvolveEvoId] = useState('');
   const [customStage, setCustomStage] = useState('');
   const [customEvoId, setCustomEvoId] = useState('');
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+  function parseSocialLinksLogo(uri: string): string | undefined {
+    try {
+      return new URL(uri).searchParams.get('logo') || undefined;
+    } catch { return undefined; }
+  }
 
   const fetchCollection = useCallback(async () => {
     if (!COLLECTION_NAME) { setLoading(false); return; }
@@ -125,6 +134,38 @@ function AdminContent() {
         setCustomStage('');
       }
     } catch (err: any) { setError(err.message || 'Set stage failed'); } finally { setAction(null); }
+  };
+
+  const handleLogoUpload = async (file: File) => {
+    if (!wallet.connected || !wallet.publicKey || !collection) { setError('Connect wallet first'); return; }
+    if (file.size > 2_000_000) { setError('Logo must be under 2MB'); return; }
+    setAction('logo'); setError(null); setTxResult(null); setLogoUploading(true);
+    try {
+      // Upload to Supabase via /api/logo
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('wallet', wallet.publicKey.toString());
+      const res = await fetch('/api/logo', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Logo upload failed');
+      const logoUrl = data.url as string;
+      setLogoPreview(logoUrl);
+
+      // Build new metadata URI with logo param
+      const existingUri = collection.metadataUri || '';
+      const [base, queryStr] = existingUri.split('?');
+      const params = new URLSearchParams(queryStr || '');
+      params.set('logo', logoUrl);
+      const newMetadataUri = `${base}?${params.toString()}`;
+
+      // Update on-chain
+      const [collectionPda] = getCollectionPDA(COLLECTION_NAME);
+      const sig = await sendTx(createUpdateMetadataIx(collectionPda, wallet.publicKey, newMetadataUri));
+      if (sig) {
+        setTxResult(sig);
+        await fetchCollection();
+      }
+    } catch (err: any) { setError(err.message || 'Logo update failed'); } finally { setAction(null); setLogoUploading(false); }
   };
 
   const lifecycleLabel = (lt: string) => {
@@ -218,6 +259,36 @@ function AdminContent() {
                   <span className="font-mono">{Buffer.from(collection.artworkManifestHash).toString('hex').slice(0, 16)}…</span>
                 </div>
               )}
+            </div>
+
+            {/* Update Logo */}
+            <div className="mt-5">
+              <p className="text-[10px] uppercase tracking-wide text-dim">Collection Logo</p>
+              <p className="mt-1 text-[11px] text-dim">
+                Upload a logo image — it&apos;s stored on Supabase and the URL is embedded in the on-chain metadata URI.
+                The logo appears on the home page and collection page.
+              </p>
+              <div className="mt-2 flex items-center gap-3">
+                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border border-border bg-surface">
+                  {logoPreview ? (
+                    <img src={logoPreview} alt="Logo preview" className="h-full w-full object-cover" />
+                  ) : collection?.metadataUri && parseSocialLinksLogo(collection.metadataUri) ? (
+                    <img src={parseSocialLinksLogo(collection.metadataUri)} alt="Current logo" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-dim text-[10px]">No logo</div>
+                  )}
+                </div>
+                <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded border border-border-strong bg-surface px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:border-accent ${action === 'logo' ? 'opacity-40 pointer-events-none' : ''}`}>
+                  {logoUploading ? 'Uploading...' : 'Upload Logo'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={action !== null}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f); }}
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="mt-5 rounded border border-border bg-surface p-4">
