@@ -21,7 +21,6 @@ import {
 } from '@/lib/evo-program';
 import { IconCheck, IconAlertTriangle, IconExternalLink, IconHammer, IconSparkle } from '@/components/Icons';
 import { BulkArtworkUploader, type BulkArtworkResult } from '@/components/BulkArtworkUploader';
-import { uploadFile } from '@/lib/arweave-upload';
 
 const FEE_DESTINATIONS: FeeDestination[] = ['Treasury', 'Creator', 'Burn', 'Split'];
 const FEE_DEST_LABELS: Record<FeeDestination, string> = {
@@ -162,18 +161,18 @@ export default function CreateCollectionPage() {
 
   const needsLifecycle = lifecycleType !== 'Static';
 
-  // Upload collection logo to Arweave via Irys
+  // Upload collection logo to Supabase Storage
   const handleLogoUpload = async (file: File) => {
-    if (!wallet.connected || !wallet.publicKey) { setError('Connect wallet first'); return; }
     if (file.size > 2_000_000) { setError('Logo must be under 2MB'); return; }
     setLogoUploading(true); setError(null);
     try {
-      const result = await uploadFile(file, wallet, [
-        { name: 'App-Name', value: 'EVO' },
-        { name: 'Content-Type', value: file.type || 'image/png' },
-        { name: 'Type', value: 'collection-logo' },
-      ], true); // devnet Irys
-      setLogoUri(result.uri);
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('wallet', wallet.publicKey?.toString() || 'anon');
+      const res = await fetch('/api/logo', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Logo upload failed');
+      setLogoUri(data.url);
     } catch (err: any) {
       setError(err?.message || 'Logo upload failed');
     } finally {
