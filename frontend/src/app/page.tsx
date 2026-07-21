@@ -376,10 +376,24 @@ function CollectionCard({ summary }: { summary: CollectionSummary }) {
   const supplyPct = data.supplyCap > 0 ? (data.currentSupply / data.supplyCap) * 100 : 0;
 
   // Parse logo URI from metadata_uri query params
-  const logoUri = (() => {
+  const chainLogoUri = (() => {
     try { return new URL(data.metadataUri).searchParams.get('logo') || ''; }
     catch { return ''; }
   })();
+
+  // Fallback: fetch logo from database API
+  const [dbLogo, setDbLogo] = useState('');
+  useEffect(() => {
+    if (chainLogoUri) return; // skip if on-chain logo already set
+    let active = true;
+    fetch(`/api/collection-logo?name=${encodeURIComponent(data.name)}`)
+      .then(r => r.json())
+      .then(d => { if (active && d.logo) setDbLogo(d.logo); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [data.name, chainLogoUri]);
+
+  const logoUri = chainLogoUri || dbLogo;
 
   return (
     <Link href={`/c/${data.name}`} className="group block overflow-hidden rounded border border-border bg-surface transition-colors hover:border-border-strong">

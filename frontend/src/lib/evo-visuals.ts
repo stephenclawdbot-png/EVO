@@ -178,6 +178,25 @@ export function isAllowedGatewayUri(uri: string): boolean {
 }
 
 /**
+ * Wrap a gateway image URL with the server-side image proxy.
+ * This bypasses Irys gateway redirect/DNS issues that prevent images from
+ * loading in the browser. Non-gateway URLs (e.g. Supabase) are returned as-is.
+ *
+ * Only called in the browser; server-side code fetches directly.
+ */
+export function proxyImageUri(uri: string): string {
+  if (!uri) return uri;
+  // Only proxy allowlisted gateway URLs
+  if (!isAllowedGatewayUri(uri)) {
+    // Try normalizing first (ipfs://, arweave://)
+    const expanded = normalizeUri(uri);
+    if (!isAllowedGatewayUri(expanded)) return uri; // non-gateway, return as-is
+    return `/api/img?uri=${encodeURIComponent(expanded)}`;
+  }
+  return `/api/img?uri=${encodeURIComponent(uri)}`;
+}
+
+/**
  * Fetch a creator-supplied URI safely. Returns null if the URI is not an allowlisted
  * gateway (SSRF guard). Always uses normalizeUri first to expand ipfs/arweave schemes.
  */
@@ -475,7 +494,7 @@ export function resolveActiveImage(
     for (const [uri, items] of bulkManifestCache) {
       const item = items.find(it => it.index === evoId);
       if (item && item.states[stageNum]) {
-        return item.states[stageNum];
+        return proxyImageUri(item.states[stageNum]);
       }
     }
   }
@@ -487,19 +506,19 @@ export function resolveActiveImage(
       url = url.replace(/\{id\}/g, String(evoId));
     }
     url = url.replace(/\{stage\}/g, String(stageNum));
-    return url;
+    return proxyImageUri(url);
   }
 
   // 2. Per-stage image
   try {
     const stage = resolveActiveStage(manifest, onChainStage, isRevealed);
-    if (stage && stage.image) return stage.image;
+    if (stage && stage.image) return proxyImageUri(stage.image);
   } catch {
     // fall through
   }
 
   // 3. Fallback
-  return manifest.fallback_image;
+  return proxyImageUri(manifest.fallback_image);
 }
 
 // ─── Safe resolve with fallback ─────────────────────────────
@@ -525,7 +544,7 @@ export async function resolveImage(
   if (isRevealed === false) {
     try {
       const preReveal = new URL(metadataUri).searchParams.get('preReveal');
-      if (preReveal) return preReveal;
+      if (preReveal) return proxyImageUri(preReveal);
     } catch { /* not a URL */ }
   }
 

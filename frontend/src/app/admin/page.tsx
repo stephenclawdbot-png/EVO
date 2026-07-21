@@ -145,36 +145,38 @@ function AdminContent() {
   };
 
   const handleLogoUpload = async (file: File) => {
-    if (!wallet.connected || !wallet.publicKey || !collection) { setError('Connect wallet first'); return; }
+    if (!collection) return;
     if (file.size > 2_000_000) { setError('Logo must be under 2MB'); return; }
-    setAction('logo'); setError(null); setTxResult(null); setLogoUploading(true);
+    setError(null); setLogoUploading(true);
     try {
       // Upload to Supabase via /api/logo
       const fd = new FormData();
       fd.append('file', file);
-      fd.append('wallet', wallet.publicKey.toString());
+      fd.append('wallet', collection.creator);
       const res = await fetch('/api/logo', { method: 'POST', body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Logo upload failed');
       const logoUrl = data.url as string;
       setLogoPreview(logoUrl);
 
-      // Build new metadata URI with logo param
-      const existingUri = collection.metadataUri || '';
-      const [base, queryStr] = existingUri.split('?');
-      const params = new URLSearchParams(queryStr || '');
-      params.set('logo', logoUrl);
-      const newMetadataUri = `${base}?${params.toString()}`;
-
-      // Update on-chain
-      const [collectionPda] = getCollectionPDA(COLLECTION_NAME);
-      const sig = await sendTx(createUpdateMetadataIx(collectionPda, wallet.publicKey, newMetadataUri));
-      if (sig) {
-        setTxResult(sig);
-        await fetchCollection();
-      }
-    } catch (err: any) { setError(err.message || 'Logo update failed'); } finally { setAction(null); setLogoUploading(false); }
+      // Save logo → collection name mapping in database (no wallet needed)
+      const saveRes = await fetch('/api/collection-logo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: COLLECTION_NAME, logo: logoUrl }),
+      });
+      if (!saveRes.ok) throw new Error('Failed to save logo mapping');
+    } catch (err: any) { setError(err.message || 'Logo update failed'); } finally { setLogoUploading(false); }
   };
+
+  // Fetch current database logo on load
+  useEffect(() => {
+    if (!COLLECTION_NAME) return;
+    fetch(`/api/collection-logo?name=${encodeURIComponent(COLLECTION_NAME)}`)
+      .then(r => r.json())
+      .then(d => { if (d.logo) setLogoPreview(d.logo); })
+      .catch(() => {});
+  }, [COLLECTION_NAME]);
 
   const handlePreRevealUpload = async (file: File) => {
     if (!wallet.connected || !wallet.publicKey || !collection) { setError('Connect wallet first'); return; }
@@ -302,7 +304,7 @@ function AdminContent() {
             <div className="mt-5">
               <p className="text-[10px] uppercase tracking-wide text-dim">Collection Logo</p>
               <p className="mt-1 text-[11px] text-dim">
-                Upload a logo image — it&apos;s stored on Supabase and the URL is embedded in the on-chain metadata URI.
+                Upload a logo — stored on Supabase (database only, no on-chain transaction needed).
                 The logo appears on the home page and collection page.
               </p>
               <div className="mt-2 flex items-center gap-3">

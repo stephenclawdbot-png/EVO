@@ -840,31 +840,26 @@ export async function readListing(conn: Connection, evoPda: PublicKey): Promise<
   return listing;
 }
 
-export async function readAllEVOs(conn: Connection, collectionPda: PublicKey, supplyCap: number): Promise<EVOAccount[]> {
-  // Derive all possible EVO PDAs and fetch in batches
+export async function readAllEVOs(conn: Connection, collectionPda: PublicKey, _supplyCap?: number): Promise<EVOAccount[]> {
+  // Use getProgramAccounts with memcmp filters for collection + discriminator
+  // This is much faster than deriving all supplyCap PDAs (e.g. 900) and fetching in batches
+  const accounts = await conn.getProgramAccounts(PROGRAM_ID, {
+    filters: [
+      { memcmp: { offset: 0, bytes: DISC_B58.EVOAccount } },
+      { memcmp: { offset: 8, bytes: collectionPda.toBase58() } },
+    ],
+  });
   const evos: EVOAccount[] = [];
-  const BATCH = 100;
-  for (let i = 0; i < supplyCap; i += BATCH) {
-    const end = Math.min(i + BATCH, supplyCap);
-    const pdaPromises: Promise<[PublicKey, number]>[] = [];
-    const pdas: PublicKey[] = [];
-    for (let j = i; j < end; j++) {
-      const [pda] = getEvoPDA(collectionPda, j);
-      pdas.push(pda);
-    }
-    const accounts = await conn.getMultipleAccountsInfo(pdas);
-    for (let k = 0; k < accounts.length; k++) {
-      const acc = accounts[k];
-      if (acc && acc.data) {
-        const evo = parseEVOAccount(acc.data);
-        if (evo) {
-          evo.evoId = i + k;
-          evo.pda = pdas[k];
-          evos.push(evo);
-        }
-      }
+  for (const { pubkey, account } of accounts) {
+    const evo = parseEVOAccount(account.data);
+    if (evo) {
+      evo.pda = pubkey;
+      evo.evoId = evo.mintIndex;
+      evos.push(evo);
     }
   }
+  // Sort by evoId for consistent ordering
+  evos.sort((a, b) => (a.evoId ?? 0) - (b.evoId ?? 0));
   return evos;
 }
 

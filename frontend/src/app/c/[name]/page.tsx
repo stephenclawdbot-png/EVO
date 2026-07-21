@@ -5,6 +5,7 @@ import { useConnection } from '@solana/wallet-adapter-react';
 import { useParams } from 'next/navigation';
 import { EvoCard } from '@/components/EvoCard';
 import { EvoDetail } from '@/components/EvoDetail';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { TradeChart } from '@/components/TradeChart';
@@ -105,6 +106,17 @@ export default function CollectionPage() {
   const [notFound, setNotFound] = useState(false);
   const [trades, setTrades] = useState<TradeEvent[]>([]);
   const [tradesLoading, setTradesLoading] = useState(false);
+  const [dbLogo, setDbLogo] = useState('');
+
+  // Fetch logo from database (fallback when not in on-chain metadata)
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/collection-logo?name=${encodeURIComponent(collectionName)}`)
+      .then(r => r.json())
+      .then(d => { if (active && d.logo) setDbLogo(d.logo); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [collectionName]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -192,7 +204,11 @@ export default function CollectionPage() {
   }, [fetchData]);
 
   if (selectedEvo) {
-    return <EvoDetail evo={selectedEvo} onBack={() => setSelectedEvo(null)} onRefresh={fetchData} />;
+    return (
+      <ErrorBoundary>
+        <EvoDetail evo={selectedEvo} onBack={() => setSelectedEvo(null)} onRefresh={fetchData} />
+      </ErrorBoundary>
+    );
   }
 
   if (notFound && !loading) {
@@ -239,9 +255,11 @@ export default function CollectionPage() {
           <div className="flex flex-wrap items-center gap-2">
             <div className="mr-auto">
               <div className="flex items-center gap-2">
-                {collection?.metadataUri && parseSocialLinks(collection.metadataUri).logo && (
-                  <img src={parseSocialLinks(collection.metadataUri).logo} alt="" className="h-6 w-6 rounded-full border border-border object-cover" />
-                )}
+                {collection?.metadataUri && parseSocialLinks(collection.metadataUri).logo ? (
+                  <img src={parseSocialLinks(collection.metadataUri).logo!} alt="" className="h-6 w-6 rounded-full border border-border object-cover" />
+                ) : dbLogo ? (
+                  <img src={dbLogo} alt="" className="h-6 w-6 rounded-full border border-border object-cover" />
+                ) : null}
                 <h2 className="text-sm font-bold tracking-tight text-text-strong">{collectionName} Collection</h2>
                 {collection?.metadataUri && <SocialIcons links={parseSocialLinks(collection.metadataUri)} />}
               </div>
