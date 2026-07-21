@@ -9,6 +9,7 @@ import {
   LAMPORTS_PER_SOL,
   AccountInfo,
 } from '@solana/web3.js';
+import bs58 from 'bs58';
 
 // ─── Constants ──────────────────────────────────────────────
 export const PROGRAM_ID = new PublicKey('Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2');
@@ -48,6 +49,12 @@ const ACCT_DISC = {
   const h = createHash('sha256').update('account:Listing').digest();
   ACCT_DISC.Listing = Buffer.from(h.subarray(0, 8));
 }
+
+// Base58-encoded discriminators for RPC memcmp filters (robust to account size changes)
+const DISC_B58 = {
+  CollectionConfig: bs58.encode(ACCT_DISC.CollectionConfig),
+  EVOAccount: bs58.encode(ACCT_DISC.EVOAccount),
+} as const;
 
 // ─── Types ───────────────────────────────────────────────────
 export type FeeDestination = 'Treasury' | 'Creator' | 'Burn' | 'Split';
@@ -862,7 +869,7 @@ export async function readAllEVOs(conn: Connection, collectionPda: PublicKey, su
 // ─── Collection & Portfolio Discovery ────────────────────────
 
 // Account sizes (from on-chain SPACE constants)
-export const COLLECTION_CONFIG_SPACE = 568;
+export const COLLECTION_CONFIG_SPACE = 572;
 export const EVO_ACCOUNT_SPACE = 1101;
 export const LISTING_ACCOUNT_SPACE = 81;
 
@@ -872,10 +879,10 @@ export interface CollectionDiscovery {
 }
 
 // Read ALL collections on the protocol via getProgramAccounts
-// Uses dataSize filter to find CollectionConfig accounts, then validates discriminator
+// Filters by discriminator (memcmp) so it survives account size changes from program upgrades
 export async function readAllCollections(conn: Connection): Promise<CollectionDiscovery[]> {
   const accounts = await conn.getProgramAccounts(PROGRAM_ID, {
-    filters: [{ dataSize: COLLECTION_CONFIG_SPACE }],
+    filters: [{ memcmp: { offset: 0, bytes: DISC_B58.CollectionConfig } }],
   });
   const collections: CollectionDiscovery[] = [];
   for (const { pubkey, account } of accounts) {
@@ -888,11 +895,11 @@ export async function readAllCollections(conn: Connection): Promise<CollectionDi
 }
 
 // Read ALL EVOs owned by a specific wallet (across ALL collections)
-// Uses dataSize + memcmp filters for efficient scanning
+// Filters by discriminator (memcmp) + owner pubkey so it survives account size changes
 export async function readAllEVOsByOwner(conn: Connection, owner: PublicKey): Promise<EVOAccount[]> {
   const accounts = await conn.getProgramAccounts(PROGRAM_ID, {
     filters: [
-      { dataSize: EVO_ACCOUNT_SPACE },
+      { memcmp: { offset: 0, bytes: DISC_B58.EVOAccount } },
       { memcmp: { offset: 40, bytes: owner.toBase58() } },
     ],
   });
