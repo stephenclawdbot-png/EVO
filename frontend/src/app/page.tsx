@@ -36,13 +36,13 @@ interface CachedSummary {
   cachedAt: number;
 }
 
-function loadCache(): CachedSummary[] | null {
+function loadCache(): { summaries: CachedSummary[]; timestamp: number } | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     const { timestamp, summaries } = JSON.parse(raw);
     if (!timestamp || !summaries) return null;
-    return summaries;
+    return { summaries, timestamp };
   } catch { return null; }
 }
 
@@ -71,10 +71,10 @@ export default function Home() {
     // Stale-while-revalidate: show cached data instantly, then re-fetch
     if (!opts?.skipCache) {
       const cached = loadCache();
-      if (cached && cached.length > 0) {
-        const isExpired = cached[0] && (Date.now() - cached[0].cachedAt > CACHE_TTL);
+      if (cached) {
+        const isExpired = Date.now() - cached.timestamp > CACHE_TTL;
         // Reconstruct CollectionSummary from cache (discovery not needed for display)
-        const cachedSummaries: CollectionSummary[] = cached.map(c => ({
+        const cachedSummaries: CollectionSummary[] = cached.summaries.map(c => ({
           discovery: undefined, // not used by card UI
           data: c.data, evoCount: c.evoCount, totalLockedSol: c.totalLockedSol,
           floorPriceSol: c.floorPriceSol, listedCount: c.listedCount,
@@ -145,6 +145,11 @@ export default function Home() {
   }, [connection]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  useEffect(() => {
+    const interval = setInterval(() => fetchData({ skipCache: true }), CACHE_TTL);
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

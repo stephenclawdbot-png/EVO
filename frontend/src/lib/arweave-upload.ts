@@ -1,5 +1,6 @@
 import type { WalletContextState } from '@solana/wallet-adapter-react';
 import { Buffer } from 'buffer';
+import BigNumber from 'bignumber.js';
 
 export interface UploadResult {
   txId: string;
@@ -190,15 +191,24 @@ export async function uploadStateFolder(
   // loaded balance is below that.
   const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
   try {
-    const [loadedBalance, atomicCost] = await Promise.all([
+    const [loadedBalanceBn, atomicCostBn] = await Promise.all([
       irys.getLoadedBalance(),
       irys.getPrice(Math.ceil(totalBytes * 1.05)),
     ]);
+    // getLoadedBalance/getPrice return bignumber.js BigNumber instances, not
+    // native bigint — mixing them into `*`/`<` with bigint literals throws
+    // "Cannot mix BigInt and other types" and gets swallowed by the catch
+    // below, silently skipping funding on every upload. Round to a whole
+    // atomic-unit string first, then convert to native bigint.
+    const loadedBalance = BigInt(loadedBalanceBn.integerValue(BigNumber.ROUND_DOWN).toFixed(0));
+    const atomicCost = BigInt(atomicCostBn.integerValue(BigNumber.ROUND_CEIL).toFixed(0));
     const needed = (atomicCost * 12n) / 10n; // +20% buffer
-    if (BigInt(loadedBalance) < needed) {
+    if (loadedBalance < needed) {
+      // Fund the gap, floored at a small minimum so tiny uploads aren't
+      // rejected for being below Irys's funding granularity.
       const topUp = (() => {
         const minFund = 5_000_000n; // 0.005 SOL in lamports
-        const gap = needed - BigInt(loadedBalance);
+        const gap = needed - loadedBalance;
         return gap > minFund ? gap : minFund;
       })();
       onProgress?.(0, files.length, `Funding Irys (${Number(topUp) / 1e9} SOL)…`);
