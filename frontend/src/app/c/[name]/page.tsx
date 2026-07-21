@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { EvoCard } from '@/components/EvoCard';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
+import { fmtSolValue, fmtPctValue } from '@/lib/format';
 import { TradeChart } from '@/components/TradeChart';
 import { TradingViewWidget } from '@/components/TradingViewWidget';
 import { EVOData, CollectionData, evoAccountToData, collectionConfigToData, mergeListingData } from '@/lib/evo-data';
@@ -181,9 +182,9 @@ export default function CollectionPage() {
     const floorPrice = listed.length > 0 ? Math.min(...listed.map(e => e.listPrice || Infinity)) : 0;
     return {
       total: active.length,
-      totalLocked: totalLocked.toFixed(2),
+      totalLocked: fmtSolValue(totalLocked),
       listedCount: listed.length,
-      floorPrice: floorPrice > 0 ? floorPrice.toFixed(2) : '--',
+      floorPrice: floorPrice > 0 ? fmtSolValue(floorPrice) : '--',
       shattered: evos.filter(e => e.isShattered).length,
     };
   }, [evos]);
@@ -307,7 +308,7 @@ export default function CollectionPage() {
                       </div>
                       <div className="mt-1 flex items-center justify-between text-[10px] text-dim">
                         <span>{minted} minted</span>
-                        <span>{pct.toFixed(0)}% claimed</span>
+                        <span>{fmtPctValue(pct)}% claimed</span>
                       </div>
                       <Link
                         href={`/c/${collectionName}/forge`}

@@ -3,6 +3,7 @@
 import { EVOData } from '@/lib/evo-data';
 import { useState, useEffect } from 'react';
 import { resolveImage } from '@/lib/evo-visuals';
+import { fmtSolValue, fmtPctValue } from '@/lib/format';
 import Link from 'next/link';
 
 interface EvoCardProps {
@@ -186,19 +187,19 @@ export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed, href, 
           )}
         </div>
         <div className="mt-0.5 flex items-center justify-between text-[10px] text-dim">
-          <span className="font-mono">{evo.lockedLamports.toFixed(2)} locked</span>
+          <span className="font-mono tabular-nums">{fmtSolValue(evo.lockedLamports)} locked</span>
           <span className="font-mono" style={{ color: theme.glow }}>S{evo.currentState}</span>
         </div>
 
         {/* Floor-coverage line on listed cards */}
         {evo.isListed && !evo.isShattered && askSol > 0 && (
           <div className="mt-0.5 text-[9px] text-dim">
-            <span className="font-mono text-positive">backed {backedSol.toFixed(2)}</span>
+            <span className="font-mono tabular-nums text-positive">backed {fmtSolValue(backedSol)}</span>
             <span className="mx-0.5">·</span>
-            <span className="font-mono">{backedPct.toFixed(0)}%</span>
+            <span className="font-mono tabular-nums">{fmtPctValue(backedPct)}%</span>
             <span className="mx-0.5">·</span>
-            <span className={`font-mono ${maxLoss < 0 ? 'text-positive' : 'text-negative'}`}>
-              {maxLoss < 0 ? `+${Math.abs(maxLoss).toFixed(2)}` : `−${maxLoss.toFixed(2)}`} max
+            <span className={`font-mono tabular-nums ${maxLoss < 0 ? 'text-positive' : 'text-negative'}`}>
+              {maxLoss < 0 ? `+${Math.abs(maxLoss).toFixed(3)}` : `−${maxLoss.toFixed(3)}`} max
             </span>
           </div>
         )}
@@ -207,8 +208,8 @@ export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed, href, 
         {showEvolveProgress && feedPct < 100 && (
           <div className="mt-1">
             <div className="flex items-center justify-between text-[8px] text-dim">
-              <span className="font-mono">{fedSol.toFixed(2)}/{feedThresholdSol.toFixed(2)} SOL fed</span>
-              <span className="font-mono">{feedPct.toFixed(0)}%</span>
+              <span className="font-mono tabular-nums">{fmtSolValue(fedSol)}/{fmtSolValue(feedThresholdSol)} SOL fed</span>
+              <span className="font-mono tabular-nums">{fmtPctValue(feedPct)}%</span>
             </div>
             <div className="mt-0.5 h-1 w-full overflow-hidden rounded-full bg-surface-2">
               <div className="h-full rounded-full transition-all duration-500" style={{

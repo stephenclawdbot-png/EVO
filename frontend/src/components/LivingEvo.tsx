@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { IconHammer, IconTrendingUp, IconFeed, IconEvolve, IconShatter } from './Icons';
+import { fmtSolValue } from '@/lib/format';
 
 /**
  * LivingEvo — a scroll-driven narrative of a single EVO object.
@@ -302,7 +303,7 @@ function EvoVisual({
           className="mt-1 font-mono text-4xl font-bold tracking-tight sm:text-5xl"
           style={{ color: isShattered ? 'var(--positive)' : 'var(--text-strong)', transition: 'color 400ms ease' }}
         >
-          {lockedSol.toFixed(2)} SOL
+          {fmtSolValue(lockedSol)} SOL
         </p>
         <p className="mt-1 text-xs text-muted">{note}</p>
       </div>

@@ -20,6 +20,7 @@ import {
 } from '@/lib/evo-program';
 import { resolveImage, fetchVisualManifest, resolveActiveImage, EvoVisualManifest, getManifestVerification, ManifestVerification } from '@/lib/evo-visuals';
 import { humanizeError } from '@/lib/errors';
+import { fmtSolValue, fmtSol, fmtPctValue } from '@/lib/format';
 import { IconCheck, IconAlertTriangle, IconExternalLink } from './Icons';
 
 interface EvoDetailProps {
@@ -455,13 +456,13 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                           <div><span className="text-dim">Trades:</span> <span className="font-mono text-muted">{evolveThresholds.trade} per stage</span></div>
                         )}
                         {evolveThresholds.feed > 0 && (
-                          <div><span className="text-dim">Feed:</span> <span className="font-mono text-muted">{(evolveThresholds.feed / 1_000_000_000).toFixed(4)} SOL per stage</span></div>
+                          <div><span className="text-dim">Feed:</span> <span className="font-mono tabular-nums text-muted">{fmtSolValue(evolveThresholds.feed / 1_000_000_000)} SOL per stage</span></div>
                         )}
                         {evolveThresholds.hold > 0 && (
                           <div><span className="text-dim">Hold:</span> <span className="font-mono text-muted">{evolveThresholds.hold < 3600 ? `${Math.floor(evolveThresholds.hold / 60)}m` : evolveThresholds.hold < 86400 ? `${(evolveThresholds.hold / 3600).toFixed(1)}h` : `${Math.floor(evolveThresholds.hold / 86400)}d`} per stage</span></div>
                         )}
                         {evolveThresholds.locked > 0 && (
-                          <div><span className="text-dim">Locked:</span> <span className="font-mono text-muted">{(evolveThresholds.locked / 1_000_000_000).toFixed(4)} SOL per stage</span></div>
+                          <div><span className="text-dim">Locked:</span> <span className="font-mono tabular-nums text-muted">{fmtSolValue(evolveThresholds.locked / 1_000_000_000)} SOL per stage</span></div>
                         )}
                       </div>
                     </div>
@@ -487,7 +488,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                             label="Fed"
                             current={evo.totalFedLamports}
                             required={evolveThresholds.feed * (evo.currentState + 1)}
-                            format={(lamports) => `${(lamports / 1_000_000_000).toFixed(4)} SOL`}
+                            format={(lamports) => `${fmtSolValue(lamports / 1_000_000_000)} SOL`}
                           />
                         )}
                         {evolveThresholds.hold > 0 && (
@@ -507,7 +508,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                             label="Locked"
                             current={Math.round(evo.lockedLamports * 1_000_000_000)}
                             required={evolveThresholds.locked * (evo.currentState + 1)}
-                            format={(lamports) => `${(lamports / 1_000_000_000).toFixed(4)} SOL`}
+                            format={(lamports) => `${fmtSolValue(lamports / 1_000_000_000)} SOL`}
                           />
                         )}
                       </div>
@@ -632,7 +633,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
             <div className="rounded border border-border bg-surface">
               <div className="grid grid-cols-2 gap-px bg-border">
                 <MktCell label="Locked value" value={`${evo.lockedLamports}`} unit="SOL" tone="pos" />
-                <MktCell label="Premium" value={evo.isListed ? `${premium > 0 ? '+' : ''}${premium.toFixed(0)}` : '--'} unit="%" />
+                <MktCell label="Premium" value={evo.isListed ? `${premium > 0 ? '+' : ''}${fmtPctValue(premium)}` : '--'} unit="%" />
                 <MktCell label="Trades" value={String(evo.tradeCount)} />
                 <MktCell label="Holders" value={String(uniqueHolders)} />
               </div>
@@ -804,7 +805,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                 </div>
                 <button onClick={handleShatter} disabled={action === 'shatter'}
                   className="w-full rounded border border-negative/30 bg-negative-soft py-2.5 text-xs font-medium text-negative transition-colors hover:bg-negative/10 disabled:opacity-50">
-                  {action === 'shatter' ? 'Shattering...' : `Shatter - recover ${(evo.lockedLamports * (10000 - shatterFeeBps) / 10000).toFixed(4)} SOL`}
+                  {action === 'shatter' ? 'Shattering...' : `Shatter - recover ${fmtSolValue(evo.lockedLamports * (10000 - shatterFeeBps) / 10000)}`}
                 </button>
               </div>
             )}

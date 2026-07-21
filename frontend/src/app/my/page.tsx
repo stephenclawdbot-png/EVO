@@ -5,6 +5,7 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
+import { fmtSolValue } from '@/lib/format';
 import Link from 'next/link';
 import { readAllCollections, getCollectionPDA, readAllEVOs, lamportsToSol } from '@/lib/evo-program';
 import { collectionConfigToData } from '@/lib/evo-data';
@@ -113,7 +114,7 @@ export default function MyCollectionsPage() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-text-strong">{c.name}</p>
                   <p className="text-[11px] text-dim">
-                    {c.currentSupply}/{c.supplyCap} forged · {c.evoCount} active · {c.totalLockedSol.toFixed(3)} SOL locked
+                    {c.currentSupply}/{c.supplyCap} forged · {c.evoCount} active · {fmtSolValue(c.totalLockedSol)} SOL locked
                   </p>
                 </div>
                 <IconArrowRight className="h-4 w-4 text-muted transition-colors group-hover:text-accent" />

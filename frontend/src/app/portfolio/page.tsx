@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
+import { fmtSolValue } from '@/lib/format';
 import Link from 'next/link';
 import {
   readAllEVOsByOwner,
@@ -131,7 +132,7 @@ export default function PortfolioPage() {
 
   const ticker = wallet.publicKey ? [
     { label: 'EVOs', value: loading ? '--' : String(summary.total) },
-    { label: 'Locked', value: loading ? '--' : `${summary.totalLockedSol.toFixed(2)} SOL`, tone: 'pos' as const },
+    { label: 'Locked', value: loading ? '--' : `${fmtSolValue(summary.totalLockedSol)} SOL`, tone: 'pos' as const },
     { label: 'Listed', value: loading ? '--' : String(summary.totalListed) },
     { label: 'Collections', value: loading ? '--' : String(summary.collections) },
   ] : [];
@@ -176,9 +177,9 @@ export default function PortfolioPage() {
               </div>
               <div className="grid grid-cols-2 gap-px bg-border sm:grid-cols-4">
                 <SummaryCell label="Total EVOs" value={String(summary.total)} />
-                <SummaryCell label="Locked SOL" value={summary.totalLockedSol.toFixed(3)} tone="pos" />
-                <SummaryCell label="Recoverable" value={summary.recoverableSol.toFixed(3)} />
-                <SummaryCell label="List Value" value={summary.totalListValueSol > 0 ? `${summary.totalListValueSol.toFixed(3)}` : '--'} tone={summary.totalListValueSol > 0 ? 'pos' : undefined} />
+                <SummaryCell label="Locked SOL" value={fmtSolValue(summary.totalLockedSol)} tone="pos" />
+                <SummaryCell label="Recoverable" value={fmtSolValue(summary.recoverableSol)} />
+                <SummaryCell label="List Value" value={summary.totalListValueSol > 0 ? fmtSolValue(summary.totalListValueSol) : '--'} tone={summary.totalListValueSol > 0 ? 'pos' : undefined} />
                 <SummaryCell label="Active" value={String(summary.active)} />
                 <SummaryCell label="Shattered" value={String(summary.shattered)} tone={summary.shattered > 0 ? 'neg' : undefined} />
                 <SummaryCell label="Total Trades" value={String(summary.totalTrades)} />
@@ -196,7 +197,7 @@ export default function PortfolioPage() {
                     </Link>
                     <span className="ml-2 font-mono text-[11px] text-dim">
                       {group.evos.length} EVO{group.evos.length !== 1 ? 's' : ''} ·
-                      {' '}{group.evos.reduce((s, e) => s + e.lockedLamports, 0).toFixed(2)} SOL locked
+                      {' '}{fmtSolValue(group.evos.reduce((s, e) => s + e.lockedLamports, 0))} SOL locked
                     </span>
                   </div>
                   {group.data && (

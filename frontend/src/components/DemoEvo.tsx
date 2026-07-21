@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { fmtSolValue, fmtPctValue } from '@/lib/format';
 
 const KITTEN_IMG = '/api/img?uri=' + encodeURIComponent('https://gateway.irys.xyz/9RppwtruTqYZQa1L7XvdGpJ1Di1WFzS8ez3XiwLnzmFD');
 const CAT_IMG = '/api/img?uri=' + encodeURIComponent('https://gateway.irys.xyz/GnGeGEkbzQF4Uh9uXuBCJdNpAXj1h6SWXHXqwTnrffnq');
@@ -80,7 +81,7 @@ export function DemoEvo() {
                 <path d="M12 2 2 22h20L12 2z" /><path d="M12 9v4M12 17h.01" />
               </svg>
               <span className="font-mono text-xs font-bold uppercase tracking-wider text-negative">Shattered</span>
-              <span className="font-mono text-[10px] text-positive">+{totalValue.toFixed(2)} SOL recovered</span>
+              <span className="font-mono tabular-nums text-[10px] text-positive">+{fmtSolValue(totalValue)} recovered</span>
             </div>
           ) : !imgError ? (
             <img src={img} alt={phase === 'evolved' ? 'Evolved cat' : 'Kitten'}
@@ -110,7 +111,7 @@ export function DemoEvo() {
           {/* Locked SOL badge */}
           {phase !== 'shattered' && (
             <span className="absolute left-2 top-2 z-10 rounded bg-bg/70 px-1.5 py-0.5 font-mono text-[9px] text-positive backdrop-blur-sm">
-              {LOCKED_SOL.toFixed(2)} SOL locked
+              {fmtSolValue(LOCKED_SOL)} locked
             </span>
           )}
         </div>
@@ -122,14 +123,14 @@ export function DemoEvo() {
               {/* Value */}
               <div className="flex items-center justify-between">
                 <span className="text-[11px] text-dim">Total value</span>
-                <span className="font-mono text-sm font-bold text-positive">{totalValue.toFixed(2)} SOL</span>
+                <span className="font-mono tabular-nums text-sm font-bold text-positive">{fmtSolValue(totalValue)} SOL</span>
               </div>
 
               {/* Feed progress */}
               <div>
                 <div className="flex items-center justify-between text-[10px] text-dim">
-                  <span>Fed {fed.toFixed(2)}/{FEED_THRESHOLD.toFixed(2)} SOL</span>
-                  <span>{feedPct.toFixed(0)}%</span>
+                  <span>Fed {fmtSolValue(fed)}/{fmtSolValue(FEED_THRESHOLD)} SOL</span>
+                  <span>{fmtPctValue(feedPct)}%</span>
                 </div>
                 <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
                   <div className="h-full rounded-full bg-accent transition-all duration-500" style={{ width: `${feedPct}%` }} />
@@ -156,7 +157,7 @@ export function DemoEvo() {
 
               {phase === 'evolved' && (
                 <p className="text-center text-[10px] text-accent">
-                  Your EVO evolved! Shatter to recover {totalValue.toFixed(2)} SOL.
+                  Your EVO evolved! Shatter to recover {fmtSolValue(totalValue)}.
                 </p>
               )}
             </>

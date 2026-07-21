@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { TradeEvent } from '@/lib/evo-chart';
+import { fmtSolValue } from '@/lib/format';
 
 interface TradingViewWidgetProps {
   events: TradeEvent[];
@@ -111,7 +112,7 @@ export function TradingViewWidget({ events, loading, currentFloorSol, collection
     const count = 5;
     return Array.from({ length: count }, (_, i) => {
       const p = view.min + priceRange * (i / (count - 1));
-      return { y: yPrice(p), label: p.toFixed(3) };
+      return { y: yPrice(p), label: fmtSolValue(p) };
     });
   }, [view.min, view.max, priceRange]);
 
@@ -136,7 +137,7 @@ export function TradingViewWidget({ events, loading, currentFloorSol, collection
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-text-strong">{collectionName || 'EVO'} Chart</span>
           {currentFloorSol != null && currentFloorSol > 0 && (
-            <span className="font-mono text-xs text-positive">◎ {currentFloorSol.toFixed(3)}</span>
+            <span className="font-mono tabular-nums text-xs text-positive">◎ {fmtSolValue(currentFloorSol)}</span>
           )}
           <span className="hidden text-[10px] text-dim sm:inline">{view.candles.length} candles</span>
         </div>

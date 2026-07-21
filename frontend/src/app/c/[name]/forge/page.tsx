@@ -9,6 +9,7 @@ import { Transaction } from '@solana/web3.js';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { humanizeError } from '@/lib/errors';
+import { fmtSolValue } from '@/lib/format';
 import {
   readCollectionConfig,
   getCollectionPDA,
@@ -148,7 +149,7 @@ export default function CollectionForgePage() {
               <div className="border-t border-border" />
               <Row label="Locked value (your floor)" value={`${collection.lockAmountSol} SOL`} tone="pos" />
               <div className="border-t border-border-strong bg-surface-2">
-                <Row label="Total to forge" value={`${totalCost.toFixed(3)} SOL`} strong />
+                <Row label="Total to forge" value={`${fmtSolValue(totalCost)} SOL`} strong />
               </div>
             </div>
 
@@ -156,7 +157,7 @@ export default function CollectionForgePage() {
             <div className="mt-3 grid grid-cols-3 gap-px overflow-hidden rounded border border-border bg-border">
               <Fee label="Shatter fee" value={`${collection.shatterFeeBps / 100}%`} />
               <Fee label="Royalty" value={`${collection.tradeRoyaltyBps / 100}%`} />
-              <Fee label="Recoverable" value={`${shatterRecover.toFixed(3)}`} />
+              <Fee label="Recoverable" value={fmtSolValue(shatterRecover)} />
             </div>
 
             {/* Supply bar */}

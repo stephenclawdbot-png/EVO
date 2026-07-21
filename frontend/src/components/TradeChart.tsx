@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { TradeEvent } from '@/lib/evo-chart';
+import { fmtSolValue } from '@/lib/format';
 
 interface TradeChartProps {
   events: TradeEvent[];
@@ -109,10 +110,10 @@ export function TradeChart({ events, loading, currentFloorSol }: TradeChartProps
         <div className="flex items-center gap-3">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-dim">Trade Chart</span>
           <span className="font-mono text-xs text-muted">
-            Last <span className="text-text-strong">{lastPrice > 0 ? `${lastPrice.toFixed(3)} SOL` : '--'}</span>
+            Last <span className="text-text-strong">{lastPrice > 0 ? `${fmtSolValue(lastPrice)} SOL` : '--'}</span>
           </span>
           <span className="font-mono text-xs text-muted">
-            Vol <span className="text-text-strong">{volume.toFixed(2)} SOL</span>
+            Vol <span className="text-text-strong">{fmtSolValue(volume)} SOL</span>
           </span>
           <span className="font-mono text-xs text-muted">
             Sales <span className="text-text-strong">{buys}</span>
@@ -175,7 +176,7 @@ export function TradeChart({ events, loading, currentFloorSol }: TradeChartProps
 
             {/* axis labels */}
             <text x={PAD} y={PAD - 6} fontSize={9} fill="var(--dim)" className="font-mono">
-              {view.maxPrice.toFixed(3)}
+              {fmtSolValue(view.maxPrice)}
             </text>
             <text x={PAD} y={PAD + chartH + 4} fontSize={9} fill="var(--dim)" className="font-mono">0</text>
           </svg>

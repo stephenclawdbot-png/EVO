@@ -7,6 +7,7 @@ import { CollectionDiscovery, readAllCollections, readAllEVOs, getCollectionPDA,
 import { CollectionData, collectionConfigToData, evoAccountToData, mergeListingData, EVOData } from '@/lib/evo-data';
 import Link from 'next/link';
 import { DemoEvo } from '@/components/DemoEvo';
+import { fmtSolValue } from '@/lib/format';
 import {
   IconArrowRight, IconHammer, IconCollection, IconTrendingUp,
   IconFeed, IconEvolve, IconShatter, IconLock, IconSparkle,
@@ -186,7 +187,7 @@ export default function Home() {
   const ticker = [
     { label: 'Collections', value: loading ? '--' : String(globalStats.totalCollections) },
     { label: 'EVOs', value: loading ? '--' : String(globalStats.totalEVOs) },
-    { label: 'Locked', value: loading ? '--' : `${globalStats.totalLocked.toFixed(2)} SOL`, tone: 'pos' as const },
+    { label: 'Locked', value: loading ? '--' : `${fmtSolValue(globalStats.totalLocked)} SOL`, tone: 'pos' as const },
     { label: 'Listed', value: loading ? '--' : String(globalStats.totalListed) },
   ];
 
@@ -494,7 +495,7 @@ function CollectionCard({ summary }: { summary: CollectionSummary }) {
           <span className="font-mono text-[10px] text-dim">{data.creator.slice(0, 4)}...{data.creator.slice(-4)}</span>
         </div>
         <div className="mt-2 flex items-baseline gap-1">
-          <span className="font-mono text-lg font-bold text-positive">{totalLockedSol.toFixed(2)}</span>
+          <span className="font-mono tabular-nums text-lg font-bold text-positive">{fmtSolValue(totalLockedSol)}</span>
           <span className="text-[11px] text-dim">SOL locked</span>
         </div>
       </div>
@@ -502,7 +503,7 @@ function CollectionCard({ summary }: { summary: CollectionSummary }) {
       <div className="grid grid-cols-3 gap-px bg-border">
         <Stat label="EVOs" value={String(evoCount)} />
         <Stat label="Listed" value={String(listedCount)} />
-        <Stat label="Floor" value={floorPriceSol !== null ? `${floorPriceSol.toFixed(2)}` : '--'} />
+        <Stat label="Floor" value={floorPriceSol !== null ? `${fmtSolValue(floorPriceSol)}` : '--'} />
       </div>
 
       <div className="px-3 py-2">
