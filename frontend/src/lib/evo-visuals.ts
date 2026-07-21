@@ -492,6 +492,7 @@ export function resolveActiveImage(
   // 0. Per-EVO bulk manifest items (highest priority)
   if (evoId !== undefined) {
     for (const [uri, items] of bulkManifestCache) {
+      if (!items || !Array.isArray(items)) continue;
       const item = items.find(it => it.index === evoId);
       if (item && item.states[stageNum]) {
         return proxyImageUri(item.states[stageNum]);

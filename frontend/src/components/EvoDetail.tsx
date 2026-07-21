@@ -88,7 +88,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
       } else {
         setTraits(null);
       }
-      if (m && m.stages.length > 0) {
+      if (m && Array.isArray(m.stages) && m.stages.length > 0) {
         const imgs = m.stages.map(s => ({
           name: s.name,
           image: resolveActiveImage(m, evo.id, s.id, isRevealed),
@@ -112,7 +112,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
 
   const displayImage = resolvedImage || '/placeholder.png';
   const scale = 0.6 + Math.min(1, evo.lockedLamports / 50) * 0.4;
-  const currentStageName = manifest?.stages.find(s => s.id === evo.currentState)?.name
+  const currentStageName = manifest?.stages?.find(s => s.id === evo.currentState)?.name
     ?? `Stage ${evo.currentState}`;
   const isOwner = wallet.connected && wallet.publicKey && evo.owner === wallet.publicKey.toBase58();
 
