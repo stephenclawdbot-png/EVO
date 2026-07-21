@@ -107,6 +107,7 @@ export interface CollectionConfig {
   creator: PublicKey;
   supplyCap: number;
   currentSupply: number;
+  totalMinted: number;
   shatterFeeBps: number;
   shatterFeeDestination: FeeDestination;
   tradeRoyaltyBps: number;
@@ -309,6 +310,7 @@ export function parseCollectionConfig(data: Buffer): CollectionConfig | null {
   const [creator, o2] = readPubkey(data, off); off = o2;
   const [supplyCap, o3] = readU32(data, off); off = o3;
   const [currentSupply, o4] = readU32(data, off); off = o4;
+  const [totalMinted, o4b] = readU32(data, off); off = o4b;
   const [shatterFeeBps, o5] = readU16(data, off); off = o5;
   const [shatterFeeDest, o6] = readFeeDest(data, off); off = o6;
   const [tradeRoyaltyBps, o7] = readU16(data, off); off = o7;
@@ -368,7 +370,7 @@ export function parseCollectionConfig(data: Buffer): CollectionConfig | null {
   }
 
   return {
-    name, creator, supplyCap, currentSupply,
+    name, creator, supplyCap, currentSupply, totalMinted,
     shatterFeeBps, shatterFeeDestination: shatterFeeDest,
     tradeRoyaltyBps, royaltyDestination: royaltyDest,
     mintPriceLamports, lockAmountLamports, bump,
