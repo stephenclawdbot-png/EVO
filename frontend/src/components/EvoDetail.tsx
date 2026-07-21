@@ -45,6 +45,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
   const [manifest, setManifest] = useState<EvoVisualManifest | null>(null);
   const [stageImages, setStageImages] = useState<{ name: string; image: string }[]>([]);
   const [manifestVerification, setManifestVerification] = useState<ManifestVerification | null>(null);
+  const [traits, setTraits] = useState<Record<string, string> | null>(null);
   const [shatterFeeBps, setShatterFeeBps] = useState<number>(500);
   const [evolveThresholds, setEvolveThresholds] = useState<{
     trade: number; feed: number; hold: number; locked: number; maxStates: number; lifecycleType: string;
@@ -79,6 +80,14 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
       if (!active) return;
       setManifest(m);
       setManifestVerification(getManifestVerification(metadataUri));
+      // Extract per-EVO traits from bulk manifest items
+      const rawItems = (m as any)?.items;
+      if (Array.isArray(rawItems)) {
+        const item = rawItems.find((it: any) => it.index === evo.id);
+        setTraits(item?.traits ?? null);
+      } else {
+        setTraits(null);
+      }
       if (m && m.stages.length > 0) {
         const imgs = m.stages.map(s => ({
           name: s.name,
@@ -337,6 +346,20 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                     <p className="text-[10px] uppercase tracking-wide text-dim">Resonance Seed</p>
                     <p className="mt-1 break-all font-mono text-[11px] text-muted">{evo.resonanceSeed}</p>
                   </div>
+
+                  {traits && Object.keys(traits).length > 0 && (
+                    <div className="rounded border border-border bg-surface px-3 py-2.5">
+                      <p className="text-[10px] uppercase tracking-wide text-dim">Traits</p>
+                      <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-3">
+                        {Object.entries(traits).map(([key, val]) => (
+                          <div key={key} className="rounded bg-bg px-2 py-1">
+                            <p className="text-[9px] uppercase tracking-wide text-dim">{key}</p>
+                            <p className="text-xs font-medium text-text">{val}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
