@@ -14,7 +14,10 @@ const securityHeaders = [
   // The Irys gateway is allowlisted for image/script fetches, and the Irys
   // uploader endpoints (mainnet + devnet) for the bulk artwork uploader —
   // without these, the browser silently blocks every upload POST and the
-  // Irys SDK just reports a generic "Network Error".
+  // Irys SDK just reports a generic "Network Error". `gateway.irys.xyz` itself
+  // 302-redirects every request to a per-content `*.mainnet-1.datasprite-cdn.com`
+  // subdomain, and Chrome enforces connect-src on that final redirected host too —
+  // without allowlisting it, every manifest fetch through the gateway silently fails.
   {
     key: "Content-Security-Policy",
     value: [
@@ -22,7 +25,7 @@ const securityHeaders = [
       "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline' https://s3.tradingview.com",
       "img-src 'self' data: blob: https: ipfs: arweave:",
-      "connect-src 'self' https://api.mainnet-beta.solana.com https://api.devnet.solana.com https://*.helius-rpc.com https://gateway.irys.xyz https://uploader.irys.xyz https://devnet.irys.xyz https://dweb.link https://arweave.net https://s3.tradingview.com https://*.tradingview.com wss://*.tradingview.com",
+      "connect-src 'self' https://api.mainnet-beta.solana.com https://api.devnet.solana.com https://*.helius-rpc.com https://gateway.irys.xyz https://uploader.irys.xyz https://devnet.irys.xyz https://*.datasprite-cdn.com https://dweb.link https://arweave.net https://s3.tradingview.com https://*.tradingview.com wss://*.tradingview.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
