@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { useRouter } from 'next/navigation';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
@@ -14,7 +15,6 @@ import {
 } from '@/lib/evo-program';
 import { evoAccountToData, EVOData, collectionConfigToData, CollectionData, mergeListingData } from '@/lib/evo-data';
 import { EvoCard } from '@/components/EvoCard';
-import { EvoDetail } from '@/components/EvoDetail';
 import { IconArrowRight, IconPortfolio } from '@/components/Icons';
 
 interface CollectionGroup {
@@ -26,9 +26,9 @@ interface CollectionGroup {
 export default function PortfolioPage() {
   const { connection } = useConnection();
   const wallet = useWallet();
+  const router = useRouter();
   const [groups, setGroups] = useState<CollectionGroup[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedEvo, setSelectedEvo] = useState<EVOData | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!wallet.publicKey) { setGroups([]); return; }
@@ -129,10 +129,6 @@ export default function PortfolioPage() {
     };
   }, [groups]);
 
-  if (selectedEvo) {
-    return <EvoDetail evo={selectedEvo} onBack={() => setSelectedEvo(null)} onRefresh={fetchData} />;
-  }
-
   const ticker = wallet.publicKey ? [
     { label: 'EVOs', value: loading ? '--' : String(summary.total) },
     { label: 'Locked', value: loading ? '--' : `${summary.totalLockedSol.toFixed(2)} SOL`, tone: 'pos' as const },
@@ -214,9 +210,13 @@ export default function PortfolioPage() {
                     <EvoCard
                       key={`${group.name}-${evo.id}`}
                       evo={evo}
-                      onClick={() => setSelectedEvo(evo)}
+                      href={`/c/${encodeURIComponent(group.name)}/${evo.id}`}
+                      onClick={() => router.push(`/c/${encodeURIComponent(group.name)}/${evo.id}`)}
                       metadataUri={group.data?.metadataUri}
                       isRevealed={group.data?.isRevealed}
+                      evolveFeedThreshold={group.data?.evolveFeedThreshold}
+                      evolveLockedThreshold={group.data?.evolveLockedThreshold}
+                      evolveHoldSeconds={group.data?.evolveHoldSeconds}
                     />
                   ))}
                 </div>

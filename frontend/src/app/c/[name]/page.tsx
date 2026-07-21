@@ -2,10 +2,8 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useConnection } from '@solana/wallet-adapter-react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { EvoCard } from '@/components/EvoCard';
-import { EvoDetail } from '@/components/EvoDetail';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { TradeChart } from '@/components/TradeChart';
@@ -93,8 +91,8 @@ function SocialIcons({ links }: { links: { website?: string; twitter?: string; t
 export default function CollectionPage() {
   const params = useParams<{ name: string }>();
   const collectionName = decodeURIComponent(params.name);
+  const router = useRouter();
   const { connection } = useConnection();
-  const [selectedEvo, setSelectedEvo] = useState<EVOData | null>(null);
   const [filterListed, setFilterListed] = useState(false);
   const [sortBy, setSortBy] = useState<SortKey>('newest');
   const [searchQuery, setSearchQuery] = useState('');
@@ -205,14 +203,6 @@ export default function CollectionPage() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [fetchData]);
-
-  if (selectedEvo) {
-    return (
-      <ErrorBoundary>
-        <EvoDetail evo={selectedEvo} onBack={() => setSelectedEvo(null)} onRefresh={fetchData} />
-      </ErrorBoundary>
-    );
-  }
 
   if (notFound && !loading) {
     return (
@@ -404,7 +394,18 @@ export default function CollectionPage() {
           <>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
               {filteredEvos.map(evo => (
-                <EvoCard key={evo.id} evo={evo} onClick={() => setSelectedEvo(evo)} isFloor={evo.id === floorEvoId} metadataUri={collection?.metadataUri} isRevealed={collection?.isRevealed} />
+                <EvoCard
+                  key={evo.id}
+                  evo={evo}
+                  href={`/c/${encodeURIComponent(collectionName)}/${evo.id}`}
+                  onClick={() => router.push(`/c/${encodeURIComponent(collectionName)}/${evo.id}`)}
+                  isFloor={evo.id === floorEvoId}
+                  metadataUri={collection?.metadataUri}
+                  isRevealed={collection?.isRevealed}
+                  evolveFeedThreshold={collection?.evolveFeedThreshold}
+                  evolveLockedThreshold={collection?.evolveLockedThreshold}
+                  evolveHoldSeconds={collection?.evolveHoldSeconds}
+                />
               ))}
             </div>
             {filteredEvos.length === 0 && (

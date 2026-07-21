@@ -6,6 +6,7 @@ import { Nav } from '@/components/Nav';
 import { CollectionDiscovery, readAllCollections, readAllEVOs, getCollectionPDA, lamportsToSol } from '@/lib/evo-program';
 import { CollectionData, collectionConfigToData, evoAccountToData, mergeListingData, EVOData } from '@/lib/evo-data';
 import Link from 'next/link';
+import { DemoEvo } from '@/components/DemoEvo';
 import {
   IconArrowRight, IconHammer, IconCollection, IconTrendingUp,
   IconFeed, IconEvolve, IconShatter, IconLock, IconSparkle,
@@ -208,6 +209,77 @@ export default function Home() {
           <p className="mt-3 max-w-lg text-[12px] font-mono leading-relaxed text-dim">
             Lock SOL. Mint evolving art. Trade on-chain. No admin keys.
           </p>
+        </div>
+      </section>
+
+      {/* ─── Three-panel explainer + interactive demo ─── */}
+      <section className="border-b border-border bg-surface">
+        <div className="mx-auto max-w-6xl px-4 py-12 lg:py-16">
+          <div className="mb-8 text-center">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-dim">What is an EVO?</p>
+            <h2 className="mt-2 text-lg font-semibold tracking-tight text-text-strong sm:text-xl">
+              SOL you can hold, feed, and break.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 gap-px overflow-hidden rounded border border-border bg-border lg:grid-cols-3">
+            {/* Panel 1: SOL inside */}
+            <div className="bg-surface p-6 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-accent/30 bg-accent/10">
+                <IconLock className="h-5 w-5 text-accent" />
+              </div>
+              <h3 className="text-sm font-bold text-text-strong">SOL sealed inside</h3>
+              <p className="mt-1.5 text-xs leading-relaxed text-muted">
+                Every EVO holds locked SOL in its own on-chain account. The value is real — it&apos;s yours.
+              </p>
+            </div>
+
+            {/* Panel 2: Feed to evolve */}
+            <div className="bg-surface p-6 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-positive/30 bg-positive/10">
+                <IconEvolve className="h-5 w-5 text-positive" />
+              </div>
+              <h3 className="text-sm font-bold text-text-strong">Feed it to evolve</h3>
+              <p className="mt-1.5 text-xs leading-relaxed text-muted">
+                Add SOL and watch your EVO transform. The art changes when the value does.
+              </p>
+            </div>
+
+            {/* Panel 3: Shatter to recover */}
+            <div className="bg-surface p-6 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-negative/30 bg-negative/10">
+                <IconShatter className="h-5 w-5 text-negative" />
+              </div>
+              <h3 className="text-sm font-bold text-text-strong">Shatter to cash out</h3>
+              <p className="mt-1.5 text-xs leading-relaxed text-muted">
+                Destroy your EVO anytime and recover the SOL. The floor is a guarantee, not a promise.
+              </p>
+            </div>
+          </div>
+
+          {/* Interactive demo */}
+          <div className="mt-8 grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
+            <div>
+              <h3 className="text-sm font-bold text-text-strong">Try it — no wallet needed</h3>
+              <p className="mt-2 text-xs leading-relaxed text-muted">
+                This is a real EVO from the Solana Evo Kitties collection. Feed it fake SOL to watch it
+                evolve, then shatter it to see how value recovery works. The real thing runs entirely
+                on-chain — this is just a preview.
+              </p>
+              <ul className="mt-4 space-y-2 text-[11px] text-dim">
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent" /> Click <strong className="text-text">Feed</strong> to add SOL and fill the progress bar
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-positive" /> At 0.15 SOL fed, the kitten <strong className="text-text">evolves</strong> into a cat
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-negative" /> Click <strong className="text-text">Shatter</strong> to destroy it and recover all the SOL
+                </li>
+              </ul>
+            </div>
+            <DemoEvo />
+          </div>
         </div>
       </section>
 

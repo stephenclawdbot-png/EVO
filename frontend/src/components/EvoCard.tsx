@@ -3,6 +3,7 @@
 import { EVOData } from '@/lib/evo-data';
 import { useState, useEffect } from 'react';
 import { resolveImage } from '@/lib/evo-visuals';
+import Link from 'next/link';
 
 interface EvoCardProps {
   evo: EVOData;
@@ -10,6 +11,13 @@ interface EvoCardProps {
   isFloor?: boolean;
   metadataUri?: string;
   isRevealed?: boolean;
+  href?: string;
+  /** Locked SOL for this EVO (for floor-coverage display) */
+  lockedSol?: number;
+  /** Evolution thresholds for progress display */
+  evolveFeedThreshold?: number;
+  evolveLockedThreshold?: number;
+  evolveHoldSeconds?: number;
 }
 
 // Stage-based color themes for generative effects
@@ -24,7 +32,7 @@ const STAGE_COLORS = [
   { glow: '#f87171', accent: '#ef4444', bg: '#f8717114' },     // State 7+ — red
 ];
 
-export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed }: EvoCardProps) {
+export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed, href, lockedSol, evolveFeedThreshold, evolveLockedThreshold, evolveHoldSeconds }: EvoCardProps) {
   const [imgError, setImgError] = useState(false);
   const [resolvedImage, setResolvedImage] = useState<string | null>(null);
 
@@ -58,11 +66,25 @@ export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed }: EvoC
   // Trade count influences fracture density
   const fractureOpacity = Math.min(0.4, evo.tradeCount * 0.05);
 
-  return (
-    <div
-      onClick={onClick}
-      className="t-row group relative cursor-pointer overflow-hidden rounded border border-border bg-surface"
-    >
+  // Floor-coverage: backed SOL and percentage of ask
+  const backedSol = evo.lockedLamports; // already in SOL
+  const askSol = evo.isListed ? (evo.listPrice ?? 0) : 0;
+  const backedPct = askSol > 0 ? (backedSol / askSol) * 100 : 0;
+  const maxLoss = askSol - backedSol;
+  const belowFloor = evo.isListed && askSol > 0 && askSol < backedSol;
+
+  // Evolution progress
+  const LAMPORTS_PER_SOL = 1_000_000_000;
+  const fedSol = evo.totalFedLamports / LAMPORTS_PER_SOL;
+  const feedThresholdSol = evolveFeedThreshold ? evolveFeedThreshold / LAMPORTS_PER_SOL : 0;
+  const lockedThresholdSol = evolveLockedThreshold ? evolveLockedThreshold / LAMPORTS_PER_SOL : 0;
+  const showEvolveProgress = feedThresholdSol > 0 && !evo.isShattered;
+  const feedPct = showEvolveProgress ? Math.min(100, (fedSol / feedThresholdSol) * 100) : 0;
+  const lockedMet = lockedThresholdSol > 0 && backedSol >= lockedThresholdSol;
+  const readyToEvolve = showEvolveProgress && feedPct >= 100 && lockedMet;
+
+  const cardContent = (
+    <>
       <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-bg">
         {/* Stage-colored radial glow background */}
         <div className="absolute inset-0" style={{
@@ -89,6 +111,20 @@ export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed }: EvoC
         }}>
           S{evo.currentState}
         </span>
+
+        {/* Below-floor arbitrage badge */}
+        {belowFloor && (
+          <span className="absolute left-1.5 top-7 z-10 rounded bg-warning px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-[#0a0a0b]">
+            Below Floor
+          </span>
+        )}
+
+        {/* Ready-to-evolve badge */}
+        {readyToEvolve && (
+          <span className="absolute right-1.5 top-7 z-10 rounded bg-accent px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white">
+            Ready
+          </span>
+        )}
 
         {isFloor && evo.isListed && (
           <span className="absolute bottom-1.5 left-1.5 z-10 rounded bg-positive px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#0a0a0b]">
@@ -144,16 +180,61 @@ export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed }: EvoC
         <div className="flex items-center justify-between gap-1">
           <h3 className="truncate text-xs font-medium text-text">{evo.name}</h3>
           {evo.isListed ? (
-            <span className="shrink-0 font-mono text-xs font-bold text-positive">{evo.listPrice}</span>
+            <span className={`shrink-0 font-mono text-xs font-bold ${belowFloor ? 'text-warning' : 'text-positive'}`}>{evo.listPrice}</span>
           ) : (
             <span className="shrink-0 font-mono text-[11px] text-dim">{evo.tradeCount}x</span>
           )}
         </div>
         <div className="mt-0.5 flex items-center justify-between text-[10px] text-dim">
-          <span className="font-mono">{evo.lockedLamports} locked</span>
+          <span className="font-mono">{evo.lockedLamports.toFixed(2)} locked</span>
           <span className="font-mono" style={{ color: theme.glow }}>S{evo.currentState}</span>
         </div>
+
+        {/* Floor-coverage line on listed cards */}
+        {evo.isListed && !evo.isShattered && askSol > 0 && (
+          <div className="mt-0.5 text-[9px] text-dim">
+            <span className="font-mono text-positive">backed {backedSol.toFixed(2)}</span>
+            <span className="mx-0.5">·</span>
+            <span className="font-mono">{backedPct.toFixed(0)}%</span>
+            <span className="mx-0.5">·</span>
+            <span className={`font-mono ${maxLoss < 0 ? 'text-positive' : 'text-negative'}`}>
+              {maxLoss < 0 ? `+${Math.abs(maxLoss).toFixed(2)}` : `−${maxLoss.toFixed(2)}`} max
+            </span>
+          </div>
+        )}
+
+        {/* Evolution progress bar */}
+        {showEvolveProgress && feedPct < 100 && (
+          <div className="mt-1">
+            <div className="flex items-center justify-between text-[8px] text-dim">
+              <span className="font-mono">{fedSol.toFixed(2)}/{feedThresholdSol.toFixed(2)} SOL fed</span>
+              <span className="font-mono">{feedPct.toFixed(0)}%</span>
+            </div>
+            <div className="mt-0.5 h-1 w-full overflow-hidden rounded-full bg-surface-2">
+              <div className="h-full rounded-full transition-all duration-500" style={{
+                width: `${feedPct}%`,
+                background: theme.glow,
+              }} />
+            </div>
+          </div>
+        )}
       </div>
+    </>
+  );
+
+  const className = "t-row group relative cursor-pointer overflow-hidden rounded border border-border bg-surface";
+
+  if (href) {
+    return (
+      <Link href={href} onClick={onClick} className={className}>
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return (
+    <div onClick={onClick} className={className}>
+      {cardContent}
     </div>
   );
 }
