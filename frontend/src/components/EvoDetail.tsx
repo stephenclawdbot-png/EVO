@@ -440,8 +440,8 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                   </div>
 
                   {/* Backed SOL */}
-                  <div className="rounded border border-accent/30 bg-accent-soft px-3 py-2.5">
-                    <p className="text-[10px] uppercase tracking-wide text-accent">Backed SOL (locked)</p>
+                  <div className="rounded border border-border-strong bg-surface-2 px-3 py-2.5">
+                    <p className="text-[10px] uppercase tracking-wide text-dim">Backed SOL (locked)</p>
                     <p className="mt-1 font-mono text-lg font-bold text-text-strong">
                       {evo.lockedLamports} <span className="text-xs text-muted">SOL</span>
                     </p>
@@ -567,7 +567,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                         <tbody>
                           {evo.fractureLines.map((fl, i) => (
                             <tr key={i} className="border-t border-border t-row">
-                              <td className="px-2 py-1.5 font-mono text-accent">#{fl.tradeNumber}</td>
+                              <td className="px-2 py-1.5 font-mono text-text-strong">#{fl.tradeNumber}</td>
                               <td className="px-2 py-1.5 font-mono text-muted">{fl.previousOwner.slice(0, 6)}...{fl.previousOwner.slice(-4)}</td>
                               <td className="px-2 py-1.5 text-dim">{getAgeString(fl.timestamp)}</td>
                               <td className="px-2 py-1.5 text-right font-mono text-muted">{fl.intensity}%</td>

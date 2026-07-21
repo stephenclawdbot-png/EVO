@@ -175,7 +175,7 @@ export function LivingEvo() {
                   className="min-h-[70vh] flex flex-col justify-center"
                 >
                   <div className={`flex items-center gap-2.5 transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-40'}`}>
-                    <span className="flex h-8 w-8 items-center justify-center rounded border border-border-strong bg-surface text-accent">
+                    <span className="flex h-8 w-8 items-center justify-center rounded border border-border-strong bg-surface text-dim">
                       <Icon className="h-4 w-4" />
                     </span>
                     <span className="font-mono text-[11px] uppercase tracking-wider text-dim">
