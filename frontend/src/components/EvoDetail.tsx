@@ -21,6 +21,7 @@ import {
 import { resolveImage, fetchVisualManifest, resolveActiveImage, EvoVisualManifest, getManifestVerification, ManifestVerification } from '@/lib/evo-visuals';
 import { humanizeError } from '@/lib/errors';
 import { fmtSolValue, fmtSol, fmtPctValue } from '@/lib/format';
+import { useFlash } from '@/lib/useFlash';
 import { IconCheck, IconAlertTriangle, IconExternalLink } from './Icons';
 
 interface EvoDetailProps {
@@ -38,6 +39,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
   const [action, setAction] = useState<string | null>(null);
   const [txResult, setTxResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const lockedFlash = useFlash(evo.lockedLamports);
   const [listPrice, setListPrice] = useState('');
   const [feedAmount, setFeedAmount] = useState('');
   const [transferAddress, setTransferAddress] = useState('');
@@ -632,7 +634,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
 
             <div className="rounded border border-border bg-surface">
               <div className="grid grid-cols-2 gap-px bg-border">
-                <MktCell label="Locked value" value={`${evo.lockedLamports}`} unit="SOL" tone="pos" />
+                <MktCell label="Locked value" value={evo.lockedLamports} unit="SOL" tone="pos" flashKey={lockedFlash.key} flashClass={lockedFlash.className} />
                 <MktCell label="Premium" value={evo.isListed ? `${premium > 0 ? '+' : ''}${fmtPctValue(premium)}` : '--'} unit="%" />
                 <MktCell label="Trades" value={String(evo.tradeCount)} />
                 <MktCell label="Holders" value={String(uniqueHolders)} />
@@ -859,11 +861,11 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
   );
 }
 
-function MktCell({ label, value, unit, tone }: { label: string; value: string; unit?: string; tone?: 'pos' }) {
+function MktCell({ label, value, unit, tone, flashKey, flashClass }: { label: string; value: string | number; unit?: string; tone?: 'pos'; flashKey?: number; flashClass?: string }) {
   return (
     <div className="bg-surface px-3 py-2">
       <p className="text-[10px] uppercase tracking-wide text-dim">{label}</p>
-      <p className={`mt-0.5 font-mono text-sm font-semibold ${tone === 'pos' ? 'text-positive' : 'text-text-strong'}`}>
+      <p key={flashKey} className={`mt-0.5 font-mono tabular-nums text-sm font-semibold rounded ${flashClass ?? ''} ${tone === 'pos' ? 'text-positive' : 'text-text-strong'}`}>
         {value}{unit && <span className="ml-0.5 text-[10px] text-muted">{unit}</span>}
       </p>
     </div>

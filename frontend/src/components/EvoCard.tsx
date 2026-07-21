@@ -4,6 +4,7 @@ import { EVOData } from '@/lib/evo-data';
 import { useState, useEffect } from 'react';
 import { resolveImage } from '@/lib/evo-visuals';
 import { fmtSolValue, fmtPctValue } from '@/lib/format';
+import { useFlash } from '@/lib/useFlash';
 import Link from 'next/link';
 
 interface EvoCardProps {
@@ -36,6 +37,7 @@ const STAGE_COLORS = [
 export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed, href, lockedSol, evolveFeedThreshold, evolveLockedThreshold, evolveHoldSeconds }: EvoCardProps) {
   const [imgError, setImgError] = useState(false);
   const [resolvedImage, setResolvedImage] = useState<string | null>(null);
+  const lockedFlash = useFlash(evo.lockedLamports);
 
   useEffect(() => {
     if (!metadataUri) { setResolvedImage(null); return; }
@@ -187,7 +189,7 @@ export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed, href, 
           )}
         </div>
         <div className="mt-0.5 flex items-center justify-between text-[10px] text-dim">
-          <span className="font-mono tabular-nums">{fmtSolValue(evo.lockedLamports)} locked</span>
+          <span key={lockedFlash.key} className={`font-mono tabular-nums rounded ${lockedFlash.className}`}>{fmtSolValue(evo.lockedLamports)} locked</span>
           <span className="font-mono" style={{ color: theme.glow }}>S{evo.currentState}</span>
         </div>
 

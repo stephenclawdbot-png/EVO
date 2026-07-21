@@ -7,8 +7,21 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { ThemeToggle } from './ThemeToggle';
 import { readAllCollections } from '@/lib/evo-program';
 import { IconEvoMark, IconHammer, IconCollection, IconPortfolio, IconHelp } from './Icons';
+import { useFlash } from '@/lib/useFlash';
 
 interface TickerStat { label: string; value: string; tone?: 'pos' | 'neg' | 'neutral' }
+
+function TickerItem({ s }: { s: TickerStat }) {
+  const flash = useFlash(s.value);
+  return (
+    <div className="flex items-center gap-1.5 border-r border-border px-3 last:border-r-0">
+      <span className="text-[10px] uppercase tracking-wide text-dim">{s.label}</span>
+      <span key={flash.key} className={`font-mono tabular-nums text-xs font-medium rounded px-0.5 ${flash.className} ${s.tone === 'pos' ? 'text-positive' : s.tone === 'neg' ? 'text-negative' : 'text-text-strong'}`}>
+        {s.value}
+      </span>
+    </div>
+  );
+}
 
 interface NavProps {
   onRefresh?: () => void;
@@ -102,14 +115,7 @@ export function Nav({ onRefresh, ticker = [] }: NavProps) {
       {/* Ticker strip */}
       {ticker.length > 0 && (
         <div className="flex h-7 items-center gap-0 border-t border-border bg-surface overflow-x-auto">
-          {ticker.map((s, i) => (
-            <div key={i} className="flex items-center gap-1.5 border-r border-border px-3 last:border-r-0">
-              <span className="text-[10px] uppercase tracking-wide text-dim">{s.label}</span>
-              <span className={`font-mono text-xs font-medium ${s.tone === 'pos' ? 'text-positive' : s.tone === 'neg' ? 'text-negative' : 'text-text-strong'}`}>
-                {s.value}
-              </span>
-            </div>
-          ))}
+          {ticker.map((s, i) => <TickerItem key={i} s={s} />)}
         </div>
       )}
     </header>
