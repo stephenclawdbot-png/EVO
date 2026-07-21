@@ -123,6 +123,12 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
   }, [metadataUri, evo.currentState, isRevealed, evo.id]);
 
   const displayImage = resolvedImage || '/placeholder.png';
+
+  // Un-latch the image error whenever the source changes. Without this, the
+  // FIRST failed load (e.g. the placeholder rendering before the manifest
+  // resolves) latched imgError=true forever, and the real image — which loads
+  // fine — was never shown: the page showed "Image not found" permanently.
+  useEffect(() => { setImgError(false); }, [displayImage]);
   const scale = 0.6 + Math.min(1, evo.lockedLamports / 50) * 0.4;
   const currentStageName = manifest?.stages?.find(s => s.id === evo.currentState)?.name
     ?? `Stage ${evo.currentState}`;

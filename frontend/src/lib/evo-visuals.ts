@@ -323,6 +323,23 @@ export async function fetchVisualManifest(
   // Check cache
   const cached = manifestCache.get(metadataUri);
   if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+    // If a hash is provided NOW but the cached fetch ran without one (e.g.
+    // resolveImage populated the cache before EvoDetail asked with the on-chain
+    // hash), upgrade the stored verification using the recorded actualHash —
+    // otherwise the UI shows "Not checked" forever on cache hits.
+    if (expectedHash && !isZeroHash(expectedHash)) {
+      const v = verificationCache.get(metadataUri);
+      if (v?.actualHash && (v.status === 'unchecked' || v.status === 'no-hash')) {
+        const expectedHex = bytesToHex(expectedHash);
+        if (v.actualHash === expectedHex) {
+          verificationCache.set(metadataUri, { status: 'verified', expectedHash: expectedHex, actualHash: v.actualHash });
+        } else {
+          verificationCache.set(metadataUri, { status: 'mismatch', expectedHash: expectedHex, actualHash: v.actualHash });
+          manifestCache.delete(metadataUri);
+          return null; // hash says tampered — don't serve the cached manifest
+        }
+      }
+    }
     return cached.manifest;
   }
 

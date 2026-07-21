@@ -41,6 +41,10 @@ export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed }: EvoC
   }, [metadataUri, evo.currentState, isRevealed, evo.id]);
 
   const sprite = resolvedImage || '/placeholder.png';
+
+  // Un-latch the image error when the source changes — otherwise one failed
+  // load (e.g. placeholder before the manifest resolves) hides the real image forever.
+  useEffect(() => { setImgError(false); }, [sprite]);
   const stageIdx = Math.min(evo.currentState, STAGE_COLORS.length - 1);
   const theme = STAGE_COLORS[stageIdx];
 

@@ -21,7 +21,9 @@ interface CollectionSummary {
 }
 
 // ── Cache helpers (stale-while-revalidate) ──
-const CACHE_KEY = 'evo_collections_v3';
+// v4: bumped so browsers drop v3 caches that hold the double-divided
+// (0.00) totalLockedSol values.
+const CACHE_KEY = 'evo_collections_v4';
 const CACHE_TTL = 60_000; // 60s — fresh data matters for floor prices
 
 interface CachedSummary {
@@ -117,7 +119,10 @@ export default function Home() {
               discovery: disc,
               data,
               evoCount: active.length,
-              totalLockedSol: lamportsToSol(totalLocked),
+              // e.lockedLamports is ALREADY in SOL (evoAccountToData converts it,
+              // despite the field name) — do NOT divide again. lamportsToSol here
+              // turned 0.30 SOL into 3e-10 and the UI showed "LOCKED 0.00 SOL".
+              totalLockedSol: totalLocked,
               floorPriceSol: floor !== null ? lamportsToSol(floor) : null,
               listedCount: listed.length,
             };

@@ -58,6 +58,23 @@ shatter has both too) — so trading failures were NOT account-layout.
 | 7 | `app/admin/page.tsx` | After reveal/evolve/set-stage/update-metadata, nothing busted the 60s manifest cache or home cache → old art kept rendering. Admin `sendTx` now calls `invalidateManifestCache()` + `invalidateCollectionsCache()` on success. | "mystery placeholder not changing" |
 | 8 | `lib/evo-data.ts` (commit `f4961ad`) | Fracture-line timestamps were on-chain **seconds** stored in a **ms** field → Activity tab "56y ago". `* 1000`. | wrong ages |
 
+### Live-site diagnosis round (latest commit) — "Image not found" + "LOCKED 0.00"
+
+Diagnosed against the LIVE deployment with real requests (not guesses):
+- On-chain `metadata_uri` for the Kitties → manifest fetched: **healthy** (900
+  items, bulk format, per-EVO Irys images, all HTTP 200).
+- The deployed site's own proxies tested directly: `/api/img` returns the PNG,
+  `/api/manifest` returns the manifest. **Backend pipeline is fine.**
+
+So both symptoms were pure client bugs — found & fixed:
+
+| # | File | Bug |
+|---|---|---|
+| 9 | `public/placeholder.png` | **The file did not exist.** Every fallback in the app points at `/placeholder.png` → guaranteed 404. Generated a real 96×96 PNG (295 bytes, dark tile). |
+| 10 | `EvoCard.tsx` + `EvoDetail.tsx` | **Image-error latch.** First render shows the (missing) placeholder → `onError` sets `imgError=true` → when the real, working image URL resolves a moment later it is never rendered — "Image not found" forever. Added `useEffect(() => setImgError(false), [src])` in both. This — combined with #9 — is the actual "Image not found" root cause. |
+| 11 | `app/page.tsx` | **Home "LOCKED 0.00 SOL".** `e.lockedLamports` is already SOL (field name lies — `evoAccountToData` converts), and the summary applied `lamportsToSol` AGAIN → 0.30 SOL became 3e-10 → "0.00". Removed the double division; `floorPriceSol` was correct and untouched. Cache key bumped `v3`→`v4` so browsers drop the wrong cached values. |
+| 12 | `lib/evo-visuals.ts` | **"Artwork Authenticity: Not checked" stuck.** Manifest cache hits returned early without applying a newly-provided on-chain hash (resolveImage warms the cache hash-less before EvoDetail asks with the hash). Cache-hit path now upgrades verification from the recorded `actualHash`; a mismatch drops the cache and returns null. |
+
 ### From commit `f4961ad` (still relevant)
 `EvoDetail` is wrapped in per-section `<Guard>` error boundaries (left column /
 right column). Any remaining render crash now degrades to an inline message and
