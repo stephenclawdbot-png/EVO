@@ -8,6 +8,7 @@ import { Footer } from '@/components/Footer';
 import { Transaction } from '@solana/web3.js';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { humanizeError } from '@/lib/errors';
 import {
   readCollectionConfig,
   getCollectionPDA,
@@ -93,7 +94,7 @@ export default function CollectionForgePage() {
       // A mint happened — the home page's cached stats are stale now.
       invalidateCollectionsCache();
       await fetchCollection();
-    } catch (err: any) { setError(err.message || 'Forge failed'); } finally { setForging(false); }
+    } catch (err: any) { setError(humanizeError(err.message || 'Forge failed')); } finally { setForging(false); }
   };
 
   const totalCost = collection ? collection.mintPriceSol + collection.lockAmountSol : 0;

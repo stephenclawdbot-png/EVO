@@ -19,6 +19,7 @@ import {
   getCollectionPDA,
 } from '@/lib/evo-program';
 import { resolveImage, fetchVisualManifest, resolveActiveImage, EvoVisualManifest, getManifestVerification, ManifestVerification } from '@/lib/evo-visuals';
+import { humanizeError } from '@/lib/errors';
 import { IconCheck, IconAlertTriangle, IconExternalLink } from './Icons';
 
 interface EvoDetailProps {
@@ -163,7 +164,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
       const collectionPda = new PublicKey(evo.collectionPda!);
       const sig = await sendTx(createFeedIx(new PublicKey(evo.evoPda!), collectionPda, wallet.publicKey!, evo.id, lamports));
       if (sig) { setTxResult(sig); setFeedAmount(''); onRefresh?.(); }
-    } catch (err: any) { setError(err.message || 'Feed failed'); } finally { setAction(null); }
+    } catch (err: any) { setError(humanizeError(err.message || 'Feed failed')); } finally { setAction(null); }
   };
 
   const handleList = async () => {
@@ -174,7 +175,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
       const collectionPda = new PublicKey(evo.collectionPda!);
       const sig = await sendTx(createListIx(new PublicKey(evo.evoPda!), collectionPda, wallet.publicKey!, evo.id, lamports));
       if (sig) { setTxResult(sig); setListPrice(''); onRefresh?.(); }
-    } catch (err: any) { setError(err.message || 'List failed'); } finally { setAction(null); }
+    } catch (err: any) { setError(humanizeError(err.message || 'List failed')); } finally { setAction(null); }
   };
 
   const handleDelist = async () => {
@@ -183,7 +184,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
       const collectionPda = new PublicKey(evo.collectionPda!);
       const sig = await sendTx(createDelistIx(new PublicKey(evo.evoPda!), collectionPda, wallet.publicKey!, evo.id));
       if (sig) { setTxResult(sig); onRefresh?.(); }
-    } catch (err: any) { setError(err.message || 'Delist failed'); } finally { setAction(null); }
+    } catch (err: any) { setError(humanizeError(err.message || 'Delist failed')); } finally { setAction(null); }
   };
 
   const handleBuy = async () => {
@@ -213,7 +214,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
         BigInt(maxPrice),
       ));
       if (sig) { setTxResult(sig); onRefresh?.(); }
-    } catch (err: any) { setError(err.message || 'Buy failed'); } finally { setAction(null); }
+    } catch (err: any) { setError(humanizeError(err.message || 'Buy failed')); } finally { setAction(null); }
   };
 
   const handleShatter = async () => {
@@ -237,7 +238,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
         cfg.shatterFeeDestination, cfg.burnDestination,
       ));
       if (sig) { setTxResult(sig); onRefresh?.(); }
-    } catch (err: any) { setError(err.message || 'Shatter failed'); } finally { setAction(null); }
+    } catch (err: any) { setError(humanizeError(err.message || 'Shatter failed')); } finally { setAction(null); }
   };
 
   const handleTransfer = async () => {
@@ -250,7 +251,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
         new PublicKey(evo.evoPda!), collectionPda, wallet.publicKey!, proto.treasury, evo.id, new PublicKey(transferAddress),
       ));
       if (sig) { setTxResult(sig); setTransferAddress(''); onRefresh?.(); }
-    } catch (err: any) { setError(err.message || 'Transfer failed'); } finally { setAction(null); }
+    } catch (err: any) { setError(humanizeError(err.message || 'Transfer failed')); } finally { setAction(null); }
   };
 
   // --- Derived data (defensive: this block runs in EvoDetail's own render, so

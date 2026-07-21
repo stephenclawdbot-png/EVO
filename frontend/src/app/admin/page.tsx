@@ -7,6 +7,7 @@ import { Nav } from '@/components/Nav';
 import { Transaction } from '@solana/web3.js';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { humanizeError } from '@/lib/errors';
 import {
   readCollectionConfig,
   getCollectionPDA,
@@ -114,7 +115,7 @@ function AdminContent() {
         setTxResult(sig);
         await fetchCollection();
       }
-    } catch (err: any) { setError(err.message || 'Reveal failed'); } finally { setAction(null); }
+    } catch (err: any) { setError(humanizeError(err.message || 'Reveal failed')); } finally { setAction(null); }
   };
 
   const handleEvolve = async () => {
@@ -130,7 +131,7 @@ function AdminContent() {
         setTxResult(sig);
         setEvolveEvoId('');
       }
-    } catch (err: any) { setError(err.message || 'Evolve failed'); } finally { setAction(null); }
+    } catch (err: any) { setError(humanizeError(err.message || 'Evolve failed')); } finally { setAction(null); }
   };
 
   const handleSetStage = async () => {
@@ -149,7 +150,7 @@ function AdminContent() {
         setCustomEvoId('');
         setCustomStage('');
       }
-    } catch (err: any) { setError(err.message || 'Set stage failed'); } finally { setAction(null); }
+    } catch (err: any) { setError(humanizeError(err.message || 'Set stage failed')); } finally { setAction(null); }
   };
 
   const handleLogoUpload = async (file: File) => {
@@ -174,7 +175,7 @@ function AdminContent() {
         body: JSON.stringify({ name: COLLECTION_NAME, logo: logoUrl }),
       });
       if (!saveRes.ok) throw new Error('Failed to save logo mapping');
-    } catch (err: any) { setError(err.message || 'Logo update failed'); } finally { setLogoUploading(false); }
+    } catch (err: any) { setError(humanizeError(err.message || 'Logo update failed')); } finally { setLogoUploading(false); }
   };
 
   // Fetch current database logo on load
@@ -212,7 +213,7 @@ function AdminContent() {
         setTxResult(sig);
         await fetchCollection();
       }
-    } catch (err: any) { setError(err.message || 'Pre-reveal image update failed'); } finally { setAction(null); setPreRevealUploading(false); }
+    } catch (err: any) { setError(humanizeError(err.message || 'Pre-reveal image update failed')); } finally { setAction(null); setPreRevealUploading(false); }
   };
 
   const lifecycleLabel = (lt: string) => {

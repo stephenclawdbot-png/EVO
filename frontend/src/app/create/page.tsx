@@ -7,6 +7,8 @@ import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { Transaction, PublicKey } from '@solana/web3.js';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { humanizeError } from '@/lib/errors';
 import {
   readProtocolConfig,
   readAllCollections,
@@ -202,7 +204,7 @@ export default function CreateCollectionPage() {
       if (!res.ok) throw new Error(data.error || 'Logo upload failed');
       setLogoUri(data.url);
     } catch (err: any) {
-      setError(err?.message || 'Logo upload failed');
+      setError(humanizeError(err?.message || 'Logo upload failed'));
     } finally {
       setLogoUploading(false);
     }
@@ -221,7 +223,7 @@ export default function CreateCollectionPage() {
       if (!res.ok) throw new Error(data.error || 'Upload failed');
       setPreRevealUri(data.url);
     } catch (err: any) {
-      setError(err?.message || 'Upload failed');
+      setError(humanizeError(err?.message || 'Upload failed'));
     } finally {
       setPreRevealUploading(false);
     }
@@ -252,7 +254,7 @@ export default function CreateCollectionPage() {
         await fetchProtocol();
       }
     } catch (err: any) {
-      setError(err?.message || String(err));
+      setError(humanizeError(err?.message || String(err)));
     } finally {
       setInitSubmitting(false);
     }
@@ -357,7 +359,7 @@ export default function CreateCollectionPage() {
         }
       }
     } catch (err: any) {
-      setError(err?.message || String(err));
+      setError(humanizeError(err?.message || String(err)));
     } finally {
       setSubmitting(false);
     }
