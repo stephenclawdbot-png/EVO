@@ -302,8 +302,10 @@ export async function fetchVisualManifest(
   }
 
   try {
-    const res = await safeGatewayFetch(metadataUri, { cache: 'no-store' });
-    if (!res || !res.ok) return null;
+    // Use server-side proxy to bypass CORS issues from Irys gateway redirects
+    const proxyUrl = `/api/manifest?uri=${encodeURIComponent(metadataUri)}`;
+    const res = await fetch(proxyUrl, { cache: 'no-store' });
+    if (!res.ok) return null;
     const rawText = await res.text();
     const data = JSON.parse(rawText);
 
