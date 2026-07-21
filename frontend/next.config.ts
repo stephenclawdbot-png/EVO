@@ -22,7 +22,7 @@ const securityHeaders = [
       "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline' https://s3.tradingview.com",
       "img-src 'self' data: blob: https: ipfs: arweave:",
-      "connect-src 'self' https://api.mainnet-beta.solana.com https://*.helius-rpc.com https://gateway.irys.xyz https://uploader.irys.xyz https://devnet.irys.xyz https://dweb.link https://arweave.net https://s3.tradingview.com https://*.tradingview.com wss://*.tradingview.com",
+      "connect-src 'self' https://api.mainnet-beta.solana.com https://api.devnet.solana.com https://*.helius-rpc.com https://gateway.irys.xyz https://uploader.irys.xyz https://devnet.irys.xyz https://dweb.link https://arweave.net https://s3.tradingview.com https://*.tradingview.com wss://*.tradingview.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
