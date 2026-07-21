@@ -357,7 +357,21 @@ export default function Home() {
         {loading ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-32 animate-pulse rounded border border-border bg-surface" />
+              <div key={i} className="animate-pulse overflow-hidden rounded border border-border bg-surface">
+                <div className="border-b border-border px-3 py-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-full bg-surface-2" />
+                    <div className="h-3 w-20 rounded bg-surface-2" />
+                  </div>
+                  <div className="mt-2 h-5 w-24 rounded bg-surface-2" />
+                </div>
+                <div className="grid grid-cols-3 gap-px bg-border">
+                  <div className="h-9 bg-surface" />
+                  <div className="h-9 bg-surface" />
+                  <div className="h-9 bg-surface" />
+                </div>
+                <div className="px-3 py-2"><div className="h-2 w-full rounded bg-surface-2" /></div>
+              </div>
             ))}
           </div>
         ) : collections.length === 0 ? (

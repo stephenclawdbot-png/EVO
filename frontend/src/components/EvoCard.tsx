@@ -159,12 +159,13 @@ export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed, href, 
         )}
 
         {!imgError ? (
-          <img src={sprite} alt={evo.name} className="relative z-[1] pixelated"
+          <img src={sprite} alt={evo.name} className="relative z-[1] pixelated opacity-0 transition-opacity duration-150"
             style={{
               transform: `scale(${scale})`,
               imageRendering: 'pixelated',
               filter: glowIntensity > 0.3 ? `drop-shadow(0 0 ${glowSize * 0.3}px ${theme.glow}80)` : 'none',
             }}
+            onLoad={(e) => { (e.target as HTMLImageElement).style.opacity = '1'; }}
             onError={() => setImgError(true)} />
         ) : (
           <div className="relative z-[1] flex h-16 w-16 items-center justify-center rounded border border-dashed border-border-strong text-[10px] text-dim">

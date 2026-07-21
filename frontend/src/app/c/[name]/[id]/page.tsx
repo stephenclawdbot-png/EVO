@@ -58,7 +58,17 @@ export default function EvoDetailPage() {
       <div className="min-h-screen bg-bg text-text">
         <Nav />
         <div className="mx-auto max-w-7xl px-3 py-20 lg:px-4">
-          <div className="h-96 animate-pulse rounded border border-border bg-surface" />
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="space-y-3">
+              <div className="aspect-square animate-pulse rounded border border-border bg-surface" />
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded border border-border bg-surface" />)}
+              </div>
+            </div>
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-20 animate-pulse rounded border border-border bg-surface" />)}
+            </div>
+          </div>
         </div>
       </div>
     );

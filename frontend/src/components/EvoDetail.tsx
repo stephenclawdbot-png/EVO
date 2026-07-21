@@ -322,8 +322,9 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
               )}
 
               {!imgError ? (
-                <img src={displayImage} alt={evo.name} className="relative z-[1]"
+                <img src={displayImage} alt={evo.name} className="relative z-[1] opacity-0 transition-opacity duration-150"
                   style={{ transform: `scale(${scale * 1.5})`, imageRendering: 'pixelated' }}
+                  onLoad={(e) => { (e.target as HTMLImageElement).style.opacity = '1'; }}
                   onError={() => setImgError(true)} />
               ) : (
                 <div className="text-dim text-sm">Image not found</div>
@@ -657,8 +658,8 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                 <div className="mt-1 text-[11px] text-dim">Locked floor: <span className="font-mono text-muted">{evo.lockedLamports} SOL</span></div>
                 {wallet.connected ? (
                   <button onClick={handleBuy} disabled={action === 'buy'}
-                    className="mt-3 w-full rounded bg-positive py-2.5 text-sm font-bold text-[#0a0a0b] transition-opacity hover:opacity-90 disabled:opacity-50">
-                    {action === 'buy' ? 'Buying...' : 'Buy now'}
+                      className="mt-3 w-full rounded bg-positive py-2.5 text-sm font-bold text-[#0a0a0b] transition-opacity hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
+                      {action === 'buy' ? <span className="inline-flex items-center justify-center gap-1.5"><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> Buying...</span> : 'Buy now'}
                   </button>
                 ) : (
                   <div className="mt-3 flex justify-center"><WalletMultiButton /></div>
@@ -675,8 +676,8 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                       <p className="font-mono text-xl font-bold text-positive">{evo.listPrice} SOL</p>
                     </div>
                     <button onClick={handleDelist} disabled={action === 'delist'}
-                      className="rounded border border-border-strong px-3 py-1.5 text-xs font-medium text-text transition-colors hover:bg-surface-2 disabled:opacity-50">
-                      {action === 'delist' ? '...' : 'Delist'}
+                      className="rounded border border-border-strong px-3 py-1.5 text-xs font-medium text-text transition-colors hover:bg-surface-2 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
+                      {action === 'delist' ? <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> : 'Delist'}
                     </button>
                   </div>
                 ) : (
@@ -686,8 +687,8 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                       <input type="number" placeholder="Price (SOL)" value={listPrice} onChange={(e) => setListPrice(e.target.value)}
                         className="t-input flex-1 px-2 py-1.5 text-sm" step="0.01" min="0.01" />
                       <button onClick={handleList} disabled={action === 'list'}
-                        className="rounded border border-positive/40 bg-positive-soft px-3 py-1.5 text-xs font-medium text-positive transition-colors hover:bg-positive/10 disabled:opacity-50">
-                        {action === 'list' ? '...' : 'List'}
+                        className="rounded border border-positive/40 bg-positive-soft px-3 py-1.5 text-xs font-medium text-positive transition-colors hover:bg-positive/10 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
+                        {action === 'list' ? <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> : 'List'}
                       </button>
                     </div>
                   </>
@@ -793,21 +794,21 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                   <input type="number" placeholder="Feed SOL" value={feedAmount} onChange={(e) => setFeedAmount(e.target.value)}
                     className="t-input flex-1 px-2 py-1.5 text-sm" step="0.001" min="0.001" />
                   <button onClick={handleFeed} disabled={action === 'feed'}
-                    className="rounded border border-warn/40 bg-warn-soft px-3 py-1.5 text-xs font-medium text-warn transition-colors hover:bg-warn/10 disabled:opacity-50">
-                    {action === 'feed' ? '...' : 'Feed'}
+                    className="rounded border border-warn/40 bg-warn-soft px-3 py-1.5 text-xs font-medium text-warn transition-colors hover:bg-warn/10 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
+                    {action === 'feed' ? <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> : 'Feed'}
                   </button>
                 </div>
                 <div className="flex gap-2">
                   <input type="text" placeholder="Recipient address" value={transferAddress} onChange={(e) => setTransferAddress(e.target.value)}
                     className="t-input flex-1 px-2 py-1.5 text-sm" />
                   <button onClick={handleTransfer} disabled={action === 'transfer' || !transferAddress}
-                    className="rounded border border-border-strong bg-surface px-3 py-1.5 text-xs font-medium text-text transition-colors hover:bg-surface-2 disabled:opacity-50">
-                    {action === 'transfer' ? '...' : 'Transfer'}
+                    className="rounded border border-border-strong bg-surface px-3 py-1.5 text-xs font-medium text-text transition-colors hover:bg-surface-2 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
+                    {action === 'transfer' ? <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> : 'Transfer'}
                   </button>
                 </div>
                 <button onClick={handleShatter} disabled={action === 'shatter'}
-                  className="w-full rounded border border-negative/30 bg-negative-soft py-2.5 text-xs font-medium text-negative transition-colors hover:bg-negative/10 disabled:opacity-50">
-                  {action === 'shatter' ? 'Shattering...' : `Shatter - recover ${fmtSolValue(evo.lockedLamports * (10000 - shatterFeeBps) / 10000)}`}
+                  className="w-full rounded border border-negative/30 bg-negative-soft py-2.5 text-xs font-medium text-negative transition-colors hover:bg-negative/10 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
+                  {action === 'shatter' ? <span className="inline-flex items-center justify-center gap-1.5"><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> Shattering...</span> : `Shatter - recover ${fmtSolValue(evo.lockedLamports * (10000 - shatterFeeBps) / 10000)}`}
                 </button>
               </div>
             )}
