@@ -297,23 +297,26 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
         setPhase(`Bundling ${stateNames[s]} (${filesToUpload.length} files${skippedCount > 0 ? `, ${skippedCount} cached` : ''})…`);
 
         try {
-          const { manifestId, results: folderResults } = await uploadStateFolder(
+          const { results: folderResults, failed: chunkFailed } = await uploadStateFolder(
             filesToUpload, s, wallet, useDevnet,
             (u, t, fn) => {
-              setProgress({ uploaded: u + allResults.reduce((sum, r) => sum + r.length, 0), total, failed: 0, currentFile: fn });
+              setProgress({ uploaded: u + allResults.reduce((sum, r) => sum + r.length, 0), total, failed: chunkFailed.length, currentFile: fn });
             },
           );
 
           // Map folder results back to the original file array position
           const stateResults: (UploadResult | null)[] = new Array(files.length).fill(null);
-          filesToUpload.forEach((f) => {
+          filesToUpload.forEach((f, fi) => {
             const origIdx = files.indexOf(f);
-            const result = folderResults.find(r => r.fileName === f.name);
+            const result = folderResults[fi];
             if (result && result.txId) {
               stateResults[origIdx] = result;
               completed.push({ fileName: f.name, txId: result.txId, stateIndex: s });
             }
           });
+
+          // Add per-chunk failures
+          globalFailed.push(...chunkFailed);
 
           // Fill in skipped (cached) files
           files.forEach((f, i) => {
@@ -327,7 +330,7 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
 
           allResults.push(stateResults);
         } catch (err: any) {
-          // Bundle failed — mark all files as failed
+          // Setup error (getIrys etc.) — mark all files as failed
           const errMsg = err?.response?.data || err?.message || String(err);
           filesToUpload.forEach(f => {
             globalFailed.push({ file: f, stateIndex: s, error: errMsg });

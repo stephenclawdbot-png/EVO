@@ -180,14 +180,13 @@ export async function uploadStateFolder(
   wallet: WalletContextState,
   useDevnet = false,
   onProgress?: (uploaded: number, total: number, fileName: string) => void,
-): Promise<{ manifestId: string; results: UploadResult[] }> {
+  chunkSize = 50,
+): Promise<{ results: (UploadResult | null)[]; failed: FailedUpload[] }> {
   const irys = await getIrys(wallet, useDevnet);
 
-  // Auto-fund the Irys balance if needed. uploadFolder bundles every file
-  // into one transaction, so an unfunded (or under-funded) balance fails
-  // the whole bundle with a generic "Network Error". We estimate the cost
-  // for the total payload and top up with a 20% buffer (min 0.005 SOL) when
-  // the current loaded balance is below that.
+  // Auto-fund the Irys balance if needed. We estimate the cost for the total
+  // payload and top up with a 20% buffer (min 0.005 SOL) when the current
+  // loaded balance is below that.
   const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
   try {
     const [loadedBalance, atomicCost] = await Promise.all([
@@ -196,8 +195,6 @@ export async function uploadStateFolder(
     ]);
     const needed = (atomicCost * 12n) / 10n; // +20% buffer
     if (BigInt(loadedBalance) < needed) {
-      // Fund the gap, floored at a small minimum so tiny uploads aren't
-      // rejected for being below Irys's funding granularity.
       const topUp = (() => {
         const minFund = 5_000_000n; // 0.005 SOL in lamports
         const gap = needed - BigInt(loadedBalance);
@@ -207,43 +204,70 @@ export async function uploadStateFolder(
       await irys.fund(topUp);
     }
   } catch (err) {
-    // getPrice/fund can fail on devnet or when the wallet lacks SOL. Surface
-    // a clear message but don't abort — the upload itself will fail with a
-    // more specific error if funding truly was the blocker.
     console.warn('Irys pre-fund skipped:', err);
   }
 
-  onProgress?.(0, files.length, 'Bundling files…');
+  const results: (UploadResult | null)[] = new Array(files.length).fill(null);
+  const failed: FailedUpload[] = [];
+  let completedCount = 0;
+  const MAX_RETRIES = 2;
 
-  // uploadFolder signs each file with a temporary key, bundles them + a manifest
-  // into a single transaction, and uploads the whole bundle at once
-  const response = await irys.uploadFolder(files, {
-    manifestTags: [
-      { name: 'App-Name', value: 'EVO' },
-      { name: 'State-Index', value: String(stateIndex) },
-      { name: 'Content-Type', value: 'application/x.irys-manifest+json' },
-    ],
-  });
+  // Upload in chunks so a single bundle failure doesn't nuke all files.
+  // Each chunk is a separate Irys transaction (manifest + data items).
+  for (let i = 0; i < files.length; i += chunkSize) {
+    const chunk = files.slice(i, i + chunkSize);
+    const chunkEnd = Math.min(i + chunkSize, files.length);
 
-  // Extract individual tx IDs from the manifest paths
-  const manifest = response.manifest;
-  const results: UploadResult[] = files.map((f) => {
-    const pathEntry = manifest?.paths?.[f.name];
-    const txId = pathEntry?.id || '';
-    return {
-      txId,
-      uri: txId ? `${IRYS_GATEWAY}${txId}` : '',
-      size: f.size,
-      fileName: f.name,
-    };
-  });
+    let chunkDone = false;
+    for (let attempt = 0; attempt < MAX_RETRIES && !chunkDone; attempt++) {
+      const label = attempt > 0
+        ? `Retry ${attempt}/${MAX_RETRIES - 1}: ${completedCount + 1}-${chunkEnd}/${files.length}`
+        : `Bundling ${completedCount + 1}-${chunkEnd}/${files.length}`;
+      onProgress?.(completedCount, files.length, label);
 
-  onProgress?.(files.length, files.length, 'Bundle uploaded');
+      try {
+        const response = await irys.uploadFolder(chunk, {
+          manifestTags: [
+            { name: 'App-Name', value: 'EVO' },
+            { name: 'State-Index', value: String(stateIndex) },
+            { name: 'Content-Type', value: 'application/x.irys-manifest+json' },
+          ],
+        });
 
-  return {
-    manifestId: response.manifestId,
-    results,
-  };
+        const manifest = response.manifest;
+        chunk.forEach((f, j) => {
+          const origIdx = i + j;
+          const pathEntry = manifest?.paths?.[f.name];
+          const txId = pathEntry?.id || '';
+          if (txId) {
+            results[origIdx] = {
+              txId,
+              uri: `${IRYS_GATEWAY}${txId}`,
+              size: f.size,
+              fileName: f.name,
+            };
+          }
+        });
+        chunkDone = true;
+      } catch (err: any) {
+        if (attempt < MAX_RETRIES - 1) {
+          // Clear cache and wait before retrying
+          clearIrysCache();
+          await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+        } else {
+          const errMsg = err?.response?.data || err?.message || String(err);
+          chunk.forEach((f, j) => {
+            failed.push({ file: f, stateIndex, error: errMsg });
+          });
+        }
+      }
+    }
+
+    completedCount = chunkEnd;
+    onProgress?.(completedCount, files.length, `${completedCount}/${files.length} done`);
+  }
+
+  return { results, failed };
 }
 
 /**
