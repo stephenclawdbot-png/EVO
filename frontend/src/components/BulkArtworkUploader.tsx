@@ -300,7 +300,7 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
           const { results: folderResults, failed: chunkFailed } = await uploadStateFolder(
             filesToUpload, s, wallet, useDevnet,
             (u, t, fn) => {
-              setProgress({ uploaded: u + allResults.reduce((sum, r) => sum + r.length, 0), total, failed: chunkFailed.length, currentFile: fn });
+              setProgress({ uploaded: u + allResults.reduce((sum, r) => sum + r.length, 0), total, failed: 0, currentFile: fn });
             },
           );
 

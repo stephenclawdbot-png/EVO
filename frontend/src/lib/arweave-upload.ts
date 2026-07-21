@@ -182,7 +182,7 @@ export async function uploadStateFolder(
   onProgress?: (uploaded: number, total: number, fileName: string) => void,
   chunkSize = 50,
 ): Promise<{ results: (UploadResult | null)[]; failed: FailedUpload[] }> {
-  const irys = await getIrys(wallet, useDevnet);
+  let irys = await getIrys(wallet, useDevnet);
 
   // Auto-fund the Irys balance if needed. We estimate the cost for the total
   // payload and top up with a 20% buffer (min 0.005 SOL) when the current
@@ -251,9 +251,9 @@ export async function uploadStateFolder(
         chunkDone = true;
       } catch (err: any) {
         if (attempt < MAX_RETRIES - 1) {
-          // Clear cache and wait before retrying
           clearIrysCache();
           await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+          irys = await getIrys(wallet, useDevnet);
         } else {
           const errMsg = err?.response?.data || err?.message || String(err);
           chunk.forEach((f, j) => {
