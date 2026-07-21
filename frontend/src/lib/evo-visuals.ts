@@ -350,9 +350,9 @@ export async function fetchVisualManifest(
       };
     }
 
-    manifestCache.set(metadataUri, { manifest: data, ts: Date.now() });
+    manifestCache.set(metadataUri, { manifest, ts: Date.now() });
     verificationCache.set(metadataUri, verification);
-    return data;
+    return manifest;
   } catch {
     return null;
   }

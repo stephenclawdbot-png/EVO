@@ -23,6 +23,8 @@ import { IconCheck, IconAlertTriangle, IconExternalLink, IconHammer, IconSparkle
 import { BulkArtworkUploader, type BulkArtworkResult } from '@/components/BulkArtworkUploader';
 import { uploadFile } from '@/lib/arweave-upload';
 
+const CREATE_DRAFT_KEY = 'evo_create_draft_v1';
+
 const FEE_DESTINATIONS: FeeDestination[] = ['Treasury', 'Creator', 'Burn', 'Split'];
 const FEE_DEST_LABELS: Record<FeeDestination, string> = {
   Treasury: 'Protocol Treasury (EVO)',
@@ -115,11 +117,32 @@ export default function CreateCollectionPage() {
 
   // Art mode
   const [artMode, setArtMode] = useState<'generative' | 'bulk'>('bulk');
-  const [bulkArtwork, setBulkArtwork] = useState<BulkArtworkResult | null>(null);
+  // bulkArtwork/logoUri survive a refresh via localStorage — the Arweave upload itself
+  // already succeeded and shouldn't be lost just because the on-chain submit hasn't happened yet.
+  const [bulkArtwork, setBulkArtwork] = useState<BulkArtworkResult | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem(CREATE_DRAFT_KEY);
+      return raw ? JSON.parse(raw).bulkArtwork ?? null : null;
+    } catch { return null; }
+  });
 
   // Collection logo
-  const [logoUri, setLogoUri] = useState('');
+  const [logoUri, setLogoUri] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    try {
+      const raw = localStorage.getItem(CREATE_DRAFT_KEY);
+      return raw ? JSON.parse(raw).logoUri ?? '' : '';
+    } catch { return ''; }
+  });
   const [logoUploading, setLogoUploading] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(CREATE_DRAFT_KEY, JSON.stringify({ bulkArtwork, logoUri }));
+    } catch { /* quota / private mode */ }
+  }, [bulkArtwork, logoUri]);
 
   const fetchProtocol = useCallback(async () => {
     setLoadingProto(true);
@@ -173,7 +196,7 @@ export default function CreateCollectionPage() {
         { name: 'App-Name', value: 'EVO' },
         { name: 'Content-Type', value: file.type || 'image/png' },
         { name: 'Type', value: 'collection-logo' },
-      ], true); // devnet Irys
+      ], false); // mainnet Irys — must match the network the connected wallet actually funds on
       setLogoUri(result.uri);
     } catch (err: any) {
       setError(err?.message || 'Logo upload failed');
@@ -304,7 +327,12 @@ export default function CreateCollectionPage() {
         lifecycle,
       );
       const sig = await sendTx(ix);
-      if (sig) setTxSig(sig);
+      if (sig) {
+        setTxSig(sig);
+        if (typeof window !== 'undefined') {
+          try { localStorage.removeItem(CREATE_DRAFT_KEY); } catch { /* private mode */ }
+        }
+      }
     } catch (err: any) {
       setError(err?.message || String(err));
     } finally {

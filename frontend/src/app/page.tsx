@@ -141,6 +141,11 @@ export default function Home() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   useEffect(() => {
+    const interval = setInterval(() => fetchData({ skipCache: true }), CACHE_TTL);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === 'r' && !e.metaKey && !e.ctrlKey && document.activeElement?.tagName !== 'INPUT') {
         fetchData();
