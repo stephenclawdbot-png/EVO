@@ -173,7 +173,7 @@ export default function CollectionForgePage() {
 
             {/* Forge */}
             <button onClick={handleForge} disabled={!wallet.connected || forging || remaining === 0}
-              className="mt-5 w-full rounded bg-accent py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40 dark:text-[#0a0a0b]">
+              className="mt-5 w-full rounded bg-accent py-3 text-sm font-semibold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 dark:text-[#0a0a0b]">
               {forging ? 'Forging...' : remaining === 0 ? 'Collection full' : `Forge ${collectionName} #${nextId}`}
             </button>
             {!wallet.connected && (

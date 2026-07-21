@@ -384,7 +384,7 @@ export default function Home() {
               Meld is permissionless. Create the first collection from the website — no SDK required.
             </p>
             <Link href="/create"
-              className="mt-5 inline-flex items-center gap-2 rounded border border-accent bg-accent px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-accent-hover">
+              className="mt-5 inline-flex items-center gap-2 rounded border border-accent bg-accent px-5 py-2 text-sm font-bold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98]">
               <IconHammer className="h-4 w-4" /> Create Collection
             </Link>
           </div>
@@ -459,7 +459,7 @@ export default function Home() {
 
 function OpCard({ icon: Icon, name, desc }: { icon: typeof IconHammer; name: string; desc: string }) {
   return (
-    <div className="bg-surface p-5 transition-colors hover:bg-surface-2">
+    <div className="bg-surface p-5 transition-colors duration-100 hover:bg-surface-2 active:scale-[0.99]">
       <Icon className="h-4 w-4 text-muted" />
       <h3 className="mt-3 text-sm font-semibold text-text-strong">{name}</h3>
       <p className="mt-1.5 text-xs leading-relaxed text-muted">{desc}</p>
@@ -493,7 +493,7 @@ function CollectionCard({ summary }: { summary: CollectionSummary }) {
   const logoUri = chainLogoUri || dbLogo;
 
   return (
-    <Link href={`/c/${data.name}`} className="group block overflow-hidden rounded border border-border bg-surface transition-colors hover:border-border-strong">
+    <Link href={`/c/${data.name}`} className="group block overflow-hidden rounded border border-border bg-surface transition-colors duration-100 hover:border-border-strong active:scale-[0.99]">
       <div className="border-b border-border px-3 py-3">
         <div className="flex items-baseline justify-between">
           <div className="flex items-center gap-2">

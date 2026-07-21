@@ -226,7 +226,7 @@ export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed, href, 
     </>
   );
 
-  const className = "t-row group relative cursor-pointer overflow-hidden rounded border border-border bg-surface";
+  const className = "t-row group relative cursor-pointer overflow-hidden rounded border border-border bg-surface transition-colors duration-100 active:scale-[0.98] hover:border-border-strong";
 
   if (href) {
     return (

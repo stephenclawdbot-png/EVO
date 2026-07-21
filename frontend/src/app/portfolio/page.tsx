@@ -164,7 +164,7 @@ export default function PortfolioPage() {
           <div className="py-20 text-center">
             <h3 className="text-sm font-semibold">No EVOs yet</h3>
             <p className="mt-1 text-xs text-muted">You don&apos;t own any EVOs. Forge one to get started.</p>
-            <Link href="/" className="mt-5 inline-flex items-center gap-2 rounded border border-accent bg-accent px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover">
+            <Link href="/" className="mt-5 inline-flex items-center gap-2 rounded border border-accent bg-accent px-5 py-2 text-sm font-semibold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98]">
               Browse collections <IconArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>

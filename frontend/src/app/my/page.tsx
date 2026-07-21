@@ -73,7 +73,7 @@ export default function MyCollectionsPage() {
             <p className="mt-1 text-xs text-muted">Collections created by your connected wallet.</p>
           </div>
           <Link href="/create"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded border border-accent bg-accent px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-accent-hover">
+            className="inline-flex shrink-0 items-center gap-1.5 rounded border border-accent bg-accent px-3 py-2 text-xs font-bold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98]">
             <IconHammer className="h-3.5 w-3.5" /> Create
           </Link>
         </div>
@@ -96,7 +96,7 @@ export default function MyCollectionsPage() {
             <p className="text-sm font-semibold text-text-strong">No collections yet</p>
             <p className="mx-auto mt-1 max-w-sm text-xs text-muted">Create your first EVO collection. You&apos;ll become its creator and lifecycle authority.</p>
             <Link href="/create"
-              className="mt-5 inline-flex items-center gap-2 rounded border border-accent bg-accent px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-accent-hover">
+              className="mt-5 inline-flex items-center gap-2 rounded border border-accent bg-accent px-5 py-2 text-sm font-bold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98]">
               <IconHammer className="h-4 w-4" /> Create Collection
             </Link>
           </div>

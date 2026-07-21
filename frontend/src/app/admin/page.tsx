@@ -411,7 +411,7 @@ function AdminContent() {
                     className="t-input mt-2 w-full px-3 py-2 font-mono text-xs" />
                 )}
                 <button onClick={handleReveal} disabled={action !== null}
-                  className="mt-2 w-full rounded bg-accent py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-40">
+                  className="mt-2 w-full rounded bg-accent py-2.5 text-sm font-semibold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98] disabled:opacity-40 disabled:active:scale-100">
                   {action === 'reveal' ? 'Revealing...' : 'Reveal Collection'}
                 </button>
               </div>

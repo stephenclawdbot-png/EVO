@@ -410,7 +410,7 @@ export default function CreateCollectionPage() {
               This wallet already created the collection <span className="font-semibold text-text-strong">{existingCollection.config.name}</span>.
               The marketplace allows one collection per wallet to prevent spam and keep the gallery clean.
             </p>
-            <Link href={`/c/${existingCollection.config.name}`} className="mt-4 inline-flex items-center gap-2 rounded border border-accent bg-accent px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-accent-hover">
+            <Link href={`/c/${existingCollection.config.name}`} className="mt-4 inline-flex items-center gap-2 rounded border border-accent bg-accent px-4 py-2 text-xs font-semibold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98]">
               <IconExternalLink className="h-3 w-3" /> View your collection
             </Link>
           </div>
@@ -429,7 +429,7 @@ export default function CreateCollectionPage() {
             <button
               onClick={handleInitializeProtocol}
               disabled={initSubmitting}
-              className="mt-4 inline-flex items-center gap-2 rounded border border-accent bg-accent px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+              className="mt-4 inline-flex items-center gap-2 rounded border border-accent bg-accent px-4 py-2 text-xs font-semibold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50"
             >
               {initSubmitting ? 'Initializing…' : 'Initialize Protocol'}
             </button>
@@ -852,7 +852,7 @@ export default function CreateCollectionPage() {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="inline-flex w-full items-center justify-center gap-2 rounded border border-accent bg-accent px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center gap-2 rounded border border-accent bg-accent px-4 py-3 text-sm font-bold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50"
             >
               {submitting ? 'Creating…' : <><IconHammer className="h-4 w-4" /> Create Collection</>}
             </button>
