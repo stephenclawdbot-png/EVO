@@ -186,18 +186,21 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
     try {
       let totalExtracted = 0;
 
-      // When the number of ZIPs dropped together matches the number of
-      // states, treat it as "one ZIP per state" (e.g. images.zip +
-      // evolved_images.zip for a 2-state collection) and assign each ZIP's
-      // contents directly to its positional state — same as the per-state
-      // drop zone. Relying on folder-name matching (groupFilesByState) here
-      // silently dumps everything into state 0 whenever the ZIP's internal
-      // folder isn't literally named "state1"/"state2"/etc, which is the
-      // common case for creators who name folders after their own artwork
-      // (e.g. "images_256"/"evolved_images_256") — that bug is why bulk
-      // uploads with more than one state looked like they only ever
-      // populated the first state.
-      if (zipFiles.length === stateNames.length && stateNames.length > 1) {
+      // When multiple ZIPs are dropped together in the combined dropzone,
+      // treat it as "one ZIP per state" (e.g. images.zip + evolved_images.zip
+      // assigned to State 1 + State 2, even if the collection is configured
+      // for more states than that) and assign each ZIP's contents directly
+      // to its positional state — same as the per-state drop zone. Relying
+      // on folder-name matching (groupFilesByState) here silently dumps
+      // everything into state 0 whenever the ZIP's internal folder isn't
+      // literally named "state1"/"state2"/etc, which is the common case for
+      // creators who name folders after their own artwork (e.g.
+      // "images_256"/"evolved_images_256") — that bug is why bulk uploads
+      // with more than one state looked like they only ever populated the
+      // first state. This only applies up to the number of configured
+      // states; extra ZIPs beyond that fall through to the folder-name
+      // grouping below.
+      if (zipFiles.length > 1 && zipFiles.length <= stateNames.length) {
         const perStateImages: File[][] = stateNames.map(() => []);
         const allJsons: File[] = [];
 
