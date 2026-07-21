@@ -1,3 +1,4 @@
+// ⛔ OBSOLETE — creator decided the stage order is INTENTIONAL (adults evolve into kitties). DO NOT RUN.
 #!/usr/bin/env node
 // Fix the Solana Evo Kitties stage-order mix-up.
 //

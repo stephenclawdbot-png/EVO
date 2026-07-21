@@ -33,8 +33,9 @@ Tensor/Magic Eden data-density × memecoin terminal (Axiom/Photon) energy:
 - Program LIVE on mainnet: `Aw4mAC5oUfQCP65a8a6mTwkrL2CoUMsBa45KvWPY3CN2`. 7/900 Kitties minted, revealed, all at state 0.
 - Manifest is HEALTHY: 900/900 items, per-item `traits` {Breed, Background, Type},
   30×30 balanced, names are 1-BASED (`#0001` = index 0). Images all load (verified).
-- **Stage order is INVERTED** (state0=adult, state1=kitten). Fix script exists
-  and is TESTED: `scripts/fix-stage-order.mjs`. Nobody has evolved yet.
+- Stage order (state0=adult, state1=kitten) is **INTENTIONAL** — creator
+  decision: adults evolve INTO kitties (the kitten is the final form). Do NOT
+  "fix" it; fix-stage-order scripts are obsolete.
 - This branch already fixed: image latch + missing placeholder.png, home
   "0.00 SOL" double division, stale caches, buy max_price=0, shatter dialog,
   blockhash confirms, EvoDetail crash guards, manifest normalization (traits
@@ -47,7 +48,7 @@ Tensor/Magic Eden data-density × memecoin terminal (Axiom/Photon) energy:
 The user wants the site to feel right, not a redesign. That is:
 - **T0** — ship the fixes already on this branch (images render, real numbers,
   trading works, no white-screens). This alone is 80% of "feels right."
-- **T1** — un-reverse the kitten stages (script ready).
+- ~~T1~~ — CANCELLED (stage order is intentional — adults evolve into kitties).
 - **T9** — human error messages (30 min, big feel).
 - **T10** — skeleton loaders (30 min, site never looks broken).
 
@@ -57,7 +58,7 @@ them if the user explicitly asks. Do not start them on your own.
 ## TASK LIST (check off in this file as you go)
 
 - [ ] **T0 — Verify & ship the branch** (gate for everything)
-- [ ] **T1 — Stage-order data fix** (with the user; needs creator wallet)
+- [x] **T1 — CANCELLED: stage order is INTENTIONAL** (creative decision — see below)
 - [ ] **T2 — EVO deep links** `/c/[name]/[id]`
 - [ ] **T3 — Real names + traits on detail** (mostly done; wire `item.name`)
 - [ ] **T4 — Terminal table view** on collection page (THE vibe task)
@@ -79,7 +80,16 @@ branch and confirm on the live site: images render, home shows `LOCKED 0.30 SOL`
 (or current), detail page opens.
 **Done when:** live site shows kitty images + non-zero locked totals.
 
-### T1 — Stage-order fix (coordinate with user; 10 min)
+### T1 — ⛔ CANCELLED — DO NOT RUN THE STAGE-ORDER SCRIPTS
+The creator DECIDED to keep the order: adult cats EVOLVE INTO kittens — that IS
+the brand ("Solana Evo Kitties": the kitten is the final form). Do NOT run
+scripts/fix-stage-order*.mjs. Do NOT update_metadata to swap states.
+Instead, small copy alignment so it reads intentional (15 min):
+- Rename stateNames via a manifest reupload ONLY if the user asks; otherwise
+  just fix UI copy: anywhere the app says art "grows"/"grows up", say
+  "evolves" / "transforms". Landing three-panel: "Feed it SOL and watch it
+  transform" (not "grow"). Demo EVO order should show adult -> kitten.
+### (old T1 for reference — obsolete)
 ```bash
 node scripts/fix-stage-order.mjs        # writes fixed-manifest.json (tested: 900/900)
 # user uploads fixed-manifest.json to Irys with creator wallet
