@@ -42,6 +42,18 @@ Tensor/Magic Eden data-density × memecoin terminal (Axiom/Photon) energy:
 
 ---
 
+## ⭐ MINIMUM "FEELS RIGHT" SET — DO THIS, THEN STOP
+
+The user wants the site to feel right, not a redesign. That is:
+- **T0** — ship the fixes already on this branch (images render, real numbers,
+  trading works, no white-screens). This alone is 80% of "feels right."
+- **T1** — un-reverse the kitten stages (script ready).
+- **T9** — human error messages (30 min, big feel).
+- **T10** — skeleton loaders (30 min, site never looks broken).
+
+**Then STOP and let the user use it.** T2–T8 are OPTIONAL growth work — only do
+them if the user explicitly asks. Do not start them on your own.
+
 ## TASK LIST (check off in this file as you go)
 
 - [ ] **T0 — Verify & ship the branch** (gate for everything)
