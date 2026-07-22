@@ -1,6 +1,6 @@
 'use client';
 
-import { EVOData, getAgeString, invalidateCollectionsCache } from '@/lib/evo-data';
+import { EVOData, getAgeString, invalidateCollectionsCache, isReadyToEvolve } from '@/lib/evo-data';
 import { useState, useEffect, Component } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
@@ -13,6 +13,7 @@ import {
   createBuyIx,
   createShatterIx,
   createTransferIx,
+  createEvolveIx,
   readCollectionConfig,
   readProtocolConfig,
   readListing,
@@ -170,6 +171,16 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
     } catch (err: any) { setError(humanizeError(err.message || 'Feed failed')); } finally { setAction(null); }
   };
 
+  const handleEvolve = async () => {
+    setAction('evolve'); setError(null); setTxResult(null);
+    try {
+      const sig = await sendTx(createEvolveIx(
+        new PublicKey(evo.evoPda!), new PublicKey(evo.collectionPda!), evo.id));
+      if (sig) { setTxResult(sig); onRefresh?.(); }
+    } catch (err: any) { setError(humanizeError(err.message || 'Evolve failed')); }
+    finally { setAction(null); }
+  };
+
   const handleList = async () => {
     setAction('list'); setError(null); setTxResult(null);
     try {
@@ -284,6 +295,9 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
     { label: 'Facets', value: `${evo.facetCount}/100` },
   ];
 
+  const canEvolve = evolveThresholds && isRevealed !== undefined
+    && isReadyToEvolve(evo, evolveThresholds, !!isRevealed);
+
   return (
     <div className="min-h-screen bg-bg text-text">
       <Nav ticker={ticker} />
@@ -352,6 +366,17 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                     )}
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Ready-to-evolve banner */}
+            {canEvolve && (
+              <div className="mt-4 flex items-center justify-between rounded border border-accent/40 bg-accent-soft px-3 py-2">
+                <span className="text-xs font-semibold text-accent">Ready to evolve ⚡</span>
+                <button onClick={handleEvolve} disabled={action === 'evolve'}
+                  className="rounded bg-accent px-3 py-1 text-xs font-bold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
+                  {action === 'evolve' ? 'Evolving...' : 'EVOLVE NOW'}
+                </button>
               </div>
             )}
 
@@ -515,9 +540,16 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                           />
                         )}
                       </div>
-                      <p className="mt-2 text-[10px] text-dim">
-                        All conditions must be met. Anyone can trigger evolution.
-                      </p>
+                      {canEvolve ? (
+                        <button onClick={handleEvolve} disabled={action === 'evolve'}
+                          className="mt-3 w-full rounded bg-accent py-2.5 text-sm font-bold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
+                          {action === 'evolve' ? <span className="inline-flex items-center justify-center gap-1.5"><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> Evolving...</span> : '⚡ EVOLVE NOW'}
+                        </button>
+                      ) : (
+                        <p className="mt-2 text-[10px] text-dim">
+                          All conditions must be met. Anyone can trigger evolution.
+                        </p>
+                      )}
                     </div>
                   )}
 
@@ -790,6 +822,12 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
             {isOwner && !evo.isShattered && (
               <div className="space-y-2 border-t border-border pt-3">
                 <p className="text-[10px] font-medium uppercase tracking-wide text-dim">Owner actions</p>
+                {canEvolve && (
+                  <button onClick={handleEvolve} disabled={action === 'evolve'}
+                    className="w-full rounded bg-accent py-2.5 text-sm font-bold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
+                    {action === 'evolve' ? <span className="inline-flex items-center justify-center gap-1.5"><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> Evolving...</span> : '⚡ EVOLVE NOW'}
+                  </button>
+                )}
                 <div className="flex gap-2">
                   <input type="number" placeholder="Feed SOL" value={feedAmount} onChange={(e) => setFeedAmount(e.target.value)}
                     className="t-input flex-1 px-2 py-1.5 text-sm" step="0.001" min="0.001" />
@@ -798,18 +836,18 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                     {action === 'feed' ? <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> : 'Feed'}
                   </button>
                 </div>
+                <button onClick={handleShatter} disabled={action === 'shatter'}
+                  className="w-full rounded border border-negative/30 bg-negative-soft py-2.5 text-xs font-medium text-negative transition-colors hover:bg-negative/10 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
+                  {action === 'shatter' ? <span className="inline-flex items-center justify-center gap-1.5"><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> Shattering...</span> : `Shatter — recover ${fmtSolValue(evo.lockedLamports * (10000 - shatterFeeBps) / 10000)}`}
+                </button>
                 <div className="flex gap-2">
                   <input type="text" placeholder="Recipient address" value={transferAddress} onChange={(e) => setTransferAddress(e.target.value)}
-                    className="t-input flex-1 px-2 py-1.5 text-sm" />
+                    className="t-input flex-1 py-1.5 text-sm" />
                   <button onClick={handleTransfer} disabled={action === 'transfer' || !transferAddress}
                     className="rounded border border-border-strong bg-surface px-3 py-1.5 text-xs font-medium text-text transition-colors hover:bg-surface-2 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
                     {action === 'transfer' ? <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> : 'Transfer'}
                   </button>
                 </div>
-                <button onClick={handleShatter} disabled={action === 'shatter'}
-                  className="w-full rounded border border-negative/30 bg-negative-soft py-2.5 text-xs font-medium text-negative transition-colors hover:bg-negative/10 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
-                  {action === 'shatter' ? <span className="inline-flex items-center justify-center gap-1.5"><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> Shattering...</span> : `Shatter - recover ${fmtSolValue(evo.lockedLamports * (10000 - shatterFeeBps) / 10000)}`}
-                </button>
               </div>
             )}
 
