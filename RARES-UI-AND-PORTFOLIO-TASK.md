@@ -83,3 +83,35 @@ all. This is the #1 fix of the whole file:
   visible ONLY <sm; desktop nav unchanged. Or minimum viable: make both
   buttons icon-only on mobile instead of hidden. Bottom bar strongly preferred.
 **Done when:** on a phone, Portfolio is permanently visible and one tap away.
+
+## Feature 4 — holder-reported (group chat, 2 items)
+
+### 4a. "No hash committed" panel scares holders — reword, don't alarm
+Holders screenshot the red-ish "art unverified / cannot be cryptographically
+verified" warning as if the collection is sketchy. Kitties CANNOT ever commit
+a hash (immutable at create). Replace the alarming copy with honest-but-calm:
+- Icon: info (not warning triangle). Dim/neutral styling, smaller.
+- Copy: "Provenance hash: not enabled for this collection. Artwork is stored
+  on permanent content-addressed storage (Irys) — files cannot be altered at
+  their URLs. On-chain manifest hashing is available for new collections."
+  (TRUE: Irys tx-ids ARE content hashes; the art files can't change.)
+- Keep the loud red treatment ONLY for status='mismatch' (actual tampering).
+
+### 4b. "Endless loading after forge/evolve — must refresh the site" (Don)
+Post-tx refetch hangs until manual refresh. Fix in EvoDetail onRefresh +
+collection page fetchData + portfolio fetchData:
+1. Post-tx refetch must RETRY-UNTIL-CHANGED: after a confirmed tx, poll the
+   affected account (readEVO / readCollectionConfig) up to 5× with 1.5s gaps
+   until data differs from pre-tx (RPC can serve stale state right after
+   confirm), THEN update UI.
+2. HARD TIMEOUT every loading state: no spinner may live >12s — on timeout
+   show "Taking longer than usual — [Refresh]" instead of spinning forever.
+3. Optimistic update where trivial: after evolve, bump currentState locally
+   immediately; after feed, bump locked locally; reconcile on refetch.
+4. Wrap all fetchData bodies in try/finally so loading=false ALWAYS runs
+   (a thrown refetch must never strand the spinner).
+**Done when:** forge/evolve updates the page by itself within seconds, and no
+spinner can ever spin forever.
+
+(Third item in same chat — "feeling ko andami kong na mint" / can't see own
+mints — is Feature 2 portfolio visibility. Already specced. Validated twice now.)
