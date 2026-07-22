@@ -20,6 +20,8 @@ interface EvoCardProps {
   evolveFeedThreshold?: number;
   evolveLockedThreshold?: number;
   evolveHoldSeconds?: number;
+  /** Override readiness flag (from isReadyToEvolve). When provided, takes precedence over local computation. */
+  readyToEvolve?: boolean;
 }
 
 // Stage-based color themes for generative effects
@@ -34,7 +36,7 @@ const STAGE_COLORS = [
   { glow: '#f87171', accent: '#ef4444', bg: '#f8717114' },     // State 7+ — red
 ];
 
-export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed, href, lockedSol, evolveFeedThreshold, evolveLockedThreshold, evolveHoldSeconds }: EvoCardProps) {
+export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed, href, lockedSol, evolveFeedThreshold, evolveLockedThreshold, evolveHoldSeconds, readyToEvolve: readyOverride }: EvoCardProps) {
   const [imgError, setImgError] = useState(false);
   const [resolvedImage, setResolvedImage] = useState<string | null>(null);
   const lockedFlash = useFlash(evo.lockedLamports);
@@ -84,7 +86,7 @@ export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed, href, 
   const showEvolveProgress = feedThresholdSol > 0 && !evo.isShattered;
   const feedPct = showEvolveProgress ? Math.min(100, (fedSol / feedThresholdSol) * 100) : 0;
   const lockedMet = lockedThresholdSol > 0 && backedSol >= lockedThresholdSol;
-  const readyToEvolve = showEvolveProgress && feedPct >= 100 && lockedMet;
+  const readyToEvolve = readyOverride !== undefined ? readyOverride : (showEvolveProgress && feedPct >= 100 && lockedMet);
 
   const cardContent = (
     <>

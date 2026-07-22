@@ -14,7 +14,7 @@ import {
   getCollectionPDA,
   EVOAccount,
 } from '@/lib/evo-program';
-import { evoAccountToData, EVOData, collectionConfigToData, CollectionData, mergeListingData } from '@/lib/evo-data';
+import { evoAccountToData, EVOData, collectionConfigToData, CollectionData, mergeListingData, isReadyToEvolve } from '@/lib/evo-data';
 import { EvoCard } from '@/components/EvoCard';
 import { IconArrowRight, IconPortfolio } from '@/components/Icons';
 
@@ -100,6 +100,39 @@ export default function PortfolioPage() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [fetchData]);
+
+  // Compute ready-to-evolve EVOs
+  const readyCount = useMemo(() => {
+    let count = 0;
+    for (const group of groups) {
+      if (!group.data) continue;
+      const t = {
+        trade: group.data.evolveTradeThreshold,
+        feed: group.data.evolveFeedThreshold,
+        hold: group.data.evolveHoldSeconds,
+        locked: group.data.evolveLockedThreshold,
+        maxStates: group.data.maxStates,
+        lifecycleType: group.data.lifecycleType,
+      };
+      for (const evo of group.evos) {
+        if (isReadyToEvolve(evo, t, group.data.isRevealed)) count++;
+      }
+    }
+    return count;
+  }, [groups]);
+
+  // Helper: check if a specific EVO is ready (for passing to EvoCard)
+  const checkReady = (evo: EVOData, collectionData: CollectionData | null): boolean => {
+    if (!collectionData) return false;
+    return isReadyToEvolve(evo, {
+      trade: collectionData.evolveTradeThreshold,
+      feed: collectionData.evolveFeedThreshold,
+      hold: collectionData.evolveHoldSeconds,
+      locked: collectionData.evolveLockedThreshold,
+      maxStates: collectionData.maxStates,
+      lifecycleType: collectionData.lifecycleType,
+    }, collectionData.isRevealed);
+  };
 
   // Portfolio summary
   const summary = useMemo(() => {
@@ -187,6 +220,16 @@ export default function PortfolioPage() {
               </div>
             </div>
 
+            {/* Ready-to-evolve banner */}
+            {readyCount > 0 && (
+              <div className="mt-4 flex items-center gap-2 rounded border border-accent/30 bg-accent/10 px-3 py-2.5">
+                <span className="text-sm">⚡</span>
+                <p className="text-sm font-medium text-text-strong">
+                  {readyCount} of your EVO{readyCount !== 1 ? 's' : ''} {readyCount !== 1 ? 'are' : 'is'} ready to evolve
+                </p>
+              </div>
+            )}
+
             {/* EVOs grouped by collection */}
             {groups.map(group => (
               <div key={group.name} className="mt-6">
@@ -218,6 +261,7 @@ export default function PortfolioPage() {
                       evolveFeedThreshold={group.data?.evolveFeedThreshold}
                       evolveLockedThreshold={group.data?.evolveLockedThreshold}
                       evolveHoldSeconds={group.data?.evolveHoldSeconds}
+                      readyToEvolve={checkReady(evo, group.data)}
                     />
                   ))}
                 </div>
