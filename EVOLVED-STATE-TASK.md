@@ -37,3 +37,17 @@ In `EvoDetail.tsx`:
 **Done when:** a fully-evolved kitty's owner can flip between adult and kitten
 art on the detail page, preference survives refresh, and the caption keeps the
 on-chain truth visible.
+
+## Step 2 AMENDMENT — future stages are LOCKED (user rule)
+The toggle may only show stages the EVO has EARNED: `stage <= evo.currentState`.
+- Future-stage pills: rendered but disabled — 🔒 icon, dimmed, `cursor-not-allowed`,
+  tooltip "Evolve to unlock". Clicking does nothing.
+- Same rule for the stage-gallery strip in EvoDetail: future stages render
+  BLURRED + grayscale (`blur-sm grayscale opacity-40`) with a 🔒 overlay —
+  do NOT show the evolved art in full to un-evolved holders (spoiler + removes
+  the incentive to feed/evolve).
+- So: state-0 kitty → only "Cat" viewable, "Kitten 🔒" locked.
+  Evolved kitty → both pills active, flip freely (Step 2 as written).
+- `viewStage` must clamp: `Math.min(storedPref, evo.currentState)`.
+**Done when:** an un-evolved EVO shows its future form only as a blurred 🔒
+teaser, and the toggle unlocks stage-by-stage as it evolves.
