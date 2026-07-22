@@ -1,0 +1,43 @@
+import { Transaction, ComputeBudgetProgram, PublicKey, Connection, TransactionInstruction, VersionedTransaction } from '@solana/web3.js';
+
+type SignFn = (tx: Transaction) => Promise<Transaction | VersionedTransaction>;
+
+export async function sendAndConfirmTx(
+  connection: Connection,
+  signTransaction: SignFn | undefined,
+  feePayer: PublicKey,
+  ix: TransactionInstruction,
+): Promise<string> {
+  if (!signTransaction) throw new Error('Transaction signing failed');
+
+  const tx = new Transaction()
+    .add(ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 150_000 }))
+    .add(ix);
+  tx.feePayer = feePayer;
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+  tx.recentBlockhash = blockhash;
+
+  const signed = await signTransaction(tx);
+  const sig = await connection.sendRawTransaction(
+    ('serialize' in signed ? signed.serialize() : (signed as any).serialize()),
+    { maxRetries: 5 },
+  );
+
+  try {
+    const conf = await connection.confirmTransaction(
+      { signature: sig, blockhash, lastValidBlockHeight },
+      'confirmed',
+    );
+    if (conf.value.err) throw new Error(`Transaction failed on-chain: ${JSON.stringify(conf.value.err)}`);
+    return sig;
+  } catch (err: any) {
+    const msg = err?.message || '';
+    if (msg.includes('block height exceeded') || msg.includes('TransactionExpired') || msg.includes('TX_EXPIRED')) {
+      // Expired ≠ failed — the tx may have landed after the blockhash window.
+      const st = await connection.getSignatureStatus(sig, { searchTransactionHistory: true });
+      if (st.value && !st.value.err) return sig; // it LANDED
+      throw new Error('TX_EXPIRED');
+    }
+    throw err;
+  }
+}

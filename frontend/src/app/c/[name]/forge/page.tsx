@@ -5,7 +5,7 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
-import { Transaction } from '@solana/web3.js';
+import { sendAndConfirmTx } from '@/lib/tx';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { humanizeError } from '@/lib/errors';
@@ -82,17 +82,7 @@ export default function CollectionForgePage() {
       const evoId = cfg.totalMinted;
       const resonanceSeed = generateResonanceSeed();
       const ix = createForgeIx(wallet.publicKey, collectionPda, cfg.creator, evoId, resonanceSeed);
-      const tx = new Transaction().add(ix);
-      tx.feePayer = wallet.publicKey;
-      // Blockhash-based confirmation — deterministic, unlike the signature-only
-      // overload which can time out while the tx actually lands.
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-      tx.recentBlockhash = blockhash;
-      const signed = await wallet.signTransaction?.(tx);
-      if (!signed) throw new Error('Transaction signing failed');
-      const sig = await connection.sendRawTransaction(signed.serialize());
-      const conf = await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, 'confirmed');
-      if (conf.value.err) throw new Error(`Transaction failed on-chain: ${JSON.stringify(conf.value.err)}`);
+      const sig = await sendAndConfirmTx(connection, wallet.signTransaction as any, wallet.publicKey, ix);
       setTxSig(sig);
       setMintedId(evoId);
       // Capture image for the minted EVO before refetch advances nextId

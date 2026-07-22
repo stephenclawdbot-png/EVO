@@ -5,7 +5,8 @@ import { useState, useEffect, Component } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Nav } from './Nav';
-import { Transaction, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { sendAndConfirmTx } from '@/lib/tx';
 import {
   createFeedIx,
   createListIx,
@@ -142,20 +143,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
   // --- Tx handlers ---
   const sendTx = async (ix: any) => {
     if (!wallet.connected || !wallet.publicKey) { setError('Connect wallet first'); return null; }
-    const tx = new Transaction().add(ix);
-    tx.feePayer = wallet.publicKey;
-    // Blockhash-based confirmation: the signature-only overload polls with a
-    // fixed timeout and can report failure while the tx actually lands (users
-    // saw "not saving" / silent state). The blockhash form is deterministic —
-    // it resolves confirmed or throws when the blockhash truly expires.
-    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-    tx.recentBlockhash = blockhash;
-    const signed = await wallet.signTransaction?.(tx);
-    if (!signed) throw new Error('Transaction signing failed');
-    const sig = await connection.sendRawTransaction(signed.serialize());
-    const conf = await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, 'confirmed');
-    if (conf.value.err) throw new Error(`Transaction failed on-chain: ${JSON.stringify(conf.value.err)}`);
-    // State changed on-chain — the home page's cached stats are now stale.
+    const sig = await sendAndConfirmTx(connection, wallet.signTransaction as any, wallet.publicKey, ix);
     invalidateCollectionsCache();
     return sig;
   };

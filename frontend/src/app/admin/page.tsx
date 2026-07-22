@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, Suspense } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Nav } from '@/components/Nav';
-import { Transaction } from '@solana/web3.js';
+import { sendAndConfirmTx } from '@/lib/tx';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { humanizeError } from '@/lib/errors';
@@ -79,19 +79,7 @@ function AdminContent() {
 
   const sendTx = async (ix: any) => {
     if (!wallet.connected || !wallet.publicKey) { setError('Connect wallet first'); return null; }
-    const tx = new Transaction().add(ix);
-    tx.feePayer = wallet.publicKey;
-    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-    tx.recentBlockhash = blockhash;
-    const signed = await wallet.signTransaction?.(tx);
-    if (!signed) throw new Error('Transaction signing failed');
-    const sig = await connection.sendRawTransaction(signed.serialize());
-    const conf = await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, 'confirmed');
-    if (conf.value.err) throw new Error(`Transaction failed on-chain: ${JSON.stringify(conf.value.err)}`);
-    // Every admin action (reveal / evolve / set stage / update metadata) changes
-    // what should render. Bust the manifest cache (60s TTL would keep serving
-    // the old art — the "mystery image not updating" bug) and the home page's
-    // cached collection stats.
+    const sig = await sendAndConfirmTx(connection, wallet.signTransaction as any, wallet.publicKey, ix);
     invalidateManifestCache();
     invalidateCollectionsCache();
     return sig;
