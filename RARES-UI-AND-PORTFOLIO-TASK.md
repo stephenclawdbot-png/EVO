@@ -42,3 +42,34 @@ Holders report they can't find their portfolio quickly. Fixes:
    "Connect to see your EVOs".
 **Done when:** from any page, a connected holder reaches their EVOs in one
 tap, sees their count in the nav, and portfolio never renders blank.
+
+## Feature 3 — MOBILE PASS (do this FIRST — degens are on phones)
+Real bugs + fixes, all at 390px width:
+
+1. **EvoCard price invisible on touch (BUG):** the "X SOL" overlay uses
+   `group-hover:translate-y-0` — no hover on phones, so mobile users never see
+   listing prices on cards. Fix: on touch/small screens show the price bar
+   ALWAYS (`max-lg:translate-y-0`), hover-reveal only on lg+.
+2. **Nav on mobile:** verify Portfolio/My Collections are reachable without
+   horizontal scroll; if links overflow, collapse to a bottom tab bar (Home ·
+   Collection · Portfolio) or a hamburger. Portfolio pill from Feature 2 must
+   be visible on mobile.
+3. **Detail page actions below the fold:** the sidebar stacks under the art on
+   mobile, so Buy/Evolve/Feed/Shatter are 2+ screens down. Fix: sticky bottom
+   action bar on <lg for the PRIMARY action (Buy if listed & not owner;
+   ⚡Evolve if ready & owner; else Feed) — h-14, full width, safe-area padding
+   (`pb-[env(safe-area-inset-bottom)]`).
+4. **Touch targets:** every button/row ≥44px tall on mobile (buttons currently
+   py-1.5 text-xs in places). Inputs ≥16px font-size to stop iOS zoom-jump.
+5. **Tables overflow:** activity/holders tables and any wide stats wrap in
+   `overflow-x-auto` containers — page body must never scroll horizontally.
+6. **Hover-only affordances:** anything that only reveals on hover (tooltips,
+   overlays) needs a tap equivalent or always-visible mobile variant. Audit
+   with: grep -rn "group-hover\|hover:" src/components src/app | review each.
+7. **Wallet connect on mobile:** test the connect flow inside Phantom's
+   in-app browser (that's how most mobile users arrive). WalletMultiButton
+   must not overflow the nav; success/error banners must be visible without
+   scrolling.
+**Done when:** at 390px — card prices always visible, primary action reachable
+without scrolling on detail, no horizontal page scroll anywhere, portfolio one
+thumb-tap from every page.
