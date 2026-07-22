@@ -165,6 +165,22 @@ export function invalidateCollectionsCache(): void {
   } catch { /* storage unavailable (private mode etc.) — ignore */ }
 }
 
+export function isReadyToEvolve(
+  evo: EVOData,
+  t: { trade: number; feed: number; hold: number; locked: number;
+       maxStates: number; lifecycleType: string },
+  isRevealed: boolean,
+): boolean {
+  const next = evo.currentState + 1;
+  return isRevealed &&
+    (t.lifecycleType === 'RevealAndEvolve' || t.lifecycleType === 'Custom') &&
+    evo.currentState < t.maxStates - 1 && !evo.isShattered &&
+    (t.trade === 0 || evo.tradeCount >= t.trade * next) &&
+    (t.feed === 0 || evo.totalFedLamports >= t.feed * next) &&
+    (t.hold === 0 || (Date.now() - evo.lastTransitionAt) / 1000 >= t.hold * next) &&
+    (t.locked === 0 || evo.lockedLamports * 1e9 >= t.locked * next);
+}
+
 export function getAgeString(forgedAt: number): string {
   const now = Date.now();
   const elapsed = now - forgedAt;
