@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useConnection } from '@solana/wallet-adapter-react';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { useParams, useRouter } from 'next/navigation';
 import { EvoCard } from '@/components/EvoCard';
 import { Nav } from '@/components/Nav';
@@ -94,7 +94,9 @@ export default function CollectionPage() {
   const collectionName = decodeURIComponent(params.name);
   const router = useRouter();
   const { connection } = useConnection();
+  const wallet = useWallet();
   const [filterListed, setFilterListed] = useState(false);
+  const [filterMine, setFilterMine] = useState(false);
   const [sortBy, setSortBy] = useState<SortKey>('newest');
   const [searchQuery, setSearchQuery] = useState('');
   const [mintPillOpen, setMintPillOpen] = useState(false);
@@ -156,6 +158,7 @@ export default function CollectionPage() {
   const filteredEvos = useMemo(() => {
     let list = evos.filter(evo => !evo.isShattered);
     if (filterListed) list = list.filter(evo => evo.isListed);
+    if (filterMine && wallet.publicKey) list = list.filter(evo => evo.owner === wallet.publicKey!.toBase58());
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       list = list.filter(evo =>
@@ -173,7 +176,7 @@ export default function CollectionPage() {
       case 'price-high': list = list.filter(e => e.isListed).sort((a, b) => (b.listPrice || 0) - (a.listPrice || 0)); break;
     }
     return list;
-  }, [evos, filterListed, sortBy, searchQuery]);
+  }, [evos, filterListed, filterMine, sortBy, searchQuery, wallet.publicKey]);
 
   const stats = useMemo(() => {
     const active = evos.filter(e => !e.isShattered);
@@ -344,6 +347,15 @@ export default function CollectionPage() {
               }`}>
               Listed
             </button>
+
+            {wallet.publicKey && (
+              <button onClick={() => setFilterMine(!filterMine)}
+                className={`rounded border px-2 py-1 text-[11px] font-medium transition-colors ${
+                  filterMine ? 'border-accent/40 bg-accent-soft text-accent' : 'border-border-strong bg-surface text-muted hover:text-text'
+                }`}>
+                Mine
+              </button>
+            )}
 
             <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortKey)}
               className="rounded border border-border-strong bg-surface px-2 py-1 text-[11px] text-text focus:border-accent focus:outline-none">

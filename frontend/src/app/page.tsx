@@ -1,16 +1,17 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useConnection } from '@solana/wallet-adapter-react';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { Nav } from '@/components/Nav';
 import { CollectionDiscovery, readAllCollections, readAllEVOs, getCollectionPDA, lamportsToSol } from '@/lib/evo-program';
 import { CollectionData, collectionConfigToData, evoAccountToData, mergeListingData, EVOData } from '@/lib/evo-data';
+import { readAllEVOsByOwner } from '@/lib/evo-program';
 import Link from 'next/link';
 import { DemoEvo } from '@/components/DemoEvo';
 import { fmtSolValue } from '@/lib/format';
 import {
   IconArrowRight, IconHammer, IconCollection, IconTrendingUp,
-  IconFeed, IconEvolve, IconShatter, IconLock, IconSparkle,
+  IconFeed, IconEvolve, IconShatter, IconLock, IconSparkle, IconPortfolio,
 } from '@/components/Icons';
 
 interface CollectionSummary {
@@ -61,12 +62,14 @@ const PAGE_SIZE = 8;
 
 export default function Home() {
   const { connection } = useConnection();
+  const wallet = useWallet();
   const [collections, setCollections] = useState<CollectionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [isStale, setIsStale] = useState(false); // showing cached data while revalidating
+  const [ownedCount, setOwnedCount] = useState<number | null>(null);
 
   const fetchData = useCallback(async (opts?: { skipCache?: boolean }) => {
     // Stale-while-revalidate: show cached data instantly, then re-fetch
@@ -146,6 +149,25 @@ export default function Home() {
   }, [connection]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Fetch owned EVO count when wallet is connected (fire-and-forget, cached 60s)
+  useEffect(() => {
+    if (!wallet.publicKey) { setOwnedCount(null); return; }
+    const cacheKey = `evo_owned_count_${wallet.publicKey.toBase58()}`;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const { count, ts } = JSON.parse(cached);
+        if (Date.now() - ts < 60_000) { setOwnedCount(count); return; }
+      }
+    } catch { /* ignore */ }
+    readAllEVOsByOwner(connection, wallet.publicKey)
+      .then(evos => {
+        setOwnedCount(evos.length);
+        try { sessionStorage.setItem(cacheKey, JSON.stringify({ count: evos.length, ts: Date.now() })); } catch { /* quota */ }
+      })
+      .catch(() => {});
+  }, [connection, wallet.publicKey]);
 
   useEffect(() => {
     const interval = setInterval(() => fetchData({ skipCache: true }), CACHE_TTL);
@@ -288,6 +310,18 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ─── Owned EVOs row (when wallet connected) ─── */}
+      {wallet.publicKey && ownedCount !== null && ownedCount > 0 && (
+        <section className="mx-auto max-w-7xl px-3 pt-8 lg:px-4">
+          <Link href="/portfolio" className="group flex items-center gap-2 text-sm font-bold tracking-tight text-text-strong hover:text-accent transition-colors">
+            <IconPortfolio className="h-4 w-4 text-accent" />
+            Your EVOs
+            <span className="font-mono text-[11px] text-dim">{ownedCount}</span>
+            <IconArrowRight className="ml-auto h-4 w-4 text-dim transition-transform group-hover:translate-x-0.5 group-hover:text-accent" />
+          </Link>
+        </section>
+      )}
 
       {/* ─── Collections — primary focus ─── */}
       <section id="collections" className="mx-auto max-w-7xl px-3 py-8 lg:px-4">

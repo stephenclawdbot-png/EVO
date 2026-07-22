@@ -24,6 +24,7 @@ import { resolveImage, fetchVisualManifest, resolveActiveImage, EvoVisualManifes
 import { humanizeError } from '@/lib/errors';
 import { fmtSolValue, fmtSol, fmtPctValue } from '@/lib/format';
 import { useFlash } from '@/lib/useFlash';
+import Link from 'next/link';
 import { IconCheck, IconAlertTriangle, IconExternalLink } from './Icons';
 
 interface EvoDetailProps {
@@ -299,7 +300,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
         </button>
       </div>
 
-      <div className="mx-auto max-w-7xl px-3 py-4 lg:px-4">
+      <div className="mx-auto max-w-7xl px-3 pb-20 pt-4 lg:px-4 lg:pb-4">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
           {/* Left: Art + tabs */}
           <Guard name="detail-left">
@@ -582,7 +583,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
               {tab === 'activity' && (
                 <div>
                   {evo.fractureLines.length > 0 ? (
-                    <div className="overflow-hidden rounded border border-border">
+                    <div className="overflow-hidden overflow-x-auto rounded border border-border">
                       <table className="w-full text-left text-xs">
                         <thead className="bg-surface text-[10px] uppercase tracking-wide text-dim">
                           <tr>
@@ -613,7 +614,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
               {tab === 'holders' && (
                 <div>
                   {holderHistory.length > 0 ? (
-                    <div className="overflow-hidden rounded border border-border">
+                    <div className="overflow-hidden overflow-x-auto rounded border border-border">
                       <table className="w-full text-left text-xs">
                         <thead className="bg-surface text-[10px] uppercase tracking-wide text-dim">
                           <tr>
@@ -801,12 +802,19 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
             </div>
 
             {txResult && (
-              <div className="flex items-center gap-2 rounded border border-positive/30 bg-positive-soft px-3 py-2 text-xs">
-                <IconCheck className="h-4 w-4 text-positive" />
-                <span className="text-positive">Confirmed</span>
-                <a href={`https://solscan.io/tx/${txResult}`} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-accent hover:underline">
-                  Solscan <IconExternalLink className="h-3 w-3" />
-                </a>
+              <div className="flex flex-col gap-2 rounded border border-positive/30 bg-positive-soft px-3 py-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <IconCheck className="h-4 w-4 text-positive" />
+                  <span className="text-positive">Confirmed</span>
+                  <a href={`https://solscan.io/tx/${txResult}`} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-accent hover:underline">
+                    Solscan <IconExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+                {wallet.connected && (
+                  <Link href="/portfolio" className="inline-flex items-center gap-1 text-accent hover:underline">
+                    View in portfolio <IconExternalLink className="h-3 w-3" />
+                  </Link>
+                )}
               </div>
             )}
             {error && (
@@ -856,6 +864,35 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
           </div>
           </Guard>
         </div>
+      </div>
+
+      {/* Mobile sticky bottom action bar — visible only below lg */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-bg pb-[env(safe-area-inset-bottom)] lg:hidden">
+        {/* Primary action: Buy if listed & not owner; Evolve if ready & owner; else Feed */}
+        {evo.isListed && !evo.isShattered && !isOwner && (
+          <button onClick={handleBuy} disabled={action === 'buy'}
+            className="flex h-14 w-full items-center justify-center gap-2 bg-positive text-sm font-bold text-[#0a0a0b] transition-opacity active:scale-[0.99] disabled:opacity-50">
+            {action === 'buy' ? <span className="inline-flex items-center gap-1.5"><svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> Buying...</span> : <span>Buy now — {evo.listPrice} SOL</span>}
+          </button>
+        )}
+        {isOwner && !evo.isShattered && canEvolve && (
+          <button onClick={handleEvolve} disabled={action === 'evolve'}
+            className="flex h-14 w-full items-center justify-center gap-2 bg-accent text-sm font-bold text-white transition-colors active:scale-[0.99] disabled:opacity-50">
+            {action === 'evolve' ? <span className="inline-flex items-center gap-1.5"><svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> Evolving...</span> : 'EVOLVE NOW'}
+          </button>
+        )}
+        {isOwner && !evo.isShattered && !canEvolve && (
+          <button onClick={handleFeed} disabled={action === 'feed'}
+            className="flex h-14 w-full items-center justify-center gap-2 border border-warn/40 bg-warn-soft text-sm font-bold text-warn transition-colors active:scale-[0.99] disabled:opacity-50">
+            {action === 'feed' ? <span className="inline-flex items-center gap-1.5"><svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> Feeding...</span> : 'Feed SOL'}
+          </button>
+        )}
+        {!isOwner && !evo.isListed && !evo.isShattered && (
+          <div className="flex h-14 w-full items-center justify-center text-xs text-dim">Not listed for sale</div>
+        )}
+        {evo.isShattered && (
+          <div className="flex h-14 w-full items-center justify-center text-xs text-negative">Shattered</div>
+        )}
       </div>
     </div>
   );

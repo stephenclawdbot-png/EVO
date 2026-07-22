@@ -190,8 +190,22 @@ export default function PortfolioPage() {
             <div className="mt-5 flex justify-center"><WalletMultiButton /></div>
           </div>
         ) : loading ? (
-          <div className="mt-10 flex justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-accent" />
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="animate-pulse overflow-hidden rounded border border-border bg-surface">
+                <div className="aspect-square bg-surface-2" />
+                <div className="px-2 py-1.5 space-y-1">
+                  <div className="flex justify-between">
+                    <div className="h-3 w-16 rounded bg-surface-2" />
+                    <div className="h-3 w-8 rounded bg-surface-2" />
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="h-2.5 w-20 rounded bg-surface-2" />
+                    <div className="h-2.5 w-6 rounded bg-surface-2" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : groups.length === 0 ? (
           <div className="py-20 text-center">

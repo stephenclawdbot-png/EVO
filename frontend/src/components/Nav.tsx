@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { ThemeToggle } from './ThemeToggle';
-import { readAllCollections } from '@/lib/evo-program';
+import { readAllCollections, readAllEVOsByOwner } from '@/lib/evo-program';
 import { IconEvoMark, IconHammer, IconCollection, IconPortfolio, IconHelp } from './Icons';
 import { useFlash } from '@/lib/useFlash';
 
@@ -31,7 +32,9 @@ interface NavProps {
 export function Nav({ onRefresh, ticker = [] }: NavProps) {
   const { connection } = useConnection();
   const wallet = useWallet();
+  const pathname = usePathname();
   const [hasCollections, setHasCollections] = useState(false);
+  const [ownedCount, setOwnedCount] = useState<number | null>(null);
 
   const checkCollections = useCallback(async () => {
     if (!wallet.publicKey) { setHasCollections(false); return; }
@@ -43,7 +46,29 @@ export function Nav({ onRefresh, ticker = [] }: NavProps) {
     }
   }, [connection, wallet.publicKey]);
 
-  useEffect(() => { checkCollections(); }, [checkCollections]);
+  // Fetch owned EVO count (cached in sessionStorage 60s, fire-and-forget)
+  const checkOwnedCount = useCallback(async () => {
+    if (!wallet.publicKey) { setOwnedCount(null); return; }
+    const cacheKey = `evo_owned_count_${wallet.publicKey.toBase58()}`;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const { count, ts } = JSON.parse(cached);
+        if (Date.now() - ts < 60_000) { setOwnedCount(count); return; }
+      }
+    } catch { /* ignore */ }
+    try {
+      const evos = await readAllEVOsByOwner(connection, wallet.publicKey);
+      const count = evos.length;
+      setOwnedCount(count);
+      try { sessionStorage.setItem(cacheKey, JSON.stringify({ count, ts: Date.now() })); } catch { /* quota */ }
+    } catch { /* ignore */ }
+  }, [connection, wallet.publicKey]);
+
+  useEffect(() => { checkCollections(); checkOwnedCount(); }, [checkCollections, checkOwnedCount]);
+
+  // Re-check owned count when route changes (e.g. after buying/evolving)
+  useEffect(() => { checkOwnedCount(); }, [pathname, checkOwnedCount]);
 
   // Auto-refetch every 30s, paused when tab hidden
   useEffect(() => {
@@ -72,7 +97,7 @@ export function Nav({ onRefresh, ticker = [] }: NavProps) {
               className="hidden h-7 items-center gap-1.5 rounded border border-border-strong bg-surface px-3 text-xs font-semibold text-text transition-colors hover:border-accent hover:text-text-strong sm:inline-flex"
             >
               <IconPortfolio className="h-3.5 w-3.5" />
-              Portfolio
+              Portfolio{ownedCount !== null && ownedCount > 0 && ` (${ownedCount})`}
             </Link>
           )}
           {connected && hasCollections && (
@@ -133,6 +158,34 @@ export function Nav({ onRefresh, ticker = [] }: NavProps) {
           {ticker.map((s, i) => <TickerItem key={i} s={s} />)}
         </div>
       )}
+
+      {/* Mobile bottom tab bar — visible only below sm */}
+      <nav className="fixed inset-x-0 bottom-0 z-50 flex border-t border-border bg-bg pb-[env(safe-area-inset-bottom)] sm:hidden">
+        <MobileTab href="/" active={pathname === '/'} icon={<IconCollection className="h-5 w-5" />} label="Home" />
+        {connected ? (
+          <MobileTab href="/portfolio" active={pathname === '/portfolio'} icon={<IconPortfolio className="h-5 w-5" />} label={`Portfolio${ownedCount !== null && ownedCount > 0 ? ` (${ownedCount})` : ''}`} />
+        ) : (
+          <MobileTab href="/portfolio" active={pathname === '/portfolio'} icon={<IconPortfolio className="h-5 w-5" />} label="Portfolio" />
+        )}
+        {connected && hasCollections && (
+          <MobileTab href="/my" active={pathname === '/my'} icon={<IconCollection className="h-5 w-5" />} label="My Col" />
+        )}
+        <MobileTab href="/create" active={pathname === '/create'} icon={<IconHammer className="h-5 w-5" />} label="Create" />
+      </nav>
     </header>
+  );
+}
+
+function MobileTab({ href, active, icon, label }: { href: string; active: boolean; icon: React.ReactNode; label: string }) {
+  return (
+    <Link
+      href={href}
+      className={`flex min-h-[3.25rem] flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
+        active ? 'text-accent' : 'text-dim hover:text-text'
+      }`}
+    >
+      {icon}
+      <span className="truncate max-w-full px-1">{label}</span>
+    </Link>
   );
 }

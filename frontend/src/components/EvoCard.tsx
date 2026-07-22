@@ -183,7 +183,7 @@ export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed, href, 
         )}
 
         {evo.isListed && !evo.isShattered && (
-          <div className="absolute inset-x-0 bottom-0 z-20 translate-y-full bg-positive/95 py-1.5 text-center font-mono text-sm font-bold text-[#0a0a0b] transition-transform duration-100 group-hover:translate-y-0">
+          <div className="absolute inset-x-0 bottom-0 z-20 max-lg:translate-y-0 bg-positive/95 py-1.5 text-center font-mono text-sm font-bold text-[#0a0a0b] transition-transform duration-100 group-hover:translate-y-0 lg:translate-y-full lg:group-hover:translate-y-0">
             {evo.listPrice} SOL
           </div>
         )}
