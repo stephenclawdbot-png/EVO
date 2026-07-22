@@ -73,3 +73,13 @@ Real bugs + fixes, all at 390px width:
 **Done when:** at 390px — card prices always visible, primary action reachable
 without scrolling on detail, no horizontal page scroll anywhere, portfolio one
 thumb-tap from every page.
+
+### Feature 3 ADDENDUM — ROOT CAUSE CONFIRMED (Nav.tsx)
+Portfolio (line ~72) and My Collections (line ~81) are `hidden sm:inline-flex`
+— they DO NOT EXIST below 640px. Mobile holders have no portfolio button at
+all. This is the #1 fix of the whole file:
+- Replace with a mobile bottom tab bar (fixed bottom, safe-area padding):
+  Home · Portfolio(N) · My Collections · Create — icons + tiny labels,
+  visible ONLY <sm; desktop nav unchanged. Or minimum viable: make both
+  buttons icon-only on mobile instead of hidden. Bottom bar strongly preferred.
+**Done when:** on a phone, Portfolio is permanently visible and one tap away.
