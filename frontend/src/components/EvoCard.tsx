@@ -124,10 +124,17 @@ export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed, href, 
           </span>
         )}
 
-        {/* Ready-to-evolve badge */}
-        {readyToEvolve && (
+        {/* Ready-to-evolve badge — only before first evolution */}
+        {readyToEvolve && evo.currentState === 0 && (
           <span className="absolute right-1.5 top-7 z-10 rounded bg-accent px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white">
             Ready
+          </span>
+        )}
+
+        {/* Evolved badge — after first evolution */}
+        {evo.currentState > 0 && !evo.isShattered && !readyToEvolve && (
+          <span className="absolute right-1.5 top-7 z-10 rounded bg-positive/80 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-[#0a0a0b]">
+            Evolved
           </span>
         )}
 

@@ -357,14 +357,22 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
               </div>
             )}
 
-            {/* Ready-to-evolve banner */}
-            {canEvolve && (
+            {/* Ready-to-evolve banner — only before first evolution */}
+            {canEvolve && evo.currentState === 0 && (
               <div className="mt-4 flex items-center justify-between rounded border border-accent/40 bg-accent-soft px-3 py-2">
                 <span className="text-xs font-semibold text-accent">Ready to evolve</span>
                 <button onClick={handleEvolve} disabled={action === 'evolve'}
                   className="rounded bg-accent px-3 py-1 text-xs font-bold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
                   {action === 'evolve' ? 'Evolving...' : 'EVOLVE NOW'}
                 </button>
+              </div>
+            )}
+
+            {/* Evolved status — after first evolution */}
+            {evo.currentState > 0 && !evo.isShattered && (
+              <div className="mt-4 flex items-center justify-between rounded border border-positive/30 bg-positive-soft px-3 py-2">
+                <span className="text-xs font-semibold text-positive">Evolved</span>
+                <span className="text-[11px] text-dim">Stage S{evo.currentState} of {evolveThresholds ? evolveThresholds.maxStates - 1 : '?'}</span>
               </div>
             )}
 
