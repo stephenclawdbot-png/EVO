@@ -84,7 +84,7 @@ all. This is the #1 fix of the whole file:
   buttons icon-only on mobile instead of hidden. Bottom bar strongly preferred.
 **Done when:** on a phone, Portfolio is permanently visible and one tap away.
 
-## Feature 4 — holder-reported (group chat, 2 items)
+## Feature 4 — MOVED to HOLDER-FEEDBACK-ROUND2.md (this file is COMPLETE)
 
 ### 4a. "No hash committed" panel scares holders — reword, don't alarm
 Holders screenshot the red-ish "art unverified / cannot be cryptographically
