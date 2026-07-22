@@ -41,8 +41,8 @@ export default function CollectionForgePage() {
 
   const remaining = collection ? collection.supplyCap - currentSupply : 0;
 
-  const fetchCollection = useCallback(async () => {
-    setLoading(true);
+  const fetchCollection = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const cfg = await readCollectionConfig(connection, collectionName);
       if (cfg) {
@@ -53,7 +53,7 @@ export default function CollectionForgePage() {
     } catch (err) {
       console.error('Failed to fetch collection:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [connection, collectionName]);
 
@@ -90,7 +90,7 @@ export default function CollectionForgePage() {
       setMintedImage(img);
       // A mint happened — the home page's cached stats are stale now.
       invalidateCollectionsCache();
-      await fetchCollection();
+      await fetchCollection(true); // silent: don't replace success card with spinner
     } catch (err: any) { setError(humanizeError(err.message || 'Forge failed')); } finally { setForging(false); }
   };
 

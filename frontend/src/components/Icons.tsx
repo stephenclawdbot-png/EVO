@@ -270,3 +270,12 @@ export const IconRocket = ({ className }: IconProps) => (
     <path d="M12 15v5s3.03-.55 4-2c1.16-1.62 1-5 1-5" />
   </svg>
 );
+
+// Info (neutral informational note).
+export const IconInfo = ({ className }: IconProps) => (
+  <svg {...base(className)}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 16v-4" />
+    <path d="M12 8h.01" />
+  </svg>
+);

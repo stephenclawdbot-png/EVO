@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { useParams, useRouter } from 'next/navigation';
 import { EvoDetail } from '@/components/EvoDetail';
@@ -14,6 +14,18 @@ import {
   readEVO,
   getCollectionPDA,
 } from '@/lib/evo-program';
+import { refetchUntilChanged } from '@/lib/tx';
+
+// Key fields that change after a tx — if any differ, the refetch landed.
+function evoSame(a: EVOData, b: EVOData): boolean {
+  return a.currentState === b.currentState &&
+    a.lockedLamports === b.lockedLamports &&
+    a.owner === b.owner &&
+    a.isListed === b.isListed &&
+    a.isShattered === b.isShattered &&
+    a.listPriceLamports === b.listPriceLamports &&
+    a.tradeCount === b.tradeCount;
+}
 
 export default function EvoDetailPage() {
   const params = useParams<{ name: string; id: string }>();
@@ -26,7 +38,13 @@ export default function EvoDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshTimedOut, setRefreshTimedOut] = useState(false);
 
+  const evoRef = useRef<EVOData | null>(null);
+  useEffect(() => { evoRef.current = evo; }, [evo]);
+
+  // Initial load (and manual refresh via refreshKey)
   useEffect(() => {
     let active = true;
     (async () => {
@@ -52,6 +70,40 @@ export default function EvoDetailPage() {
     })();
     return () => { active = false; };
   }, [connection, collectionName, evoId, refreshKey]);
+
+  // Post-tx refresh: retry-until-changed with 12s hard timeout
+  const handleTxRefresh = useCallback(async () => {
+    const prev = evoRef.current;
+    if (!prev) return;
+    setRefreshing(true);
+    setRefreshTimedOut(false);
+    try {
+      const fetcher = async (): Promise<EVOData> => {
+        const [collectionPda] = getCollectionPDA(collectionName);
+        const raw = await readEVO(connection, collectionPda, evoId);
+        if (!raw) throw new Error('EVO not found');
+        const data = evoAccountToData(raw, collectionName);
+        if (!data) throw new Error('EVO data error');
+        await mergeListingData(connection, [data]);
+        return data;
+      };
+      const { data, changed, timedOut } = await refetchUntilChanged(
+        fetcher, prev, evoSame, { maxRetries: 5, gapMs: 1500, timeoutMs: 12000 }
+      );
+      if (changed) setEvo(data);
+      if (timedOut && !changed) setRefreshTimedOut(true);
+    } catch (err) {
+      console.error('EvoDetailPage: tx refresh failed:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [connection, collectionName, evoId]);
+
+  // Manual refresh from timeout button
+  const handleManualRefresh = useCallback(() => {
+    setRefreshTimedOut(false);
+    setRefreshKey(k => k + 1);
+  }, []);
 
   if (loading) {
     return (
@@ -99,7 +151,10 @@ export default function EvoDetailPage() {
       <EvoDetail
         evo={evo}
         onBack={() => router.push(`/c/${encodeURIComponent(collectionName)}`)}
-        onRefresh={() => setRefreshKey(k => k + 1)}
+        onRefresh={handleTxRefresh}
+        refreshing={refreshing}
+        refreshTimedOut={refreshTimedOut}
+        onManualRefresh={handleManualRefresh}
       />
     </ErrorBoundary>
   );

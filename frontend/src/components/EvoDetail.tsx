@@ -25,23 +25,30 @@ import { humanizeError } from '@/lib/errors';
 import { fmtSolValue, fmtSol, fmtPctValue } from '@/lib/format';
 import { useFlash } from '@/lib/useFlash';
 import Link from 'next/link';
-import { IconCheck, IconAlertTriangle, IconExternalLink } from './Icons';
+import { IconCheck, IconAlertTriangle, IconExternalLink, IconInfo } from './Icons';
 
 interface EvoDetailProps {
   evo: EVOData;
   onBack: () => void;
   onRefresh?: () => void;
+  refreshing?: boolean;
+  refreshTimedOut?: boolean;
+  onManualRefresh?: () => void;
 }
 
-export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
+export function EvoDetail({ evo: _evo, onBack, onRefresh, refreshing, refreshTimedOut, onManualRefresh }: EvoDetailProps) {
   const { connection } = useConnection();
   const wallet = useWallet();
-  const collectionName = evo.collectionName || 'EVO';
+  const collectionName = _evo.collectionName || 'EVO';
   const [imgError, setImgError] = useState(false);
   const [resolvedImage, setResolvedImage] = useState<string | null>(null);
   const [action, setAction] = useState<string | null>(null);
   const [txResult, setTxResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [optimisticOverrides, setOptimisticOverrides] = useState<Partial<EVOData>>({});
+  // Reset optimistic overrides when the evo prop reference changes (parent refetched)
+  useEffect(() => { setOptimisticOverrides({}); }, [_evo]);
+  const evo = { ..._evo, ...optimisticOverrides };
   const lockedFlash = useFlash(evo.lockedLamports);
   const [listPrice, setListPrice] = useState('');
   const [feedAmount, setFeedAmount] = useState('');
@@ -156,7 +163,11 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
       if (!lamports || lamports <= 0) throw new Error('Enter a valid SOL amount');
       const collectionPda = new PublicKey(evo.collectionPda!);
       const sig = await sendTx(createFeedIx(new PublicKey(evo.evoPda!), collectionPda, wallet.publicKey!, evo.id, lamports));
-      if (sig) { setTxResult(sig); setFeedAmount(''); onRefresh?.(); }
+      if (sig) {
+        setTxResult(sig); setFeedAmount('');
+        setOptimisticOverrides(prev => ({ ...prev, lockedLamports: (prev.lockedLamports ?? _evo.lockedLamports) + lamports / LAMPORTS_PER_SOL }));
+        onRefresh?.();
+      }
     } catch (err: any) { setError(humanizeError(err.message || 'Feed failed')); } finally { setAction(null); }
   };
 
@@ -165,7 +176,11 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
     try {
       const sig = await sendTx(createEvolveIx(
         new PublicKey(evo.evoPda!), new PublicKey(evo.collectionPda!), evo.id));
-      if (sig) { setTxResult(sig); onRefresh?.(); }
+      if (sig) {
+        setTxResult(sig);
+        setOptimisticOverrides(prev => ({ ...prev, currentState: (prev.currentState ?? _evo.currentState) + 1 }));
+        onRefresh?.();
+      }
     } catch (err: any) { setError(humanizeError(err.message || 'Evolve failed')); }
     finally { setAction(null); }
   };
@@ -567,7 +582,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                         ) : manifestVerification.status === 'mismatch' ? (
                           <><IconAlertTriangle className="h-4 w-4 text-negative" /><span className="text-xs text-negative">Hash mismatch — art may be tampered</span></>
                         ) : manifestVerification.status === 'no-hash' ? (
-                          <><IconAlertTriangle className="h-4 w-4 text-dim" /><span className="text-xs text-dim">No on-chain hash committed</span></>
+                          <><IconInfo className="h-4 w-4 text-dim" /><span className="text-xs text-dim">No on-chain hash</span></>
                         ) : (
                           <><IconAlertTriangle className="h-4 w-4 text-dim" /><span className="text-xs text-dim">Unchecked</span></>
                         )}
@@ -784,11 +799,11 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                 if (v.status === 'no-hash') {
                   return (
                     <div className="mt-1 space-y-0.5">
-                      <div className="flex items-center gap-1.5 text-[11px] text-warn">
-                        <IconAlertTriangle className="h-3.5 w-3.5" />
-                        <span>No hash committed — art unverified</span>
+                      <div className="flex items-center gap-1.5 text-[11px] text-dim">
+                        <IconInfo className="h-3.5 w-3.5" />
+                        <span>Provenance hash: not enabled</span>
                       </div>
-                      <p className="text-[10px] text-dim">This collection did not commit a manifest hash. Artwork cannot be cryptographically verified.</p>
+                      <p className="text-[10px] text-dim">Artwork is stored on permanent content-addressed storage (Irys) — files cannot be altered at their URLs. On-chain manifest hashing is available for new collections.</p>
                     </div>
                   );
                 }
@@ -806,10 +821,24 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                 <div className="flex items-center gap-2">
                   <IconCheck className="h-4 w-4 text-positive" />
                   <span className="text-positive">Confirmed</span>
+                  {refreshing && (
+                    <span className="inline-flex items-center gap-1 text-dim">
+                      <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg>
+                      Updating...
+                    </span>
+                  )}
                   <a href={`https://solscan.io/tx/${txResult}`} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-accent hover:underline">
                     Solscan <IconExternalLink className="h-3 w-3" />
                   </a>
                 </div>
+                {refreshTimedOut && (
+                  <div className="flex items-center gap-2 text-warn">
+                    <span>Taking longer than usual</span>
+                    <button onClick={onManualRefresh} className="rounded border border-warn/40 px-2 py-0.5 text-[11px] font-medium text-warn hover:bg-warn/10">
+                      Refresh
+                    </button>
+                  </div>
+                )}
                 {wallet.connected && (
                   <Link href="/portfolio" className="inline-flex items-center gap-1 text-accent hover:underline">
                     View in portfolio <IconExternalLink className="h-3 w-3" />
