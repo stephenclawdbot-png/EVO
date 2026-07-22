@@ -372,7 +372,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
             {/* Ready-to-evolve banner */}
             {canEvolve && (
               <div className="mt-4 flex items-center justify-between rounded border border-accent/40 bg-accent-soft px-3 py-2">
-                <span className="text-xs font-semibold text-accent">Ready to evolve ⚡</span>
+                <span className="text-xs font-semibold text-accent">Ready to evolve</span>
                 <button onClick={handleEvolve} disabled={action === 'evolve'}
                   className="rounded bg-accent px-3 py-1 text-xs font-bold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
                   {action === 'evolve' ? 'Evolving...' : 'EVOLVE NOW'}
@@ -543,7 +543,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                       {canEvolve ? (
                         <button onClick={handleEvolve} disabled={action === 'evolve'}
                           className="mt-3 w-full rounded bg-accent py-2.5 text-sm font-bold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
-                          {action === 'evolve' ? <span className="inline-flex items-center justify-center gap-1.5"><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> Evolving...</span> : '⚡ EVOLVE NOW'}
+                          {action === 'evolve' ? <span className="inline-flex items-center justify-center gap-1.5"><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> Evolving...</span> : 'EVOLVE NOW'}
                         </button>
                       ) : (
                         <p className="mt-2 text-[10px] text-dim">
@@ -825,7 +825,7 @@ export function EvoDetail({ evo, onBack, onRefresh }: EvoDetailProps) {
                 {canEvolve && (
                   <button onClick={handleEvolve} disabled={action === 'evolve'}
                     className="w-full rounded bg-accent py-2.5 text-sm font-bold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
-                    {action === 'evolve' ? <span className="inline-flex items-center justify-center gap-1.5"><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> Evolving...</span> : '⚡ EVOLVE NOW'}
+                    {action === 'evolve' ? <span className="inline-flex items-center justify-center gap-1.5"><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> Evolving...</span> : 'EVOLVE NOW'}
                   </button>
                 )}
                 <div className="flex gap-2">

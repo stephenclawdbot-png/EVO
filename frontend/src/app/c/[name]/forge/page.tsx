@@ -36,6 +36,8 @@ export default function CollectionForgePage() {
   const [txSig, setTxSig] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [resolvedImage, setResolvedImage] = useState<string | null>(null);
+  const [mintedId, setMintedId] = useState<number | null>(null);
+  const [mintedImage, setMintedImage] = useState<string | null>(null);
 
   const remaining = collection ? collection.supplyCap - currentSupply : 0;
 
@@ -92,6 +94,10 @@ export default function CollectionForgePage() {
       const conf = await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, 'confirmed');
       if (conf.value.err) throw new Error(`Transaction failed on-chain: ${JSON.stringify(conf.value.err)}`);
       setTxSig(sig);
+      setMintedId(evoId);
+      // Capture image for the minted EVO before refetch advances nextId
+      const img = await resolveImage(collection.metadataUri, '/placeholder.png', 0, collection.isRevealed, evoId);
+      setMintedImage(img);
       // A mint happened — the home page's cached stats are stale now.
       invalidateCollectionsCache();
       await fetchCollection();
@@ -129,70 +135,120 @@ export default function CollectionForgePage() {
           </div>
         ) : collection ? (
           <>
-            {/* Preview — generic, uses manifest-resolved image */}
-            <div className="mt-5 flex flex-col items-center">
-              <div className="relative flex h-40 w-40 items-center justify-center overflow-hidden rounded border border-border bg-surface">
-                <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 45%, rgba(129,140,248,0.12), transparent 65%)` }} />
-                {resolvedImage ? (
-                  <img src={resolvedImage} alt={`${collectionName} #${nextId}`} className="relative z-[1] pixelated" style={{ transform: 'scale(2)' }} />
-                ) : (
-                  <span className="relative z-[1] font-mono text-2xl font-bold text-accent">#{nextId}</span>
+            {txSig && mintedId !== null ? (
+              /* ── FORGE SUCCESS CARD ── */
+              <div className="mt-5">
+                <div className="flex flex-col items-center rounded border border-positive/40 bg-positive-soft px-5 py-6 text-center">
+                  <div className="mb-3 flex items-center gap-2">
+                    <IconCheck className="h-6 w-6 text-positive" />
+                    <h2 className="text-lg font-bold text-positive">FORGED</h2>
+                  </div>
+
+                  {/* Large minted EVO image */}
+                  <div className="relative flex h-40 w-40 items-center justify-center overflow-hidden rounded border border-positive/20 bg-bg">
+                    <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 45%, rgba(52,211,153,0.12), transparent 65%)` }} />
+                    {mintedImage ? (
+                      <img src={mintedImage} alt={`${collectionName} #${mintedId}`} className="relative z-[1] pixelated" style={{ transform: 'scale(2)' }} />
+                    ) : (
+                      <span className="relative z-[1] font-mono text-2xl font-bold text-positive">#{mintedId}</span>
+                    )}
+                  </div>
+
+                  <p className="mt-3 text-sm font-semibold text-text-strong">
+                    {collectionName} #{mintedId} is yours
+                  </p>
+                  <p className="mt-1 font-mono text-[11px] text-dim">
+                    Locked inside: {fmtSolValue(collection.lockAmountSol)} SOL (your floor — recover anytime via shatter)
+                  </p>
+
+                  {/* Three action buttons */}
+                  <div className="mt-5 flex w-full flex-col gap-2">
+                    <Link href={`/c/${encodeURIComponent(collectionName)}/${mintedId}`}
+                      className="w-full rounded bg-accent py-2.5 text-sm font-bold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98] dark:text-[#0a0a0b]">
+                      View my EVO
+                    </Link>
+                    <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Just forged ${collectionName} #${mintedId} on @meldterminal — SOL locked inside, floor guaranteed`)}&url=${encodeURIComponent(`https://meldterminal.io/c/${encodeURIComponent(collectionName)}/${mintedId}`)}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="w-full rounded border border-border-strong bg-surface py-2.5 text-sm font-medium text-text transition-colors duration-100 hover:bg-surface-2 active:scale-[0.98]">
+                      Share on X
+                    </a>
+                    <button onClick={() => { setTxSig(null); setMintedId(null); setMintedImage(null); setError(null); fetchCollection(); }}
+                      className="w-full rounded border border-border-strong bg-surface py-2.5 text-sm font-medium text-text transition-colors duration-100 hover:bg-surface-2 active:scale-[0.98]">
+                      Forge another
+                    </button>
+                  </div>
+                </div>
+
+                {/* Solscan link row */}
+                <div className="mt-3 flex items-center gap-2 rounded border border-border bg-surface px-3 py-2 text-xs">
+                  <span className="text-dim">Transaction</span>
+                  <a href={`https://solscan.io/tx/${txSig}`} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-accent hover:underline">
+                    Solscan <IconExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Preview — generic, uses manifest-resolved image */}
+                <div className="mt-5 flex flex-col items-center">
+                  <div className="relative flex h-40 w-40 items-center justify-center overflow-hidden rounded border border-border bg-surface">
+                    <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 45%, rgba(129,140,248,0.12), transparent 65%)` }} />
+                    {resolvedImage ? (
+                      <img src={resolvedImage} alt={`${collectionName} #${nextId}`} className="relative z-[1] pixelated" style={{ transform: 'scale(2)' }} />
+                    ) : (
+                      <span className="relative z-[1] font-mono text-2xl font-bold text-accent">#{nextId}</span>
+                    )}
+                  </div>
+                  <p className="mt-3 text-sm font-semibold">{collectionName} #{nextId}</p>
+                  <p className="font-mono text-[11px] text-dim">Next to forge</p>
+                </div>
+
+                {/* Cost breakdown */}
+                <div className="mt-5 overflow-hidden rounded border border-border">
+                  <Row label="Mint price (to creator)" value={`${collection.mintPriceSol} SOL`} />
+                  <div className="border-t border-border" />
+                  <Row label="Locked value (your floor)" value={`${collection.lockAmountSol} SOL`} tone="pos" />
+                  <div className="border-t border-border-strong bg-surface-2">
+                    <Row label="Total to forge" value={`${fmtSolValue(totalCost)} SOL`} strong />
+                  </div>
+                </div>
+
+                {/* Fee schedule */}
+                <div className="mt-3 grid grid-cols-3 gap-px overflow-hidden rounded border border-border bg-border">
+                  <Fee label="Shatter fee" value={`${collection.shatterFeeBps / 100}%`} />
+                  <Fee label="Royalty" value={`${collection.tradeRoyaltyBps / 100}%`} />
+                  <Fee label="Recoverable" value={fmtSolValue(shatterRecover)} />
+                </div>
+
+                {/* Supply bar */}
+                <div className="mt-3 rounded border border-border bg-surface p-2.5">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-dim">Supply</span>
+                    <span className="font-mono text-text-strong">{currentSupply} / {collection.supplyCap}</span>
+                  </div>
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-bg">
+                    <div className="h-full bg-accent transition-all" style={{ width: `${(currentSupply / collection.supplyCap) * 100}%` }} />
+                  </div>
+                </div>
+
+                {/* Forge */}
+                <button onClick={handleForge} disabled={!wallet.connected || forging || remaining === 0}
+                  className="mt-5 w-full rounded bg-accent py-3 text-sm font-semibold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 dark:text-[#0a0a0b]">
+                  {forging ? 'Forging...' : remaining === 0 ? 'Collection full' : `Forge ${collectionName} #${nextId}`}
+                </button>
+                {forging && (
+                  <p className="mt-2 text-center text-xs text-dim">Confirming on Solana… ~5s</p>
                 )}
-              </div>
-              <p className="mt-3 text-sm font-semibold">{collectionName} #{nextId}</p>
-              <p className="font-mono text-[11px] text-dim">Next to forge</p>
-            </div>
+                {!wallet.connected && (
+                  <div className="mt-3 flex justify-center"><WalletMultiButton /></div>
+                )}
 
-            {/* Cost breakdown */}
-            <div className="mt-5 overflow-hidden rounded border border-border">
-              <Row label="Mint price (to creator)" value={`${collection.mintPriceSol} SOL`} />
-              <div className="border-t border-border" />
-              <Row label="Locked value (your floor)" value={`${collection.lockAmountSol} SOL`} tone="pos" />
-              <div className="border-t border-border-strong bg-surface-2">
-                <Row label="Total to forge" value={`${fmtSolValue(totalCost)} SOL`} strong />
-              </div>
-            </div>
-
-            {/* Fee schedule */}
-            <div className="mt-3 grid grid-cols-3 gap-px overflow-hidden rounded border border-border bg-border">
-              <Fee label="Shatter fee" value={`${collection.shatterFeeBps / 100}%`} />
-              <Fee label="Royalty" value={`${collection.tradeRoyaltyBps / 100}%`} />
-              <Fee label="Recoverable" value={fmtSolValue(shatterRecover)} />
-            </div>
-
-            {/* Supply bar */}
-            <div className="mt-3 rounded border border-border bg-surface p-2.5">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-dim">Supply</span>
-                <span className="font-mono text-text-strong">{currentSupply} / {collection.supplyCap}</span>
-              </div>
-              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-bg">
-                <div className="h-full bg-accent transition-all" style={{ width: `${(currentSupply / collection.supplyCap) * 100}%` }} />
-              </div>
-            </div>
-
-            {/* Forge */}
-            <button onClick={handleForge} disabled={!wallet.connected || forging || remaining === 0}
-              className="mt-5 w-full rounded bg-accent py-3 text-sm font-semibold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 dark:text-[#0a0a0b]">
-              {forging ? 'Forging...' : remaining === 0 ? 'Collection full' : `Forge ${collectionName} #${nextId}`}
-            </button>
-            {!wallet.connected && (
-              <div className="mt-3 flex justify-center"><WalletMultiButton /></div>
-            )}
-
-            {txSig && (
-              <div className="mt-4 flex items-center gap-2 rounded border border-positive/30 bg-positive-soft px-3 py-2.5 text-xs">
-                <IconCheck className="h-4 w-4 text-positive" />
-                <span className="text-positive font-medium">EVO forged</span>
-                <a href={`https://solscan.io/tx/${txSig}`} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-accent hover:underline">
-                  Solscan <IconExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            )}
-            {error && (
-              <div className="mt-4 flex items-center gap-2 rounded border border-negative/30 bg-negative-soft px-3 py-2.5 text-xs text-negative">
-                <IconAlertTriangle className="h-4 w-4 shrink-0" /> {error}
-              </div>
+                {error && (
+                  <div className="mt-4 flex items-center gap-2 rounded border border-negative/30 bg-negative-soft px-3 py-2.5 text-xs text-negative">
+                    <IconAlertTriangle className="h-4 w-4 shrink-0" /> {error}
+                  </div>
+                )}
+              </>
             )}
           </>
         ) : (

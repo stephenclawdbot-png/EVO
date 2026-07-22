@@ -223,7 +223,7 @@ export default function PortfolioPage() {
             {/* Ready-to-evolve banner */}
             {readyCount > 0 && (
               <div className="mt-4 flex items-center gap-2 rounded border border-accent/30 bg-accent/10 px-3 py-2.5">
-                <span className="text-sm">⚡</span>
+                <span className="text-sm font-bold text-accent">!</span>
                 <p className="text-sm font-medium text-text-strong">
                   {readyCount} of your EVO{readyCount !== 1 ? 's' : ''} {readyCount !== 1 ? 'are' : 'is'} ready to evolve
                 </p>
