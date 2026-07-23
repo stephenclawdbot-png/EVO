@@ -17,6 +17,7 @@ import {
   unzipFilesStream,
   groupFilesByState,
   parseTraitsFromJsons,
+  injectRareEvolutions,
   type BulkCollectionManifest,
 } from '@/lib/bulk-manifest';
 
@@ -27,10 +28,17 @@ export interface BulkArtworkResult {
   totalImages: number;
 }
 
+export interface RareConfig {
+  enabled: boolean;
+  rate: number;
+  seed: number;
+}
+
 interface Props {
   collectionName: string;
   stateNames: string[];
   onArtworkReady: (result: BulkArtworkResult | null) => void;
+  rareConfig?: RareConfig;
 }
 
 const STATE_COLORS = ['#a1a1aa', '#818cf8', '#6366f1', '#a78bfa', '#c084fc', '#f472b6'];
@@ -42,7 +50,7 @@ interface CompletedUpload {
   stateIndex: number;
 }
 
-export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady }: Props) {
+export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady, rareConfig }: Props) {
   const wallet = useWallet();
   const [stateFiles, setStateFiles] = useState<File[][]>(stateNames.map(() => []));
   const [jsonFiles, setJsonFiles] = useState<File[]>([]);
@@ -58,6 +66,8 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
   const [verifyResults, setVerifyResults] = useState<{ checked: number; failed: string[] } | null>(null);
   const [resumeSession, setResumeSession] = useState<CompletedUpload[] | null>(null);
   const [showWarning, setShowWarning] = useState(false);
+  const [rareFiles, setRareFiles] = useState<File[]>([]);
+  const rareInputRef = useRef<HTMLInputElement>(null);
   const zipInputRef = useRef<HTMLInputElement>(null);
 
   // localStorage key for resume
@@ -415,6 +425,24 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
         items,
       );
 
+      // Inject rare evolutions if enabled
+      if (rareConfig?.enabled && rareFiles.length > 0 && manifest.items.length > 0) {
+        setPhase('Uploading rare evolved forms…');
+        const rareResults: UploadResult[] = [];
+        const { results: rareUploadResults, failed: rareFailed } = await uploadStateFolder(
+          rareFiles, 0, wallet, useDevnet,
+          (u, _t, fn) => setProgress(p => ({ ...p, currentFile: `rare: ${fn}` })),
+        );
+        rareUploadResults.forEach(r => { if (r?.txId) rareResults.push(r); });
+        globalFailed.push(...rareFailed);
+
+        if (rareResults.length > 0) {
+          const rareUris = rareResults.map(r => `https://gateway.irys.xyz/${r.txId}`);
+          const assignments = injectRareEvolutions(manifest, rareUris, rareConfig.rate, rareConfig.seed);
+          setPhase(`Injected ${assignments.length} rare evolutions (${(assignments.length / manifest.items.length * 100).toFixed(1)}%)…`);
+        }
+      }
+
       setPhase('Computing Merkle root…');
       const merkleRoot = await computeBulkMerkleRoot(manifest.items);
 
@@ -449,7 +477,7 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
       setUploading(false);
       setVerifying(false);
     }
-  }, [wallet, stateFiles, stateNames, collectionName, useDevnet, onArtworkReady, jsonFiles, resumeSession, buildSkipSet, saveProgress, clearProgress]);
+  }, [wallet, stateFiles, stateNames, collectionName, useDevnet, onArtworkReady, jsonFiles, resumeSession, buildSkipSet, saveProgress, clearProgress, rareConfig, rareFiles]);
 
   const retryFailed = useCallback(() => {
     if (failedUploads.length === 0) return;
@@ -573,6 +601,45 @@ export function BulkArtworkUploader({ collectionName, stateNames, onArtworkReady
           </div>
         ))}
       </div>
+
+      {/* Rare evolutions drop zone */}
+      {rareConfig?.enabled && (
+        <div
+          onDrop={(e) => { e.preventDefault(); const imgs = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')); setRareFiles(prev => [...prev, ...imgs]); }}
+          onDragOver={(e) => e.preventDefault()}
+          className="rounded-lg border-2 border-dashed border-accent/40 bg-accent/5 p-3"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-accent">RARE evolved forms</span>
+            <span className="text-[10px] text-muted">{rareFiles.length} files</span>
+          </div>
+          <p className="mt-1 text-[10px] leading-relaxed text-muted">
+            Drop a few rare images here — they'll be randomly assigned to ~{rareConfig.rate}% of items as their final evolved form. Reused across winners if fewer images than winners.
+          </p>
+          <label className="mt-1.5 inline-flex cursor-pointer text-[10px] text-accent hover:underline">
+            + Add rare images
+            <input
+              ref={rareInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => { if (e.target.files) { const imgs = Array.from(e.target.files).filter(f => f.type.startsWith('image/')); setRareFiles(prev => [...prev, ...imgs]); } e.currentTarget.value = ''; }}
+            />
+          </label>
+          {rareFiles.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {rareFiles.slice(0, 8).map((f, i) => (
+                <div key={i} className="flex items-center gap-1 rounded bg-bg px-1.5 py-0.5 text-[9px] text-muted">
+                  <span className="max-w-[80px] truncate">{f.name}</span>
+                  <button onClick={() => setRareFiles(prev => prev.filter((_, j) => j !== i))} className="text-negative hover:text-text">x</button>
+                </div>
+              ))}
+              {rareFiles.length > 8 && <span className="text-[9px] text-dim">+{rareFiles.length - 8} more</span>}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* JSON traits indicator */}
       {jsonFiles.length > 0 && (

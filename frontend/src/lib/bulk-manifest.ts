@@ -16,6 +16,60 @@ export interface BulkCollectionManifest {
   items: ManifestItem[];
 }
 
+// mulberry32 — seeded PRNG so assignments are reproducible with the same seed
+function mulberry32(seed: number) {
+  let s = seed >>> 0;
+  return () => {
+    s |= 0; s = (s + 0x6D2B79F5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export interface RareAssignment {
+  index: number;
+  name: string;
+  was: string;
+  now: string;
+}
+
+/**
+ * Inject rare evolved-form variants into a bulk manifest.
+ * Uses a seeded PRNG (mulberry32) so assignments are deterministic given the
+ * same seed. Replaces the LAST state URL for winners and tags Evolution trait.
+ *
+ * Ported from scripts/add-rare-evolutions.mjs — do not reinvent.
+ *
+ * NOTE: The manifest is public JSON. Determined snipers can read which IDs hold
+ * rare stage URLs. Fine for fun collections; true unsnipeable randomness needs
+ * committed art / VRF (protocol v2).
+ */
+export function injectRareEvolutions(
+  manifest: BulkCollectionManifest,
+  rareUris: string[],
+  rate: number,
+  seed: number,
+): RareAssignment[] {
+  if (!rareUris.length || rate <= 0) return [];
+  const rand = mulberry32(seed);
+  const assignments: RareAssignment[] = [];
+  let ri = 0;
+  for (const item of manifest.items) {
+    if (!Array.isArray(item.states) || item.states.length < 2) continue;
+    if (rand() < rate) {
+      const stageIdx = item.states.length - 1;
+      const rareUrl = rareUris[ri % rareUris.length]; ri++;
+      assignments.push({ index: item.index, name: item.name, was: item.states[stageIdx], now: rareUrl });
+      item.states[stageIdx] = rareUrl;
+      item.traits = { ...(item.traits || {}), Evolution: 'Rare' };
+    } else {
+      item.traits = { ...(item.traits || {}), Evolution: 'Standard' };
+    }
+  }
+  return assignments;
+}
+
 export function buildBulkManifest(
   name: string,
   description: string,

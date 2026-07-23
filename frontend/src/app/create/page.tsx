@@ -23,7 +23,7 @@ import {
   type CollectionDiscovery,
 } from '@/lib/evo-program';
 import { IconCheck, IconAlertTriangle, IconExternalLink, IconHammer, IconSparkle } from '@/components/Icons';
-import { BulkArtworkUploader, type BulkArtworkResult } from '@/components/BulkArtworkUploader';
+import { BulkArtworkUploader, type BulkArtworkResult, type RareConfig } from '@/components/BulkArtworkUploader';
 
 const CREATE_DRAFT_KEY = 'evo_create_draft_v1';
 
@@ -116,6 +116,16 @@ export default function CreateCollectionPage() {
   const [manifestRoot, setManifestRoot] = useState('');
   const [transitionPolicyHash, setTransitionPolicyHash] = useState('');
   const [artworkManifestHash, setArtworkManifestHash] = useState('');
+
+  // Rare evolutions
+  const [rareEnabled, setRareEnabled] = useState(false);
+  const [rareRate, setRareRate] = useState('3');
+  const [rareSeed, setRareSeed] = useState(() => {
+    if (typeof window === 'undefined') return 0;
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    return arr[0];
+  });
 
   // Art mode
   const [artMode, setArtMode] = useState<'generative' | 'bulk'>('bulk');
@@ -787,10 +797,70 @@ export default function CreateCollectionPage() {
                         </div>
                       </div>
                     </details>
+                    {(lifecycleType === 'RevealAndEvolve' || lifecycleType === 'Custom') && (
+                      <div className="rounded-lg border border-border bg-surface p-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={rareEnabled}
+                            onChange={e => setRareEnabled(e.target.checked)}
+                            className="h-4 w-4"
+                          />
+                          <span className="text-sm font-semibold text-text">Rare evolutions</span>
+                          <span className="text-[10px] text-muted">— some items evolve into a rare variant</span>
+                        </label>
+                        {rareEnabled && (
+                          <div className="mt-3 space-y-3">
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                              <div>
+                                <label className={labelCls}>Rarity %</label>
+                                <input
+                                  className={inputCls}
+                                  type="number"
+                                  min="0.1"
+                                  max="50"
+                                  step="0.1"
+                                  value={rareRate}
+                                  onChange={e => {
+                                    const v = parseFloat(e.target.value);
+                                    if (!isNaN(v)) setRareRate(String(Math.max(0.1, Math.min(50, v))));
+                                    else setRareRate(e.target.value);
+                                  }}
+                                  placeholder="3"
+                                />
+                                <p className="mt-1 text-[10px] text-dim">Default 3%. Clamped 0.1–50%.</p>
+                              </div>
+                              <div>
+                                <label className={labelCls}>Fairness seed</label>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    className={`${inputCls} font-mono`}
+                                    value={rareSeed}
+                                    readOnly
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => { const arr = new Uint32Array(1); crypto.getRandomValues(arr); setRareSeed(arr[0]); }}
+                                    className="shrink-0 rounded border border-border-strong px-2 py-1.5 text-[10px] font-semibold text-muted hover:text-text"
+                                  >
+                                    Reroll
+                                  </button>
+                                </div>
+                                <p className="mt-1 text-[10px] text-dim">Publish this later to prove the rare assignment was fixed at creation.</p>
+                              </div>
+                            </div>
+                            <p className="text-[10px] leading-relaxed text-muted">
+                              Deterministic under the hood, hidden until earned — holders discover their variant at evolution. Note: manifest is public JSON.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <BulkArtworkUploader
                       collectionName={name}
                       stateNames={Array.from({ length: lifecycleType === 'Static' ? 1 : (parseInt(maxStates) || 1) }, (_, i) => `State ${i + 1}`)}
                       onArtworkReady={setBulkArtwork}
+                      rareConfig={rareEnabled ? { enabled: true, rate: parseFloat(rareRate) / 100 || 0.03, seed: rareSeed } : undefined}
                     />
                   </div>
                 ) : (
