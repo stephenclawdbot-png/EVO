@@ -31,3 +31,16 @@ price pinned right: flex row, title `min-w-0 truncate`, price `shrink-0`.
 
 **Done when (390px):** nothing is clipped off-screen, the stats bar swipes in
 one line, and no card art is covered by any price bar.
+
+## 5. Footer unreachable on mobile — hidden behind the fixed bottom tab bar
+The new tab bar is `fixed bottom-0` but page content has no bottom padding, so
+the footer (Guide/Docs/GitHub links) is permanently covered — users cannot
+scroll to or tap the doc links.
+- Add global bottom padding on mobile equal to the bar height + safe area:
+  on the layout/page wrapper `pb-20 sm:pb-0` (adjust 20 to actual bar height),
+  and give the tab bar itself `pb-[env(safe-area-inset-bottom)]`.
+- Verify EVERY page (home, collection, detail, forge, portfolio, create,
+  docs, guide): scrolled to the very bottom, the last element clears the bar
+  fully and all footer links are tappable.
+**Done when:** on a phone, the footer's Docs/Guide/GitHub links are fully
+visible and tappable above the tab bar on every page.
