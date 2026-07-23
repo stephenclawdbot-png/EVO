@@ -133,13 +133,13 @@ export function TradingViewWidget({ events, loading, currentFloorSol, collection
   return (
     <div className="rounded-lg border border-border bg-surface">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-text-strong">{collectionName || 'EVO'} Chart</span>
+      <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-xs font-bold text-text-strong">{collectionName || 'EVO'} Chart</span>
           {currentFloorSol != null && currentFloorSol > 0 && (
-            <span className="font-mono tabular-nums text-xs text-positive">◎ {fmtSolValue(currentFloorSol)}</span>
+            <span className="shrink-0 font-mono tabular-nums text-xs text-positive">◎ {fmtSolValue(currentFloorSol)}</span>
           )}
-          <span className="hidden text-[10px] text-dim sm:inline">{view.candles.length} candles</span>
+          <span className="hidden shrink-0 text-[10px] text-dim sm:inline">{view.candles.length} candles</span>
         </div>
         <div className="flex items-center gap-2">
           <button

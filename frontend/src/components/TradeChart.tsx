@@ -106,16 +106,16 @@ export function TradeChart({ events, loading, currentFloorSol }: TradeChartProps
   return (
     <div className="overflow-hidden rounded border border-border bg-surface">
       {/* header */}
-      <div className="flex items-center justify-between border-b border-border bg-surface-2 px-3 py-2">
-        <div className="flex items-center gap-3">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-dim">Trade Chart</span>
-          <span className="font-mono text-xs text-muted">
+      <div className="flex items-center justify-between gap-2 border-b border-border bg-surface-2 px-3 py-2">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-dim">Trade Chart</span>
+          <span className="hidden shrink-0 font-mono text-xs text-muted sm:inline">
             Last <span className="text-text-strong">{lastPrice > 0 ? `${fmtSolValue(lastPrice)} SOL` : '--'}</span>
           </span>
-          <span className="font-mono text-xs text-muted">
+          <span className="hidden shrink-0 font-mono text-xs text-muted sm:inline">
             Vol <span className="text-text-strong">{fmtSolValue(volume)} SOL</span>
           </span>
-          <span className="font-mono text-xs text-muted">
+          <span className="hidden shrink-0 font-mono text-xs text-muted sm:inline">
             Sales <span className="text-text-strong">{buys}</span>
           </span>
         </div>

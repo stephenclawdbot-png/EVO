@@ -139,7 +139,7 @@ export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed, href, 
         )}
 
         {isFloor && evo.isListed && (
-          <span className="absolute bottom-1.5 left-1.5 z-10 rounded bg-positive px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#0a0a0b]">
+          <span className="absolute bottom-1.5 right-1.5 z-10 rounded bg-positive px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#0a0a0b]">
             Floor
           </span>
         )}
@@ -181,19 +181,13 @@ export function EvoCard({ evo, onClick, isFloor, metadataUri, isRevealed, href, 
             {evo.name}
           </div>
         )}
-
-        {evo.isListed && !evo.isShattered && (
-          <div className="absolute inset-x-0 bottom-0 z-20 max-lg:translate-y-0 bg-positive/95 py-1.5 text-center font-mono text-sm font-bold text-[#0a0a0b] transition-transform duration-100 group-hover:translate-y-0 lg:translate-y-full lg:group-hover:translate-y-0">
-            {evo.listPrice} SOL
-          </div>
-        )}
       </div>
 
       <div className="px-2 py-1.5">
         <div className="flex items-center justify-between gap-1">
           <h3 className="truncate text-xs font-medium text-text">{evo.name}</h3>
           {evo.isListed ? (
-            <span className={`shrink-0 font-mono text-xs font-bold ${belowFloor ? 'text-warn' : 'text-positive'}`}>{evo.listPrice}</span>
+            <span className={`shrink-0 font-mono text-sm font-bold ${belowFloor ? 'text-warn' : 'text-positive'}`}>{evo.listPrice}</span>
           ) : (
             <span className="shrink-0 font-mono text-[11px] text-dim">{evo.tradeCount}x</span>
           )}

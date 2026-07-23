@@ -294,7 +294,7 @@ export default function CollectionPage() {
                     <svg className={`h-3 w-3 text-dim transition-transform ${mintPillOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                   </button>
                   {mintPillOpen && (
-                    <div className="absolute right-0 z-30 mt-1 w-60 rounded-lg border border-border bg-surface px-3 py-2.5 shadow-lg">
+                    <div className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2.5 shadow-lg sm:absolute sm:left-0 sm:right-auto sm:z-30 sm:mt-1 sm:w-60 sm:max-w-[calc(100vw-2rem)]">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-medium uppercase tracking-wider text-dim">Mint remaining</span>
                         <span className={`flex items-center gap-1 text-[10px] font-semibold ${statusColor}`}>
