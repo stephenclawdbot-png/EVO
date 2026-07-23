@@ -47,7 +47,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col pb-[4.5rem] sm:pb-0">
         <ThemeProvider>
           <WalletContextProvider>
             <ErrorBoundary>{children}</ErrorBoundary>
