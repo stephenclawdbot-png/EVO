@@ -140,7 +140,7 @@ export function TradeChart({ events, loading, currentFloorSol }: TradeChartProps
         ) : view.priced.length === 0 ? (
           <div className="flex h-[200px] flex-col items-center justify-center text-center">
             <p className="text-xs text-muted">No trades yet.</p>
-            <p className="mt-1 text-[11px] text-dim">Be the first to forge or buy — chart builds from on-chain trades.</p>
+            <p className="mt-1 text-[11px] text-dim">Be the first to forge or buy. Chart builds from on-chain trades.</p>
           </div>
         ) : (
           <svg viewBox={`0 0 ${W} ${H}`} className="h-[200px] w-full" preserveAspectRatio="none">

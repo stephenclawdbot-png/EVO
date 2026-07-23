@@ -1,15 +1,15 @@
 const MAP: Record<string, string> = {
   SelfTradeNotAllowed: "You can't buy your own listing.",
-  PriceExceedsMax: 'Price changed under you — refresh and retry.',
-  EvolutionConditionsNotMet: 'Not ready to evolve yet — check feed/hold/locked progress.',
+  PriceExceedsMax: 'Price changed under you. Refresh and retry.',
+  EvolutionConditionsNotMet: 'Not ready to evolve yet. Check feed/hold/locked progress.',
   SupplyCapReached: 'Collection is minted out.',
-  EvoShattered: 'This EVO was shattered — it no longer exists.',
-  InsufficientTransferFee: 'Transfer costs 0.009 SOL — top up your wallet.',
+  EvoShattered: 'This EVO was shattered. It no longer exists.',
+  InsufficientTransferFee: 'Transfer costs 0.009 SOL. Top up your wallet.',
   NotEvoOwner: "You don't own this EVO.",
   InsufficientPayment: 'Not enough SOL in your wallet.',
   AlreadyAtMaxState: 'Already fully evolved.',
   NotRevealed: 'Collection not revealed yet.',
-  TX_EXPIRED: "Solana was congested and your transaction expired before landing. No SOL left your wallet — it's safe to try again.",
+  TX_EXPIRED: "Solana was congested and your transaction expired before landing. No SOL left your wallet. It's safe to try again.",
 };
 
 export function humanizeError(raw: string): string {

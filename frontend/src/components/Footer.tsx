@@ -2,7 +2,7 @@ export function Footer() {
   return (
     <footer className="border-t border-border">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-3 py-3 text-[11px] text-dim lg:px-4">
-        <span>Meld — EVO Protocol — Assets that don&apos;t stay the same.</span>
+        <span>Meld. EVO Protocol. Assets that don&apos;t stay the same.</span>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <a href="/guide" className="transition-colors hover:text-text">Guide</a>
           <a href="/docs" className="transition-colors hover:text-text">Docs</a>

@@ -148,7 +148,7 @@ export default function CollectionForgePage() {
                     {collectionName} #{mintedId} is yours
                   </p>
                   <p className="mt-1 font-mono text-[11px] text-dim">
-                    Locked inside: {fmtSolValue(collection.lockAmountSol)} SOL (your floor — recover anytime via shatter)
+                    Locked inside: {fmtSolValue(collection.lockAmountSol)} SOL (your floor, recover anytime via shatter)
                   </p>
 
                   {/* Three action buttons */}
@@ -161,7 +161,7 @@ export default function CollectionForgePage() {
                       className="w-full rounded border border-border-strong bg-surface py-2.5 text-sm font-medium text-text transition-colors duration-100 hover:bg-surface-2 active:scale-[0.98]">
                       View in portfolio
                     </Link>
-                    <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Just forged ${collectionName} #${mintedId} on @meldterminal — SOL locked inside, floor guaranteed`)}&url=${encodeURIComponent(`https://meldterminal.io/c/${encodeURIComponent(collectionName)}/${mintedId}`)}`}
+                    <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Just forged ${collectionName} #${mintedId} on @meldterminal. SOL locked inside, floor guaranteed`)}&url=${encodeURIComponent(`https://meldterminal.io/c/${encodeURIComponent(collectionName)}/${mintedId}`)}`}
                       target="_blank" rel="noopener noreferrer"
                       className="w-full rounded border border-border-strong bg-surface py-2.5 text-sm font-medium text-text transition-colors duration-100 hover:bg-surface-2 active:scale-[0.98]">
                       Share on X

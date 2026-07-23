@@ -227,7 +227,7 @@ export function ArtworkDropzone({ collectionName, maxStates, onArtworkReady }: P
       {images.length > 0 && (
         <div className="rounded border border-border bg-surface p-2.5 text-[10px] text-muted">
           <p className="font-semibold text-text">Generated manifest</p>
-          <p className="mt-0.5">IPFS CIDs computed locally. Pin to IPFS before mainnet — gateways will resolve once pinned.</p>
+          <p className="mt-0.5">IPFS CIDs computed locally. Pin to IPFS before mainnet. Gateways will resolve once pinned.</p>
           <p className="mt-1 font-mono text-text">{images.length} state(s) → Merkle root auto-filled below.</p>
         </div>
       )}

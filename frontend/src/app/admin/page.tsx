@@ -301,7 +301,7 @@ function AdminContent() {
             <div className="mt-5">
               <p className="text-[10px] uppercase tracking-wide text-dim">Collection Logo</p>
               <p className="mt-1 text-[11px] text-dim">
-                Upload a logo — stored on Supabase (database only, no on-chain transaction needed).
+                Upload a logo. Stored on Supabase (database only, no on-chain transaction needed).
                 The logo appears on the home page and collection page.
               </p>
               <div className="mt-2 flex items-center gap-3">
@@ -333,7 +333,7 @@ function AdminContent() {
                 <p className="text-[10px] uppercase tracking-wide text-dim">Pre-Reveal Mystery Image</p>
                 <p className="mt-1 text-[11px] text-dim">
                   Shown to collectors before the collection is revealed, instead of the actual art.
-                  Keeps the reveal a surprise. Optional — if not set, collectors see Stage 1 art.
+                  Keeps the reveal a surprise. Optional: if not set, collectors see Stage 1 art.
                 </p>
                 <div className="mt-2 flex items-center gap-3">
                   <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border bg-surface">
@@ -409,7 +409,7 @@ function AdminContent() {
               <div className="mt-5">
                 <p className="text-[10px] uppercase tracking-wide text-dim">Evolve EVO (Permissionless)</p>
                 <p className="mt-1 text-[11px] text-dim">
-                  Calls <code className="text-accent">evolve</code> — anyone can call it, but the EVO only
+                  Calls <code className="text-accent">evolve</code>. Anyone can call it, but the EVO only
                   advances if all threshold conditions are met.
                   {collection.lifecycleType === 'RevealAndEvolve' && ' Collection must be revealed first.'}
                 </p>
@@ -427,7 +427,7 @@ function AdminContent() {
               <div className="mt-5">
                 <p className="text-[10px] uppercase tracking-wide text-dim">Set Visual Stage (Authority Only)</p>
                 <p className="mt-1 text-[11px] text-dim">
-                  Calls <code className="text-accent">set_visual_stage</code> — override an EVO&apos;s stage
+                  Calls <code className="text-accent">set_visual_stage</code>. Override an EVO&apos;s stage
                   without threshold checks. Only works on Custom lifecycle collections.
                 </p>
                 <div className="mt-2 flex gap-2">
@@ -447,7 +447,7 @@ function AdminContent() {
 
             {collection.lifecycleType === 'Static' && (
               <div className="mt-5 rounded border border-border bg-surface p-3 text-center text-xs text-dim">
-                Static lifecycle — no stage transitions allowed.
+                Static lifecycle. No stage transitions allowed.
               </div>
             )}
 

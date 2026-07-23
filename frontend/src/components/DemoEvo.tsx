@@ -151,7 +151,7 @@ export function DemoEvo() {
                   disabled={shattering}
                   className="flex-1 rounded border border-negative/40 bg-negative-soft px-3 py-1.5 text-xs font-bold text-negative transition-all hover:bg-negative/10 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {shattering ? 'Smashing…' : '💔 Shatter'}
+                  {shattering ? 'Smashing…' : 'Shatter'}
                 </button>
               </div>
 
@@ -173,7 +173,7 @@ export function DemoEvo() {
           )}
 
           <p className="text-center text-[9px] text-dim">
-            Demo only — no wallet or real SOL needed
+            Demo only. No wallet or real SOL needed
           </p>
         </div>
       </div>

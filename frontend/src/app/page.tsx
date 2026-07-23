@@ -258,7 +258,7 @@ export default function Home() {
               </div>
               <h3 className="text-sm font-bold text-text-strong">SOL sealed inside</h3>
               <p className="mt-1.5 text-xs leading-relaxed text-muted">
-                Every EVO holds locked SOL in its own on-chain account. The value is real — it&apos;s yours.
+                Every EVO holds locked SOL in its own on-chain account. The value is real. It&apos;s yours.
               </p>
             </div>
 
@@ -288,11 +288,11 @@ export default function Home() {
           {/* Interactive demo */}
           <div className="mt-8 grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
             <div>
-              <h3 className="text-sm font-bold text-text-strong">Try it — no wallet needed</h3>
+              <h3 className="text-sm font-bold text-text-strong">Try it: no wallet needed</h3>
               <p className="mt-2 text-xs leading-relaxed text-muted">
                 This is a real EVO from the Solana Evo Kitties collection. Feed it fake SOL to watch it
                 evolve, then shatter it to see how value recovery works. The real thing runs entirely
-                on-chain — this is just a preview.
+                on-chain. This is just a preview.
               </p>
               <ul className="mt-4 space-y-2 text-[11px] text-dim">
                 <li className="flex items-center gap-2">
@@ -415,7 +415,7 @@ export default function Home() {
             </div>
             <h3 className="text-sm font-semibold">No collections yet</h3>
             <p className="mx-auto mt-1 max-w-xs text-xs text-muted">
-              Meld is permissionless. Create the first collection from the website — no SDK required.
+              Meld is permissionless. Create the first collection from the website, no SDK required.
             </p>
             <Link href="/create"
               className="mt-5 inline-flex items-center gap-2 rounded border border-accent bg-accent px-5 py-2 text-sm font-bold text-white transition-colors duration-100 hover:bg-accent-hover active:scale-[0.98]">
@@ -477,7 +477,7 @@ export default function Home() {
       {/* ─── Footer ─── */}
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-3 py-3 text-[11px] text-dim lg:px-4">
-          <span>Meld — EVO Protocol — Assets that don&apos;t stay the same.</span>
+          <span>Meld. EVO Protocol. Assets that don&apos;t stay the same.</span>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <a href="/guide" className="transition-colors hover:text-text">Guide</a>
             <a href="/docs" className="transition-colors hover:text-text">Docs</a>

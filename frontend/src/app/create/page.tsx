@@ -39,7 +39,7 @@ const LIFECYCLE_TYPES: LifecycleType[] = ['Static', 'Reveal', 'CommitReveal', 'R
 const LIFECYCLE_INFO: Record<LifecycleType, { label: string; desc: string }> = {
   Static: {
     label: 'Static',
-    desc: 'The art never changes. No reveal, no evolution. Simplest option — like a standard NFT with a SOL floor.',
+    desc: 'The art never changes. No reveal, no evolution. Simplest option, like a standard NFT with a SOL floor.',
   },
   Reveal: {
     label: 'Reveal',
@@ -564,7 +564,7 @@ export default function CreateCollectionPage() {
                       onChange={e => setLockAmountSol(e.target.value)}
                       readOnly={lifecycleType === 'Static'}
                     />
-                    {lifecycleType === 'Static' && <p className="mt-1 text-[10px] text-dim">Minimal lock for Static — no evolution needed.</p>}
+                    {lifecycleType === 'Static' && <p className="mt-1 text-[10px] text-dim">Minimal lock for Static. No evolution needed.</p>}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -602,7 +602,7 @@ export default function CreateCollectionPage() {
               <h2 className={sectionTitleCls}>Lifecycle Settings</h2>
               <div className="space-y-3">
                 <div className="rounded border border-border bg-surface p-2 text-[10px] leading-relaxed text-muted">
-                  <span className="font-semibold text-text">{LIFECYCLE_INFO[lifecycleType].label}</span> — {LIFECYCLE_INFO[lifecycleType].desc}
+                  <span className="font-semibold text-text">{LIFECYCLE_INFO[lifecycleType].label}</span>: {LIFECYCLE_INFO[lifecycleType].desc}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                       <div>
@@ -622,7 +622,7 @@ export default function CreateCollectionPage() {
                         <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-dim">Evolution Rules</p>
                         <p className="mb-3 text-[10px] leading-relaxed text-muted">
                           Choose what makes an EVO reach its next form. Evolution fires automatically once all enabled conditions are met.
-                          Leave a field at 0 to ignore that condition. Each stage becomes progressively harder — stage 2 needs 2× the threshold, stage 3 needs 3×, etc.
+                          Leave a field at 0 to ignore that condition. Each stage becomes progressively harder: stage 2 needs 2× the threshold, stage 3 needs 3×, etc.
                           Evolution is permissionless: anyone can trigger it, but it only fires if conditions are met.
                         </p>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -751,17 +751,17 @@ export default function CreateCollectionPage() {
                         <div>
                           <p className="font-semibold text-text">Two ways to upload:</p>
                           <ul className="mt-1 ml-4 list-disc space-y-1">
-                            <li><span className="font-semibold text-text">ZIP files</span> — Drag one or more .zip files into the drop zone. The uploader extracts them and auto-sorts images into states based on folder names (e.g. <code className="rounded bg-bg px-1">state1/</code>, <code className="rounded bg-bg px-1">state2/</code>).</li>
-                            <li><span className="font-semibold text-text">Per-state drop zones</span> — Drag image files directly into each state box below. Useful for small collections or when adding a few files manually.</li>
+                            <li><span className="font-semibold text-text">ZIP files</span>: Drag one or more .zip files into the drop zone. The uploader extracts them and auto-sorts images into states based on folder names (e.g. <code className="rounded bg-bg px-1">state1/</code>, <code className="rounded bg-bg px-1">state2/</code>).</li>
+                            <li><span className="font-semibold text-text">Per-state drop zones</span>: Drag image files directly into each state box below. Useful for small collections or when adding a few files manually.</li>
                           </ul>
                         </div>
                         <div>
                           <p className="font-semibold text-text">Image files:</p>
                           <ul className="mt-1 ml-4 list-disc space-y-1">
-                            <li>PNG, JPG, GIF, or WebP — all supported.</li>
+                            <li>PNG, JPG, GIF, or WebP. All supported.</li>
                             <li>File naming: <code className="rounded bg-bg px-1">0.png</code>, <code className="rounded bg-bg px-1">1.png</code>, <code className="rounded bg-bg px-1">2.png</code>… (zero-indexed, matching the mint order).</li>
                             <li>Each state must have the same number of images. If State 1 has 100 images, State 2 also needs 100.</li>
-                            <li>Image #0 in State 1 corresponds to Image #0 in State 2 — they represent the same NFT at different lifecycle stages.</li>
+                            <li>Image #0 in State 1 corresponds to Image #0 in State 2. They represent the same NFT at different lifecycle stages.</li>
                           </ul>
                         </div>
                         <div>
@@ -769,7 +769,7 @@ export default function CreateCollectionPage() {
                           <ul className="mt-1 ml-4 list-disc space-y-1">
                             <li>Drop <code className="rounded bg-bg px-1">.json</code> files alongside your images (in the ZIP or per-state zone).</li>
                             <li>Each JSON file should be named to match its image: <code className="rounded bg-bg px-1">0.json</code> for <code className="rounded bg-bg px-1">0.png</code>, <code className="rounded bg-bg px-1">1.json</code> for <code className="rounded bg-bg px-1">1.png</code>, etc.</li>
-                            <li>Format: <code className="rounded bg-bg px-1">{'{"traits": {"Rarity": "Rare", "Color": "Blue"}}'}</code> — a simple object with a <code className="rounded bg-bg px-1">traits</code> key mapping trait names to values.</li>
+                            <li>Format: <code className="rounded bg-bg px-1">{'{"traits": {"Rarity": "Rare", "Color": "Blue"}}'}</code>. A simple object with a <code className="rounded bg-bg px-1">traits</code> key mapping trait names to values.</li>
                             <li>Only one set of JSON files is needed (not per-state). Traits apply to the NFT itself, not per-stage.</li>
                             <li>If no JSON files are provided, traits will be empty in the manifest. You can always add them later via the metadata API.</li>
                           </ul>
@@ -785,12 +785,12 @@ export default function CreateCollectionPage() {
 └── state2/
     ├── 0.png
     └── 1.png`}</code></pre>
-                          <p className="mt-1">JSON files can live in any state folder — the uploader collects them all and matches by filename index.</p>
+                          <p className="mt-1">JSON files can live in any state folder. The uploader collects them all and matches by filename index.</p>
                         </div>
                         <div>
                           <p className="font-semibold text-text">Costs:</p>
                           <ul className="mt-1 ml-4 list-disc space-y-1">
-                            <li>Uploads go to Arweave via Irys — permanent, censorship-resistant storage.</li>
+                            <li>Uploads go to Arweave via Irys. Permanent, censorship-resistant storage.</li>
                             <li>Cost is paid in SOL from your connected wallet. Use "Estimate cost" after adding files to preview the fee.</li>
                             <li>Devnet option is free but temporary (data pruned after ~60 days). Use mainnet for production collections.</li>
                           </ul>
@@ -807,7 +807,7 @@ export default function CreateCollectionPage() {
                             className="h-4 w-4"
                           />
                           <span className="text-sm font-semibold text-text">Rare evolutions</span>
-                          <span className="text-[10px] text-muted">— some items evolve into a rare variant</span>
+                          <span className="text-[10px] text-muted">Some items evolve into a rare variant</span>
                         </label>
                         {rareEnabled && (
                           <div className="mt-3 space-y-3">
@@ -850,7 +850,7 @@ export default function CreateCollectionPage() {
                               </div>
                             </div>
                             <p className="text-[10px] leading-relaxed text-muted">
-                              Deterministic under the hood, hidden until earned — holders discover their variant at evolution. Note: manifest is public JSON.
+                              Deterministic under the hood, hidden until earned. Holders discover their variant at evolution. Note: manifest is public JSON.
                             </p>
                           </div>
                         )}

@@ -94,7 +94,7 @@ export default function DocsPage() {
               that cannot go to zero.
             </p>
             <p>
-              Unlike a static NFT — which is a frozen image with a market price — an EVO is
+              Unlike a static NFT, which is a frozen image with a market price, an EVO is
               <span className="text-text-strong"> alive</span>. It has lifecycle states. It can
               reveal, evolve, and change over time based on on-chain triggers. The protocol itself
               is the source of truth for what the asset looks like at any given moment.
@@ -277,11 +277,11 @@ export default function DocsPage() {
             </div>
             <p className="mt-4 text-xs leading-relaxed text-muted">
               <span className="text-text-strong">NFTs</span> built culture and community on art and
-              scarcity — they proved people will pay for digital ownership. <span className="text-text-strong">
+              scarcity. They proved people will pay for digital ownership. <span className="text-text-strong">
               Meme tokens</span> proved liquidity and virality can move real money at speed. Both have
               real value drivers and real risks. <span className="text-text-strong">EVO</span> takes the
               non-fungible ownership of NFTs, the liquidity option of tokens, and adds a guaranteed
-              floor backed by locked SOL. It is not better at everything — NFTs have deeper marketplaces
+              floor backed by locked SOL. It is not better at everything. NFTs have deeper marketplaces
               and meme tokens have stronger liquidity. EVO is a different tradeoff: you give up some
               ecosystem maturity for a floor that cannot go to zero.
             </p>
@@ -295,15 +295,15 @@ export default function DocsPage() {
           <h2 className="text-2xl font-semibold tracking-tight text-text-strong">What is Meld?</h2>
           <div className="mt-6 space-y-4 text-sm leading-relaxed text-muted">
             <p>
-              Meld is the <span className="text-text-strong">terminal</span> — the consumer-facing
+              Meld is the <span className="text-text-strong">terminal</span>: the consumer-facing
               product built on top of EVO. Think of it like Magic Eden is to NFTs, or Pump.fun is to
               memecoins. Meld is where you create collections, forge assets, browse the marketplace,
               and manage your portfolio.
             </p>
             <p>
-              <span className="text-text-strong">EVO</span> is the protocol — the on-chain rules,
+              <span className="text-text-strong">EVO</span> is the protocol: the on-chain rules,
               account structures, and instructions that define what an asset is and how it behaves.
-              <span className="text-text-strong"> Meld</span> is the interface — the website, the
+              <span className="text-text-strong"> Meld</span> is the interface: the website, the
               wallet connection, the UX that makes it usable.
             </p>
           </div>
@@ -385,7 +385,7 @@ export default function DocsPage() {
               {
                 icon: IconLock,
                 title: '2. Forge an EVO',
-                body: 'Users forge (mint) EVOs from the collection. Each forge locks SOL inside a PDA. That SOL is the floor value — it belongs to whoever holds the EVO.',
+                body: 'Users forge (mint) EVOs from the collection. Each forge locks SOL inside a PDA. That SOL is the floor value. It belongs to whoever holds the EVO.',
               },
               {
                 icon: IconEvolve,
@@ -405,7 +405,7 @@ export default function DocsPage() {
               {
                 icon: IconSparkle,
                 title: '6. Verify everything',
-                body: 'Manifests are Merkle-verified on-chain. Metadata URIs are stored on IPFS/Arweave. The protocol is the source of truth — not a centralized server.',
+                body: 'Manifests are Merkle-verified on-chain. Metadata URIs are stored on IPFS/Arweave. The protocol is the source of truth, not a centralized server.',
               },
             ].map((step) => (
               <div key={step.title} className="rounded-lg border border-border bg-surface p-5">
@@ -425,7 +425,7 @@ export default function DocsPage() {
         <div className="mx-auto max-w-4xl px-4 py-16">
           <h2 className="text-2xl font-semibold tracking-tight text-text-strong">Architecture</h2>
           <p className="mt-3 text-sm text-muted">
-            How the pieces fit together — from your browser to the Solana blockchain.
+            How the pieces fit together, from your browser to the Solana blockchain.
           </p>
 
           {/* ── Flow diagram ── */}
@@ -570,7 +570,7 @@ export default function DocsPage() {
             </div>
             <p className="mt-3 text-[10px] text-muted">
               Each stage transition is an on-chain instruction. The protocol records the current
-              state — no off-chain server can override it.
+              state. No off-chain server can override it.
             </p>
           </div>
 
@@ -619,7 +619,7 @@ export default function DocsPage() {
           <h2 className="text-2xl font-semibold tracking-tight text-text-strong">Key properties</h2>
           <div className="mt-6 space-y-4">
             {[
-              { title: 'SOL-backed floor', body: 'Every EVO locks SOL in a PDA. The floor is not a market opinion — it is a provable on-chain balance.' },
+              { title: 'SOL-backed floor', body: 'Every EVO locks SOL in a PDA. The floor is not a market opinion. It is a provable on-chain balance.' },
               { title: 'Permissionless triggers', body: 'Feed, reveal, and verify instructions can be called by anyone. No centralized oracle or admin key needed.' },
               { title: 'Commit-reveal fairness', body: 'Creators commit a hash before minting. The secret is revealed after. This prevents supply manipulation.' },
               { title: 'Built-in exit', body: 'Shatter burns the EVO and returns locked SOL. You are never trapped holding something you cannot exit.' },
@@ -684,7 +684,7 @@ export default function DocsPage() {
       {/* ─── Footer ─── */}
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-3 py-3 text-[11px] text-dim lg:px-4">
-          <span>Meld — EVO Protocol — Assets that don&apos;t stay the same.</span>
+          <span>Meld. EVO Protocol. Assets that don&apos;t stay the same.</span>
           <div className="flex items-center gap-4">
             <Link href="/" className="transition-colors hover:text-text">Back to app</Link>
             <Link href="/guide" className="transition-colors hover:text-text">Guide</Link>

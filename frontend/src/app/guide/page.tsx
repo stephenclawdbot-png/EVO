@@ -4,7 +4,7 @@ import { IconHammer, IconTrendingUp, IconFeed, IconEvolve, IconShatter, IconPale
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "Guide — How Creators & Collectors Use Meld",
+  title: "Guide: How Creators & Collectors Use Meld",
   description: "Step-by-step visual guide: how creators upload collections and how collectors forge, trade, evolve, and shatter EVOs on Meld.",
 };
 
@@ -57,9 +57,9 @@ export default function GuidePage() {
             </div>
             {/* Labels */}
             <div className="space-y-1.5 text-left text-xs sm:text-sm">
-              <div className="flex items-center gap-2"><IconPalette className="h-4 w-4 flex-shrink-0 text-accent" /> <span className="text-muted"><strong className="text-text">Art</strong> — your image, stored permanently</span></div>
-              <div className="flex items-center gap-2"><IconCoins className="h-4 w-4 flex-shrink-0 text-positive" /> <span className="text-muted"><strong className="text-text">Locked SOL</strong> — real money inside, always withdrawable</span></div>
-              <div className="flex items-center gap-2"><IconUser className="h-4 w-4 flex-shrink-0 text-dim" /> <span className="text-muted"><strong className="text-text">Owner</strong> — whoever holds the EVO</span></div>
+              <div className="flex items-center gap-2"><IconPalette className="h-4 w-4 flex-shrink-0 text-accent" /> <span className="text-muted"><strong className="text-text">Art</strong>: your image, stored permanently</span></div>
+              <div className="flex items-center gap-2"><IconCoins className="h-4 w-4 flex-shrink-0 text-positive" /> <span className="text-muted"><strong className="text-text">Locked SOL</strong>: real money inside, always withdrawable</span></div>
+              <div className="flex items-center gap-2"><IconUser className="h-4 w-4 flex-shrink-0 text-dim" /> <span className="text-muted"><strong className="text-text">Owner</strong>: whoever holds the EVO</span></div>
             </div>
           </div>
         </div>
@@ -97,24 +97,24 @@ export default function GuidePage() {
           <Step num="2" title="Click &quot;Create Collection&quot;">
             Hit the Create button in the nav bar. You&apos;ll configure your collection:
             <ul className="mt-2 space-y-1 pl-4 text-muted">
-              <li>• <strong className="text-text">Name</strong> — your collection name (e.g. &quot;Cosmic Kitties&quot;)</li>
-              <li>• <strong className="text-text">Supply cap</strong> — max number of EVOs (e.g. 900)</li>
-              <li>• <strong className="text-text">Lock amount</strong> — SOL locked per EVO (the floor value)</li>
-              <li>• <strong className="text-text">Lifecycle type</strong> — how art changes over time (see below)</li>
-              <li>• <strong className="text-text">Fee config</strong> — where royalties go (creator, treasury, burn, or split)</li>
+              <li>• <strong className="text-text">Name</strong>: your collection name (e.g. &quot;Cosmic Kitties&quot;)</li>
+              <li>• <strong className="text-text">Supply cap</strong>: max number of EVOs (e.g. 900)</li>
+              <li>• <strong className="text-text">Lock amount</strong>: SOL locked per EVO (the floor value)</li>
+              <li>• <strong className="text-text">Lifecycle type</strong>: how art changes over time (see below)</li>
+              <li>• <strong className="text-text">Fee config</strong>: where royalties go (creator, treasury, burn, or split)</li>
             </ul>
           </Step>
           <Step num="3" title="Choose How Your Art Behaves">
-            Pick a lifecycle type — this decides if and how your art changes over time:
+            Pick a lifecycle type. This decides if and how your art changes over time:
             <div className="mt-2 space-y-1.5">
-              <LifecycleRow name="Static" desc="Art stays the same forever. Easiest — just upload one image per EVO." />
+              <LifecycleRow name="Static" desc="Art stays the same forever. Easiest, just upload one image per EVO." />
               <LifecycleRow name="Reveal" desc="Art starts hidden (mystery), then you reveal it when ready." />
-              <LifecycleRow name="Commit-Reveal" desc="Mystery reveal, but provably fair — nobody can peek or change the art." />
+              <LifecycleRow name="Commit-Reveal" desc="Mystery reveal, but provably fair. Nobody can peek or change the art." />
               <LifecycleRow name="Reveal & Evolve" desc="Art reveals, then evolves through stages as collectors feed it SOL." />
-              <LifecycleRow name="Custom" desc="Full creative control — evolve + manually switch art stages anytime." />
+              <LifecycleRow name="Custom" desc="Full creative control. Evolve + manually switch art stages anytime." />
             </div>
             <div className="mt-2 rounded bg-surface-2 px-3 py-2 text-[11px] text-dim">
-              Not sure? Start with <strong className="text-text">Static</strong> — you can always make an evolving collection next time.
+              Not sure? Start with <strong className="text-text">Static</strong>. You can always make an evolving collection next time.
             </div>
           </Step>
           <Step num="4" title="Upload Your Artwork">
@@ -125,9 +125,9 @@ export default function GuidePage() {
               <strong className="text-text">Tip:</strong> Name your files in order (001.png, 002.png, …) to keep them organized.
             </div>
           </Step>
-          <Step num="5" title="Deploy — Pay the Transaction Fee">
+          <Step num="5" title="Deploy. Pay the Transaction Fee">
             Confirm the transaction in your wallet. Your collection goes live on Solana instantly.
-            No admin keys, no central server — the protocol owns it, and it appears on the homepage
+            No admin keys, no central server. The protocol owns it, and it appears on the homepage
             right away.
             <div className="mt-2 rounded border border-accent/30 bg-accent-soft px-3 py-2 text-xs text-accent">
               <strong>Cost:</strong> ~0.02 SOL for transaction fees + Arweave storage (~0.005 SOL per image)
@@ -164,7 +164,7 @@ export default function GuidePage() {
         {/* SOL lifecycle — where does your money go? */}
         <div className="mb-5 rounded border border-border bg-surface p-4 sm:p-6">
           <h3 className="mb-1 text-center text-sm font-bold text-text-strong">Where does your SOL go?</h3>
-          <p className="mb-4 text-center text-xs text-muted">Your money is never locked away forever — you can always get it back.</p>
+          <p className="mb-4 text-center text-xs text-muted">Your money is never locked away forever. You can always get it back.</p>
           <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-center sm:gap-1">
             <SolFlow icon={<IconCoins className="h-6 w-6" />} label="You pay SOL" sublabel="at Forge" />
             <SolArrow />
@@ -175,7 +175,7 @@ export default function GuidePage() {
             <SolFlow icon={<IconShatter className="h-6 w-6" />} label="Shatter →" sublabel="get SOL back" />
           </div>
           <div className="mt-3 rounded bg-surface-2 px-3 py-2 text-center text-[11px] text-dim">
-            The SOL locked inside an EVO is its <strong className="text-text">floor value</strong> — the minimum it&apos;s always worth.
+            The SOL locked inside an EVO is its <strong className="text-text">floor value</strong>: the minimum it&apos;s always worth.
           </div>
         </div>
 
@@ -191,7 +191,7 @@ export default function GuidePage() {
             <EvoStage num="3" icon={<IconEvolve className="h-7 w-7" />} label="Stage 3" sub="Fully evolved" color="from-purple-600/20 to-purple-600/5" />
           </div>
           <div className="mt-3 rounded bg-surface-2 px-3 py-2 text-center text-[11px] text-dim">
-            Not all collections evolve — <strong className="text-text">Static</strong> collections keep the same art forever.
+            Not all collections evolve. <strong className="text-text">Static</strong> collections keep the same art forever.
           </div>
         </div>
 
@@ -202,7 +202,7 @@ export default function GuidePage() {
             collections.
           </Step>
           <Step num="2" title="Forge an EVO">
-            On a collection page, click &quot;Forge&quot; to mint a new EVO. You lock SOL inside it —
+            On a collection page, click &quot;Forge&quot; to mint a new EVO. You lock SOL inside it,
             this becomes its floor value (the minimum it&apos;s always worth). The art is assigned
             to your EVO (randomly or deterministically, depending on the collection).
             <div className="mt-2 rounded border border-accent/30 bg-accent-soft px-3 py-2 text-xs text-accent">
@@ -210,22 +210,22 @@ export default function GuidePage() {
             </div>
           </Step>
           <Step num="3" title="Trade on-chain">
-            List your EVO for sale at any price. Other collectors can buy it instantly — royalties
+            List your EVO for sale at any price. Other collectors can buy it instantly. Royalties
             are enforced automatically by the protocol, so you always get your cut. The locked SOL
             (floor value) travels with the EVO to the new owner.
           </Step>
           <Step num="4" title="Feed SOL to Evolve It">
             Add more SOL to your EVO&apos;s lock. This raises its floor value and can trigger
-            evolution in evolving collections. Feeding is optional — your EVO works fine without it.
+            evolution in evolving collections. Feeding is optional. Your EVO works fine without it.
           </Step>
           <Step num="5" title="Evolve">
             For evolving collections, the art changes when certain thresholds are met (enough SOL
-            locked, enough trades, etc.). Each stage is a new visual — watch your EVO transform
+            locked, enough trades, etc.). Each stage is a new visual. Watch your EVO transform
             over time.
           </Step>
           <Step num="6" title="Shatter to Recover SOL">
             Done with your EVO? Shatter it. The EVO is destroyed and you get back the locked SOL,
-            minus a small fee. This is the key difference from regular NFTs — you always have a
+            minus a small fee. This is the key difference from regular NFTs. You always have a
             floor value you can cash out into.
           </Step>
         </div>
@@ -259,10 +259,10 @@ export default function GuidePage() {
         <div className="space-y-2">
           <Faq q="How much does it cost to create a collection?" a="About 0.02 SOL for the transaction + roughly 0.005 SOL per image for permanent storage. A 100-image collection costs around 0.5 SOL total." />
           <Faq q="Can I change the art after deploying?" a="It depends on the lifecycle type you chose. Static collections can't be changed. Commit-Reveal is locked forever (provably fair). Custom lifecycle lets you switch art stages manually." />
-          <Faq q="What happens when I shatter an EVO?" a="The EVO is permanently destroyed and you get back the SOL that was locked inside it, minus a small fee. The art is gone — shattering is permanent." />
-          <Faq q="Are royalties enforced?" a="Yes — the protocol enforces royalties on every trade automatically. No marketplace can bypass them. You set where the fees go when you create the collection." />
+          <Faq q="What happens when I shatter an EVO?" a="The EVO is permanently destroyed and you get back the SOL that was locked inside it, minus a small fee. The art is gone. Shattering is permanent." />
+          <Faq q="Are royalties enforced?" a="Yes. The protocol enforces royalties on every trade automatically. No marketplace can bypass them. You set where the fees go when you create the collection." />
           <Faq q="What wallets are supported?" a="Phantom, Solflare, Backpack, and any Solana-compatible wallet." />
-          <Faq q="Do I need to know how to code?" a="No! If you can upload images and click buttons, you can create a collection. The entire process is visual — no coding required." />
+          <Faq q="Do I need to know how to code?" a="No! If you can upload images and click buttons, you can create a collection. The entire process is visual. No coding required." />
         </div>
         </Section>
 
@@ -280,7 +280,7 @@ export default function GuidePage() {
       {/* Footer */}
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-3 py-3 text-[11px] text-dim lg:px-4">
-          <span>Meld — EVO Protocol — Assets that don&apos;t stay the same.</span>
+          <span>Meld. EVO Protocol. Assets that don&apos;t stay the same.</span>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <Link href="/guide" className="transition-colors hover:text-text">Guide</Link>
             <Link href="/docs" className="transition-colors hover:text-text">Docs</Link>

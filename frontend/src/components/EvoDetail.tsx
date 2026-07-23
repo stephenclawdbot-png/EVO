@@ -580,7 +580,7 @@ export function EvoDetail({ evo: _evo, onBack, onRefresh, refreshing, refreshTim
                         {manifestVerification.status === 'verified' ? (
                           <><IconCheck className="h-4 w-4 text-positive" /><span className="text-xs text-positive">Hash verified on-chain</span></>
                         ) : manifestVerification.status === 'mismatch' ? (
-                          <><IconAlertTriangle className="h-4 w-4 text-negative" /><span className="text-xs text-negative">Hash mismatch — art may be tampered</span></>
+                          <><IconAlertTriangle className="h-4 w-4 text-negative" /><span className="text-xs text-negative">Hash mismatch. Art may be tampered</span></>
                         ) : manifestVerification.status === 'no-hash' ? (
                           <><IconInfo className="h-4 w-4 text-dim" /><span className="text-xs text-dim">No on-chain hash</span></>
                         ) : (
@@ -803,7 +803,7 @@ export function EvoDetail({ evo: _evo, onBack, onRefresh, refreshing, refreshTim
                         <IconInfo className="h-3.5 w-3.5" />
                         <span>Provenance hash: not enabled</span>
                       </div>
-                      <p className="text-[10px] text-dim">Artwork is stored on permanent content-addressed storage (Irys) — files cannot be altered at their URLs. On-chain manifest hashing is available for new collections.</p>
+                      <p className="text-[10px] text-dim">Artwork is stored on permanent content-addressed storage (Irys). Files cannot be altered at their URLs. On-chain manifest hashing is available for new collections.</p>
                     </div>
                   );
                 }
@@ -871,7 +871,7 @@ export function EvoDetail({ evo: _evo, onBack, onRefresh, refreshing, refreshTim
                 </div>
                 <button onClick={handleShatter} disabled={action === 'shatter'}
                   className="w-full rounded border border-negative/30 bg-negative-soft py-2.5 text-xs font-medium text-negative transition-colors hover:bg-negative/10 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
-                  {action === 'shatter' ? <span className="inline-flex items-center justify-center gap-1.5"><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> Shattering...</span> : `Shatter — recover ${fmtSolValue(evo.lockedLamports * (10000 - shatterFeeBps) / 10000)}`}
+                  {action === 'shatter' ? <span className="inline-flex items-center justify-center gap-1.5"><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> Shattering...</span> : `Shatter. Recover ${fmtSolValue(evo.lockedLamports * (10000 - shatterFeeBps) / 10000)}`}
                 </button>
                 <div className="flex gap-2">
                   <input type="text" placeholder="Recipient address" value={transferAddress} onChange={(e) => setTransferAddress(e.target.value)}
@@ -901,7 +901,7 @@ export function EvoDetail({ evo: _evo, onBack, onRefresh, refreshing, refreshTim
         {evo.isListed && !evo.isShattered && !isOwner && (
           <button onClick={handleBuy} disabled={action === 'buy'}
             className="flex h-14 w-full items-center justify-center gap-2 bg-positive text-sm font-bold text-[#0a0a0b] transition-opacity active:scale-[0.99] disabled:opacity-50">
-            {action === 'buy' ? <span className="inline-flex items-center gap-1.5"><svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> Buying...</span> : <span>Buy now — {evo.listPrice} SOL</span>}
+            {action === 'buy' ? <span className="inline-flex items-center gap-1.5"><svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fillRule="evenodd" clipRule="evenodd" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/></svg> Buying...</span> : <span>Buy now: {evo.listPrice} SOL</span>}
           </button>
         )}
         {isOwner && !evo.isShattered && canEvolve && (
@@ -1025,9 +1025,9 @@ function lifecycleDesc(type: string): string {
   switch (type) {
     case 'Static': return 'Art never changes. Simplest lifecycle.';
     case 'Reveal': return 'Art starts hidden, revealed by the creator.';
-    case 'CommitReveal': return 'Provably fair reveal — no one can peek or change the art.';
+    case 'CommitReveal': return 'Provably fair reveal. No one can peek or change the art.';
     case 'RevealAndEvolve': return 'Art reveals, then evolves through stages as collectors feed it SOL.';
-    case 'Custom': return 'Full creative control — evolve and manually switch art stages anytime.';
+    case 'Custom': return 'Full creative control. Evolve and manually switch art stages anytime.';
     default: return '';
   }
 }
