@@ -1,5 +1,16 @@
 # EVO-EVM — collectibles with real assets sealed inside (DRAFT)
 
+> ## ⚑ DIRECTION (creator decision — binding)
+> **EVO-EVM will NOT be an ERC-721.** EVO is a third asset model, not an NFT,
+> on every chain. The chosen path is authoring a NEW standard — **ERC-EVO**
+> (Evolving Value Objects): own interface (`forge/feed/reserveOf/evolve/
+> shatter`), intrinsic reserve, native lifecycle, ungateable redemption, plus
+> primitives NFTs cannot express — **meld** (merge two EVOs: reserves combine,
+> histories join) and **split**. MELD remains the exclusive terminal — that is
+> the moat, not a limitation. The ERC-721 draft below is retained ONLY as a
+> compatibility reference; do not build it as the product.
+
+
 Port of the EVO primitive to EVM chains (Base first; BSC for degen flavor).
 **Status: architecture + draft contract only. NOT compiled, NOT audited,
 NOT deployed. Do not use with real funds.**
