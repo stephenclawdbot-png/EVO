@@ -46,3 +46,16 @@ An ERC-721 where every token seals a redeemable reserve inside:
 Foundry: `forge init`, OpenZeppelin (ERC721, ERC2981, ReentrancyGuard,
 SafeERC20), tests mirroring the Solana invariants (SECURITY.md §4 of the main
 repo), Chainlink VRF for rare evolutions, deploy Base Sepolia → Base.
+
+## Reserve classes (creator decision — ERC-EVO holds ANY of these, per collection)
+Same architecture on every chain: the contract is the custodian (PDA-equivalent
+= contract storage records); the asset never leaves the machine.
+1. **Native ETH/BNB** — direct port of the Solana model
+2. **LSTs (stETH/rETH)** — DEFAULT FLAGSHIP: the floor yields ~3-4%/yr natively,
+   zero extra machinery. "A pet whose floor grows while you sleep."
+3. **Stables / tokenized stocks / PAXG** — dollar-legible or RWA floors
+   (regulatory ladder above applies; check transfer restrictions first)
+4. **NFTs as reserves** — an EVO wrapping an ERC-721: a living vault around a
+   static asset. Gives the existing NFT world feed/evolve/meld/history —
+   upgrade layer, not competitor. Genuinely novel; no prior art known.
+5. Mixed baskets — later.
