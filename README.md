@@ -173,6 +173,21 @@ Wallets read `current_state` from the EVO account and resolve the image from the
 
 ---
 
+
+## Repository Layout
+
+```
+programs/evo/     Solana program (LIVE on mainnet) — the EVO protocol
+frontend/         MELD terminal (meldterminal.io) — Next.js
+packages/         @evo/sdk (integrators) + @evo/renderer
+evm/              EVO-EVM — draft port (any-ERC20 reserve, Base-first);
+                  self-contained, splits to its own repo via evm/SPLIT-TO-REPO.md
+docs/             Whitepapers, guides, threat model, archived dev-sprint tasks
+scripts/ tests/   Operational scripts + Anchor test suite
+```
+One folder per chain, one per app. The Solana program is the live protocol;
+`evm/` is a specced future port — see its README before assuming parity.
+
 ## Documentation
 
 | Document | Description |
