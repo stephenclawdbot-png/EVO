@@ -43,3 +43,30 @@ a strong MVB application. This is a real audit-money path.
   moat holds on every chain.
 - Validator set is small/centralized vs ETH — fine for collectibles, worth one
   honest line in any BSC whitepaper.
+
+## Tokenized stocks on BSC — study (knowledge as of early 2026; re-verify before build)
+BNB Chain became a serious tokenized-equity venue in late 2025:
+- **Ondo Global Markets on BNB Chain** — 100+ tokenized US stocks/ETFs
+  (AAPL/TSLA/NVDA-style tokens), 1:1 backed, freely transferable ERC-20s for
+  non-US persons, tradable on PancakeSwap.
+- **Backed's xStocks** — same class, multi-chain incl. BSC.
+- Key nuance vs our earlier RWA caution: these wrappers are TRANSFER-
+  permissionless (restrictions live at mint/redeem + geo level), so sealing
+  them inside an EVO does not break transfers. Still: lawyer + geo-gating on
+  the MELD frontend before launch; never serve US persons.
+
+## THE INVENTION — "Stock Pets": the first brokerage position you can pet
+EVO reserve = tokenized equity. The creature IS the position.
+- **Forge** a pet with tokenized NVDA sealed inside — its floor is a real stock.
+- **Feed** it more shares over time. Evolution thresholds = DCA milestones:
+  the pet grows because you SAVED. Investing discipline becomes pet care —
+  streaks, stages, visible progress. (Tamagotchi mechanics aimed at the retail
+  audience BSC actually has.)
+- **Meld** two pets = merge positions into one creature (portfolio building as
+  a game verb). **Split** = take profits into offspring.
+- **Shatter** = sell out, always, ungateable — the honest exit.
+- Art reflects the journey (fed count, hold time, melds survived) — your
+  portfolio has a face and a history no spreadsheet has.
+Why it wins on BSC: retail that gambles memecoins gets a pet that tricks them
+into dollar-cost-averaging Apple. No prior art known for equity-reserve
+collectibles with care-loop mechanics. Pitch line: **"Raise your portfolio."**
