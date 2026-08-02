@@ -64,3 +64,19 @@ Same architecture on every chain: the contract is the custodian (PDA-equivalent
 **EVM (Base/Ethereum) FIRST.** This folder covers the flagship deployment only.
 BSC is a separate, LATER phase — see `../bsc/` (same ERC-EVO bytecode, its own
 reserve menu, positioning, and funding path). Do not mix the two roadmaps.
+
+## Reserve classes — additions (creator Q&A, 2026-07-23)
+6. **Working reserves (LP/vault tokens)** — seal auto-compounding vault/LP
+   tokens; trading volume pays fees into the reserve, floor grows on its own.
+   DOABLE VERSION: no DeFi engineering, just allow yield-bearing tokens as the
+   reserve choice; MELD displays live value + "earned this week". Honest note:
+   working positions can dip; floor = current value of the position.
+7. **Growable, not fixed** — reserves were never fixed: `feed` adds more of
+   the reserve token any time, forever. Deposits stack AND fees compound on
+   the stack.
+8. **Basket reserves** — one EVO holds MULTIPLE tokens (ledger per
+   tokenId x tokenAddress). Guardrail: creator whitelists 3-5 allowed tokens
+   per collection (anti dust/scam stuffing). Shatter returns the whole basket.
+   Product frame: "a growing portfolio with a face" — stable = hard floor,
+   LP = self-feeding, meme = lottery. Build order: single-token v1 first,
+   basket v1.1.
